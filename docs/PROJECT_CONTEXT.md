@@ -4,6 +4,15 @@
 기존 구조·API 필드·DB 컬럼·담당 역할을 임의로 바꾸지 않는다. 변경 이유를 먼저 설명하고 팀 합의 → 문서 변경 → 코드 변경 순서를 따른다.
 정보가 부족하거나 기존 결정과 충돌하면 구현 전에 사용자에게 확인한다. 아래 기능 정의는 구현 완료를 뜻하지 않는다.
 
+## 문서 상태 구분
+
+- **현재 실행 상태**: health check와 네 페이지 placeholder만 구현되어 있다. 연동 완료를 의미하지 않는다.
+- **최종 합의**: 앞으로 구현할 요구사항이다. 현재 구현 여부와 구분한다.
+- **예시**: JSON의 비밀번호·ID·파일명, 탐지 수치 등 설명용 값이다. 실제 설정으로 확정하지 않는다.
+- **확인 필요**: 담당자와 합의 후 문서에 반영할 사항이다. 임의 구현하지 않는다.
+- **DB 현재 상태**: H2는 초기 실행 확인용 임시 DB이다. 최종 DB 선정이 아니다. MySQL은 검토 중이며 채택·버전 확정은 아직 문서에 반영되지 않았다.
+
+
 ## 현재 구현 상태와 해석 기준
 
 - 현재 구현은 AI/Backend health check 및 Frontend 네 페이지 placeholder에 한정된다.
@@ -79,9 +88,13 @@ Temporal Validation
     ↓
 위험 이벤트 확정
     ↓
-Backend Event 생성
+AI Snapshot 확보 및 파일 저장
     ↓
-Snapshot 저장
+POST /api/ai/events (snapshotPath 전달)
+    ↓
+Backend Event 생성 및 Snapshot 경로 저장
+    ↓
+Frontend에서 이벤트 조회 가능 (영상 완성을 기다리지 않음)
     ↓
 AI Frame Buffer 기반 Event Video 생성
     ↓
@@ -93,7 +106,7 @@ Frontend 통합 관제 Dashboard 표시
     ↓
 TRUE_FIRE / FALSE_POSITIVE 검수
     ↓
-이력 및 통계 저장
+이벤트·검수 이력 저장 및 통계 집계 (통계 전용 테이블 없음)
 
 전체 기술 구조:
 
@@ -948,6 +961,8 @@ GET /api/statistics/dashboard
 
 ## 22. 인증
 
+**최종 합의:** 사용자 JWT 인증. **후보/확인 필요:** AI API Key 방식의 최종 채택과 세부 검증 정책. 둘 다 현재 Skeleton에는 구현되어 있지 않다.
+
 Frontend 사용자는 JWT 사용.
 
 Header:
@@ -962,6 +977,8 @@ Header 예:
 X-AI-API-KEY: {apiKey}
 
 ## 23. 로그인 API
+
+**예시 주의:** 아래 및 비밀번호 관련 예시의 qwe123은 실제 공통 임시 비밀번호로 확정된 값이 아니다.
 
 POST /api/auth/login
 
@@ -1074,6 +1091,8 @@ Response 예:
 
 ## 27. AI 이벤트 생성 API
 
+**예시 주의:** event_31.jpg는 파일명 예시이며 아직 발급되지 않은 eventId로 파일명을 먼저 만들라는 규칙이 아니다. 파일명과 eventId 연결 방식은 확인이 필요하다. /storage/... 경로가 곧바로 브라우저 접근 URL이라는 뜻도 아니다.
+
 POST /api/ai/events
 
 AI Server 전용.
@@ -1097,7 +1116,7 @@ FIRE_EVENT 생성
 
 EVENT_MEDIA 생성
 
-Snapshot 저장
+AI가 전달한 snapshotPath를 DB에 저장 (이미지 파일 생성·저장은 AI/파일 저장소 담당)
 
 Video Path는 NULL 가능
 
@@ -1212,6 +1231,8 @@ reviewerId를 Frontend Request에서 받지 않는다.
 JWT의 로그인 사용자에서 accountId를 확인하여 저장한다.
 
 ## 32. Dashboard 통계 API
+
+**확인 필요:** 화면의 “오늘 이벤트”와 아래 totalEvents의 집계 기간을 맞춰야 한다. 예시만으로 오늘/전체 범위를 확정하지 않는다. ONLINE CCTV 및 최근 이벤트 전달 계약도 별도 확인이 필요하다.
 
 GET /api/statistics/dashboard
 
@@ -1418,7 +1439,8 @@ Review 결과
 
 영상 설명:
 
-이벤트 발생 전 5초 ~ 발생 후 5초
+표시 예시: 이벤트 발생 전 5초 ~ 발생 후 5초.
+실제 안내 문구는 preSeconds/postSeconds를 사용한다. 전후 5초는 고정 규칙이 아니다.
 
 영상 생성 중:
 
@@ -1466,13 +1488,10 @@ WORKER에게 메뉴 자체가 보이지 않는다.
 
 이름 입력
 
-Backend가:
+Backend는 loginId를 자동 생성한다.
 
-loginId
-
-temporaryPassword
-
-를 자동 생성.
+MVP에서는 공통 임시 비밀번호를 사용할 수 있으며 적용한 값을 temporaryPassword로 반환한다.
+실제 공통값은 확인 필요이며, 요청마다 무작위 비밀번호를 생성한다고 확정한 것은 아니다.
 
 비밀번호 초기화:
 

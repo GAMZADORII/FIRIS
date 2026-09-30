@@ -2,6 +2,15 @@
 
 기준: [PROJECT_CONTEXT](PROJECT_CONTEXT.md). 팀 합의 → 문서 변경 → 코드 변경을 따른다.
 
+## 문서 상태 구분
+
+- **현재 실행 상태**: health check와 네 페이지 placeholder만 구현되어 있다. 연동 완료를 의미하지 않는다.
+- **최종 합의**: 앞으로 구현할 요구사항이다. 현재 구현 여부와 구분한다.
+- **예시**: JSON의 비밀번호·ID·파일명, 탐지 수치 등 설명용 값이다. 실제 설정으로 확정하지 않는다.
+- **확인 필요**: 담당자와 합의 후 문서에 반영할 사항이다. 임의 구현하지 않는다.
+- **DB 현재 상태**: H2는 초기 실행 확인용 임시 DB이다. 최종 DB 선정이 아니다. MySQL은 검토 중이며 채택·버전 확정은 아직 문서에 반영되지 않았다.
+
+
 ## Monorepo 및 개발 환경
 
 루트 .git 하나를 공유하고 ai/backend/frontend/docs를 독립된 폴더로 유지한다. 하위 Git Repository는 만들지 않는다.
@@ -79,7 +88,7 @@ Statistics Table 없이 집계하며, 검수 행이 없으면 UNREVIEWED이다.
 ## 현재 실행 구성
 - AI: FastAPI/Uvicorn, 8000 포트. OpenCV 의존성만 준비하고 모델 추론은 없다.
 - Backend: Java 17, Spring Boot, Gradle Wrapper, 8080 포트.
-- Spring Web/JPA/Security/Validation과 개발용 메모리 H2를 포함한다.
+- Spring Web/JPA/Security/Validation과 초기 실행 확인용 임시 메모리 H2를 포함한다. 최종 DB는 별도로 확정한다.
 - `ddl-auto: none`, SQL 초기화 비활성화. Entity, 테이블, 계정 시드는 없다.
 - Spring Security는 GET /api/health만 허용하고 나머지는 차단한다. 기본 사용자 자동 생성과 폼/Basic 로그인은 사용하지 않는다. JWT는 최종 구현 예정이며 현재 단계에서는 미구현이다.
 - Frontend: React/Vite/JavaScript, React Router, Axios, Yarn, 5173 포트. API 연동과 CORS 정책은 아직 구현하지 않는다.
