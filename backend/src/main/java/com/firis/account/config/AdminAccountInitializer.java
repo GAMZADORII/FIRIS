@@ -26,7 +26,7 @@ public class AdminAccountInitializer implements ApplicationRunner {
             AccountRepository accountRepository,
             PasswordEncoder passwordEncoder,
             @Value("${app.admin.login-id:admin}") String adminLoginId,
-            @Value("${app.admin.password:firis1234!}") String adminPassword,
+            @Value("${app.admin.password:admin1234}") String adminPassword,
             @Value("${app.admin.name:관리자}") String adminName
     ) {
         this.accountRepository = accountRepository;

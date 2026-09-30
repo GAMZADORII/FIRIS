@@ -27,7 +27,7 @@ security:
 app:
   admin:
     login-id: ${ADMIN_LOGIN_ID:admin}
-    password: ${ADMIN_PASSWORD:firis1234!}
+    password: ${ADMIN_PASSWORD:admin1234}
     name: ${ADMIN_NAME:관리자}
   worker:
     default-password: ${WORKER_DEFAULT_PASSWORD:qwe123}
