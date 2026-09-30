@@ -1,15 +1,18 @@
 # FIRIS ERD 설계 초안
 
+> 현재 Backend 구현 범위: health check, AI 이벤트 생성·미디어 갱신 및 CAMERA/FIRE_EVENT/EVENT_MEDIA 매핑. [구현·검증 안내](AI_EVENT_IMPLEMENTATION.md)를 함께 확인한다. 금빈님 계정/JWT 및 MySQL 설정이 dev에 병합되어 이 브랜치에도 포함된다.
+
+
 기준: [PROJECT_CONTEXT](PROJECT_CONTEXT.md) 19~20절. 아래 컬럼명·타입·제약은 팀이 제공한 설계이며 임의 변경하지 않는다.
-**현재 Entity, DDL, migration, 테이블, 시드는 구현하지 않는다.** 운영 DB 종류는 아직 확정하지 않는다.
+**CAMERA/FIRE_EVENT/EVENT_MEDIA Entity를 구현했다. ACCOUNT는 금빈님 코드로 구현됐고 EVENT_REVIEW는 미구현이다. 운영 DDL·migration과 CAMERA 시드는 별도 작업이다.** 현재 기본 설정은 MySQL이며 버전과 운영 스키마 관리 정책은 확인이 필요하다.
 
 ## 문서 상태 구분
 
-- **현재 실행 상태**: health check와 네 페이지 placeholder만 구현되어 있다. 연동 완료를 의미하지 않는다.
+- **현재 실행 상태**: health check, AI 이벤트 생성·미디어 갱신 코드와 네 페이지 placeholder가 있다. 이벤트 API의 서비스 단위 테스트는 DB 없이 검증했다. MySQL 통합 테스트는 전용 테스트 DB가 있을 때 실행하도록 구성했으나 아직 실제 MySQL에서 실행하지 않았다. 서버 실행에는 MySQL·카메라 데이터·API Key 설정이 필요하다. 실제 AI/Frontend 연동 완료를 의미하지 않는다.
 - **최종 합의**: 앞으로 구현할 요구사항이다. 현재 구현 여부와 구분한다.
 - **예시**: JSON의 비밀번호·ID·파일명, 탐지 수치 등 설명용 값이다. 실제 설정으로 확정하지 않는다.
 - **확인 필요**: 담당자와 합의 후 문서에 반영할 사항이다. 임의 구현하지 않는다.
-- **DB 현재 상태**: H2는 초기 실행 확인용 임시 DB이다. 최종 DB 선정이 아니다. MySQL은 검토 중이며 채택·버전 확정은 아직 문서에 반영되지 않았다.
+- **DB 현재 상태**: backend 기본 연결은 MySQL이다. 이벤트 API DB 통합 테스트는 별도 MySQL 테스트 DB에서 선택적으로 실행한다. MySQL 버전과 운영 스키마 관리 정책은 별도 확인이 필요하다.
 
 
 ## ACCOUNT

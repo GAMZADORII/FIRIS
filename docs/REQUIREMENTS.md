@@ -1,21 +1,24 @@
 # FIRIS 요구사항
 
+> 현재 Backend 구현 범위: health check, AI 이벤트 생성·미디어 갱신 및 CAMERA/FIRE_EVENT/EVENT_MEDIA 매핑. [구현·검증 안내](AI_EVENT_IMPLEMENTATION.md)를 함께 확인한다. 금빈님 계정/JWT 및 MySQL 설정이 dev에 병합되어 이 브랜치에도 포함된다.
+
+
 기준: [PROJECT_CONTEXT](PROJECT_CONTEXT.md). 설계 변경은 팀 합의 → 문서 → 코드 순서로 진행한다.
 
 ## 문서 상태 구분
 
-- **현재 실행 상태**: health check와 네 페이지 placeholder만 구현되어 있다. 연동 완료를 의미하지 않는다.
+- **현재 실행 상태**: health check, AI 이벤트 생성·미디어 갱신 코드와 네 페이지 placeholder가 있다. 이벤트 API의 서비스 단위 테스트는 DB 없이 검증했다. MySQL 통합 테스트는 전용 테스트 DB가 있을 때 실행하도록 구성했으나 아직 실제 MySQL에서 실행하지 않았다. 서버 실행에는 MySQL·카메라 데이터·API Key 설정이 필요하다. 실제 AI/Frontend 연동 완료를 의미하지 않는다.
 - **최종 합의**: 앞으로 구현할 요구사항이다. 현재 구현 여부와 구분한다.
 - **예시**: JSON의 비밀번호·ID·파일명, 탐지 수치 등 설명용 값이다. 실제 설정으로 확정하지 않는다.
 - **확인 필요**: 담당자와 합의 후 문서에 반영할 사항이다. 임의 구현하지 않는다.
-- **DB 현재 상태**: H2는 초기 실행 확인용 임시 DB이다. 최종 DB 선정이 아니다. MySQL은 검토 중이며 채택·버전 확정은 아직 문서에 반영되지 않았다.
+- **DB 현재 상태**: backend 기본 연결은 MySQL이다. 이벤트 API DB 통합 테스트는 별도 MySQL 테스트 DB에서 선택적으로 실행한다. MySQL 버전과 운영 스키마 관리 정책은 별도 확인이 필요하다.
 
 
 ## 구현 단계와 최종 범위
 
-**현재 단계에서는 최소 실행 뼈대만 제공한다. JWT 인증과 작업자/관리자 기능은 향후 구현 예정이며 최종 제외 기능이 아니다.**
-현재 실행 가능한 기능은 AI GET /health, Backend GET /api/health, Frontend 네 페이지 placeholder와 라우팅이다.
-Entity, 테이블/시드, AI 학습/추론, JWT, 업무 API/UI 및 Docker/Jenkins는 이 단계에서 구현하지 않는다.
+**초기 뼈대 이후 AI 이벤트 생성·미디어 갱신 구현을 시작했다. JWT 인증과 작업자/관리자 Backend 기능은 금빈님 PR 병합으로 dev에 포함됐다.**
+현재 AI GET /health, Backend GET /api/health 및 POST /api/ai/events·PATCH /api/ai/events/{eventId}/media, Frontend 네 페이지 placeholder와 라우팅이 있다.
+이번 작업은 이벤트 관련 세 Entity와 두 AI 수신 API에 한정한다. 운영 테이블/시드, 학습/추론, 조회/검수 UI, 배포 구성은 별도 작업이다.
 
 ## 목적 및 일정
 

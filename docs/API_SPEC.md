@@ -1,16 +1,19 @@
 # FIRIS API 명세 초안
 
+> 현재 Backend 구현 범위: health check, AI 이벤트 생성·미디어 갱신 및 CAMERA/FIRE_EVENT/EVENT_MEDIA 매핑. [구현·검증 안내](AI_EVENT_IMPLEMENTATION.md)를 함께 확인한다. 금빈님 계정/JWT 및 MySQL 설정이 dev에 병합되어 이 브랜치에도 포함된다.
+
+
 기준: [PROJECT_CONTEXT](PROJECT_CONTEXT.md) 21~32절. 아래 필드명과 경로를 임의 변경하지 않는다.
-**현재 구현된 API는 health check 두 개뿐이다. 업무 API와 JWT는 향후 구현 예정이다.**
+**현재 health check 두 개와 AI 이벤트 생성·미디어 갱신 API를 구현했다. 금빈님 인증·작업자 API와 사용자 JWT는 병합된 dev에 포함됐다. 이벤트 목록·상세·검수·통계 API는 아직 미구현이다.**
 JSON 예시는 계약을 설명하며 비밀번호·ID·경로·시각은 실제 환경 설정이 아니다.
 
 ## 문서 상태 구분
 
-- **현재 실행 상태**: health check와 네 페이지 placeholder만 구현되어 있다. 연동 완료를 의미하지 않는다.
+- **현재 실행 상태**: health check, AI 이벤트 생성·미디어 갱신 코드와 네 페이지 placeholder가 있다. 이벤트 API의 서비스 단위 테스트는 DB 없이 검증했다. MySQL 통합 테스트는 전용 테스트 DB가 있을 때 실행하도록 구성했으나 아직 실제 MySQL에서 실행하지 않았다. 서버 실행에는 MySQL·카메라 데이터·API Key 설정이 필요하다. 실제 AI/Frontend 연동 완료를 의미하지 않는다.
 - **최종 합의**: 앞으로 구현할 요구사항이다. 현재 구현 여부와 구분한다.
 - **예시**: JSON의 비밀번호·ID·파일명, 탐지 수치 등 설명용 값이다. 실제 설정으로 확정하지 않는다.
 - **확인 필요**: 담당자와 합의 후 문서에 반영할 사항이다. 임의 구현하지 않는다.
-- **DB 현재 상태**: H2는 초기 실행 확인용 임시 DB이다. 최종 DB 선정이 아니다. MySQL은 검토 중이며 채택·버전 확정은 아직 문서에 반영되지 않았다.
+- **DB 현재 상태**: backend 기본 연결은 MySQL이다. 이벤트 API DB 통합 테스트는 별도 MySQL 테스트 DB에서 선택적으로 실행한다. MySQL 버전과 운영 스키마 관리 정책은 별도 확인이 필요하다.
 
 
 ## 현재 구현
@@ -19,10 +22,12 @@ JSON 예시는 계약을 설명하며 비밀번호·ID·경로·시각은 실제
 | --- | --- | --- | --- |
 | AI :8000 | GET | /health | 200, {"status":"ok"} |
 | Backend :8080 | GET | /api/health | 200, {"status":"ok"} |
+| Backend :8080 | POST | /api/ai/events | 201, eventId/reviewStatus (API Key 필요) |
+| Backend :8080 | PATCH | /api/ai/events/{eventId}/media | 200, eventId/videoAvailable (API Key 필요) |
 
-Content-Type은 application/json이고 인증 없이 프로세스 응답만 확인한다. DB/모델 readiness 검사는 하지 않는다.
+Content-Type은 application/json이다. health API만 인증 없이 프로세스 응답을 확인하며 DB/모델 readiness 검사는 하지 않는다. 두 AI API는 API Key 인증과 준비된 DB를 필요로 한다.
 
-## 향후 API 및 담당
+## 전체 API 및 담당 (두 AI API 외 업무 API는 별도 개발)
 
 | Method | 경로 | 담당 | 용도/권한 |
 | --- | --- | --- | --- |
@@ -42,7 +47,7 @@ Content-Type은 application/json이고 인증 없이 프로세스 응답만 확�
 
 ## 22. 인증
 
-**최종 합의:** 사용자 JWT 인증. **후보/확인 필요:** AI API Key 방식의 최종 채택과 세부 검증 정책. 둘 다 현재 Skeleton에는 구현되어 있지 않다.
+**최종 합의:** 사용자 JWT 인증. **이번 구현:** AI API Key 방식, 미설정·누락·불일치 시 401. 사용자 JWT는 금빈님 PR 병합으로 포함됐다.
 
 Frontend 사용자는 JWT 사용.
 
@@ -51,7 +56,7 @@ Header:
 Authorization: Bearer {accessToken}
 
 AI Server → Backend 통신은
-간단한 API Key 방식을 사용할 수 있다.
+이번 구현에서는 X-AI-API-KEY 방식으로 인증한다.
 
 Header 예:
 
@@ -345,9 +350,9 @@ FIRE_EVENT와 EVENT_REVIEW를 집계한다.
 - 이벤트 생성은 영상 완성을 기다리지 않는다. POST 응답 eventId로 이후 PATCH를 호출한다.
 - UNREVIEWED는 검수 행 부재로 계산하며 검수 result 저장값이 아니다.
 - 검수 완료 UI는 읽기 전용이다. 서버의 중복/동시 검수 요청 응답 정책은 구현 전에 확인한다.
-- 예시 날짜에 시간대가 없으므로 저장·조회 시간대 및 from/to 경계 정책을 확정해야 한다.
+- 이번 AI API의 detectedAt은 오프셋 없는 한국시간(Asia/Seoul)을 사용한다. 향후 조회 API의 from/to 경계 정책은 별도로 확정한다.
 - 작업자 목록/상태 변경/CCTV 조회의 세부 요청·응답 JSON은 미정이다. 상태 변경 요청 필드도 임의로 정하지 않는다.
-- 목록/상세의 응답 JSON 구조, 페이지 기본값/정렬/상한, Confidence 단위·검증 범위는 확인 후 명세화한다.
+- 목록/상세의 응답 JSON 구조, 페이지 기본값/정렬/상한, AI 수신 Confidence는 0~1이며, 나머지 조회 계약은 확인 후 명세화한다.
 - Dashboard 집계 기간(오늘/전체), ONLINE CCTV 및 최근 이벤트 데이터 전달 방식은 기존 예시 필드를 바꾸지 않고 담당자와 먼저 확인한다.
-- workerId가 account_id에 대응하는 방식, API 성공 상태 코드/오류 형식, JWT 수명/갱신 및 AI API Key 검증 세부 정책은 구현 전에 확정한다.
+- workerId가 account_id에 대응하는 방식, API 성공 상태 코드/오류 형식, JWT 수명/갱신 및 AI API Key 검증은 AI_EVENT_IMPLEMENTATION.md를 따른다.
 - 필드 필수 여부·문자열 길이 검증·재시도/멱등성 등 API에 아직 없는 조건은 ERD와 함께 확인한다.

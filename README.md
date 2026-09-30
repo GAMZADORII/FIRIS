@@ -1,6 +1,6 @@
 # FIRIS
 AI 기반 화재·연기 조기 감지 관제 서비스. AI / Backend / Frontend를 하나의 Repository에서 독립적으로 개발한다.
-현재는 health check 두 개와 네 페이지 placeholder를 실행하는 초기 뼈대이다.
+현재 health check와 네 페이지 placeholder에 더해 Backend AI 이벤트 생성·미디어 갱신 코드를 구현했다. [이벤트 API 실행 조건 및 검증](docs/AI_EVENT_IMPLEMENTATION.md)을 참고한다.
 
 ## 구조
 ```text
@@ -20,7 +20,7 @@ FIRIS/
 | 파트 | 현재 | 향후 |
 | --- | --- | --- |
 | AI | Python, FastAPI, Uvicorn, OpenCV headless | PyTorch 또는 TensorFlow, MobileNet 계열 탐지 |
-| Backend | Java 17, Spring Boot 3.5, Gradle Wrapper, Web/JPA/Security/Validation, 초기 실행용 임시 H2 | 최종 DB 확인 필요, JWT, 도메인 Entity/API |
+| Backend | Java 17, Spring Boot 3.5, Gradle Wrapper, Web/JPA/Security/Validation, MySQL·JWT·계정 및 AI 이벤트 API | 이벤트 조회·검수 등 후속 기능 |
 | Frontend | React, Vite, JavaScript, Axios, React Router | 통합 Dashboard, History, 계정 관리 |
 
 ## 실행
@@ -43,7 +43,7 @@ cd backend
 ./gradlew bootRun
 ```
 `curl http://localhost:8080/api/health` → `{"status":"ok"}`.
-Windows는 `gradlew.bat bootRun`. 초기 실행 확인용 메모리 H2를 사용하며 테이블은 생성하지 않는다. **최종 DB를 H2로 결정한 것이 아니다.** MySQL은 검토 중이며 채택·버전은 확인이 필요하다.
+Windows는 `gradlew.bat bootRun`. 현재 기본 연결은 MySQL이며 backend/.env의 DB 정보를 설정해야 한다. 이벤트 API DB 통합 테스트는 별도 MySQL 테스트 DB에서 선택적으로 실행한다.
 
 ### Frontend
 ```bash
@@ -58,11 +58,12 @@ http://localhost:5173 에서 `/login`, `/dashboard`, `/history`, `/admin` 확인
 ## 환경변수 및 파일
 `.env`는 커밋하지 않고 `.env.example`만 관리한다. 기본 실행에는 `.env`가 필요 없다.
 Backend/Frontend는 필요 시 해당 폴더의 예제를 `.env`로 복사한다.
-루트 예제는 안내용이며 공통 자동 로더는 없다. AI 환경변수와 JWT/API 키는 향후 기능용 예약 항목이다.
+루트 예제는 안내용이며 공통 자동 로더는 없다. AI 서버 환경변수는 향후 연동용이다. Backend JWT_SECRET은 사용자 인증에, AI_API_KEY는 AI 수신 API에 사용한다.
 VITE_ 환경변수에 비밀 값을 넣지 않는다.
 모델 weight와 이벤트 영상/이미지는 Git에서 제외하며 필요한 빈 폴더는 `.gitkeep`으로 유지한다.
 
 ## 개발 기준 문서
+- [AI_EVENT_IMPLEMENTATION](docs/AI_EVENT_IMPLEMENTATION.md): 이번 AI 수신 API 구현·통합·검증 범위
 - [PROJECT_CONTEXT](docs/PROJECT_CONTEXT.md): 팀 합의 전체, 담당 분담 및 개발 원칙
 - [REQUIREMENTS](docs/REQUIREMENTS.md): 계정, CCTV, 탐지, 화면, 제외 범위
 - [ARCHITECTURE](docs/ARCHITECTURE.md): 파트 책임과 이벤트/미디어 흐름
@@ -70,7 +71,7 @@ VITE_ 환경변수에 비밀 값을 넣지 않는다.
 - [API_SPEC](docs/API_SPEC.md): 현재 health check와 향후 이벤트 API
 
 **기능 구현 전 문서를 먼저 확인한다. 설계 변경은 팀 합의 후 코드보다 먼저 문서에 반영한다.**
-AI 학습/추론, JWT, DB 테이블/시드, 관리자/작업자 기능, Dashboard UI, Docker/Jenkins는 최종 구현 예정이며 현재 뼈대 단계에서는 미구현이다. 최종 제외 기능은 REQUIREMENTS의 별도 목록을 따른다.
+AI 학습/추론, CAMERA 초기 데이터, 이벤트 조회·검수, Dashboard UI, Compose/Jenkins는 후속 작업이다. 계정/JWT 및 AI 이벤트 수신 Backend는 dev 반영 후 이 브랜치에 포함됐다. 최종 제외 기능은 REQUIREMENTS의 별도 목록을 따른다.
 
 ## Git branch 전략
 | Branch | 용도 |
