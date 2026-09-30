@@ -1,0 +1,65 @@
+# Local secrets (examples remain tracked)
+.env
+.env.*
+!.env.example
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+.coverage
+htmlcov/
+# Java / Gradle
+.gradle/
+build/
+out/
+*.class
+*.jar
+*.war
+!backend/gradle/wrapper/gradle-wrapper.jar
+*.h2.db
+*.mv.db
+*.trace.db
+# Node / React / Vite
+node_modules/
+dist/
+.vite/
+coverage/
+*.tsbuildinfo
+*.log
+# Editors / operating systems
+.vscode/
+.idea/
+*.iml
+*.ipr
+*.iws
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.stackdump
+*~
+*.swp
+*.swo
+*:Zone.Identifier
+# AI weights and event data
+*.pt
+*.pth
+*.onnx
+*.tflite
+*.h5
+*.keras
+*.safetensors
+*.mp4
+*.avi
+*.mov
+*.mkv
+ai/model/*
+!ai/model/.gitkeep
+ai/storage/events/*
+!ai/storage/events/.gitkeep
