@@ -9,6 +9,7 @@ FIRIS/
 ├── backend/            # Spring Boot, 향후 계정/이벤트/검수 관리
 ├── frontend/           # React 관제 화면
 ├── docs/               # 개발 기준 문서
+├── .gitattributes      # WSL/Windows 줄바꿈 규칙
 ├── .gitignore
 ├── .env.example        # 전체 환경변수 안내
 ├── docker-compose.yml  # 예약 파일, 배포 서비스 없음
@@ -19,7 +20,7 @@ FIRIS/
 | 파트 | 현재 | 향후 |
 | --- | --- | --- |
 | AI | Python, FastAPI, Uvicorn, OpenCV headless | PyTorch 또는 TensorFlow, MobileNet 계열 탐지 |
-| Backend | Java 17, Spring Boot 3.5, Gradle Wrapper, Web/JPA/Security/Validation, H2 | JWT, 도메인 Entity/API |
+| Backend | Java 17, Spring Boot 3.5, Gradle Wrapper, Web/JPA/Security/Validation, 초기 실행용 임시 H2 | 최종 DB 확인 필요, JWT, 도메인 Entity/API |
 | Frontend | React, Vite, JavaScript, Axios, React Router | 통합 Dashboard, History, 계정 관리 |
 
 ## 실행
@@ -42,17 +43,16 @@ cd backend
 ./gradlew bootRun
 ```
 `curl http://localhost:8080/api/health` → `{"status":"ok"}`.
-Windows는 `gradlew.bat bootRun`. 메모리 H2를 사용하며 테이블은 생성하지 않는다.
+Windows는 `gradlew.bat bootRun`. 초기 실행 확인용 메모리 H2를 사용하며 테이블은 생성하지 않는다. **최종 DB를 H2로 결정한 것이 아니다.** MySQL은 검토 중이며 채택·버전은 확인이 필요하다.
 
 ### Frontend
 ```bash
 cd frontend
-corepack enable
-yarn install --immutable
-yarn start
+corepack yarn install --immutable
+corepack yarn start
 ```
 http://localhost:5173 에서 `/login`, `/dashboard`, `/history`, `/admin` 확인.
-빌드 검증은 Backend `./gradlew build`, Frontend `yarn build`.
+빌드 검증은 Backend `./gradlew build`, Frontend `corepack yarn build`.
 파트별 설정/Windows 안내는 각 폴더의 README를 참고한다.
 
 ## 환경변수 및 파일
@@ -63,13 +63,14 @@ VITE_ 환경변수에 비밀 값을 넣지 않는다.
 모델 weight와 이벤트 영상/이미지는 Git에서 제외하며 필요한 빈 폴더는 `.gitkeep`으로 유지한다.
 
 ## 개발 기준 문서
+- [PROJECT_CONTEXT](docs/PROJECT_CONTEXT.md): 팀 합의 전체, 담당 분담 및 개발 원칙
 - [REQUIREMENTS](docs/REQUIREMENTS.md): 계정, CCTV, 탐지, 화면, 제외 범위
 - [ARCHITECTURE](docs/ARCHITECTURE.md): 파트 책임과 이벤트/미디어 흐름
 - [ERD](docs/ERD.md): 향후 테이블과 관계 (Entity/DDL 없음)
 - [API_SPEC](docs/API_SPEC.md): 현재 health check와 향후 이벤트 API
 
-**기능 구현 전 문서를 먼저 확인한다. 설계 변경은 코드보다 먼저 문서에 반영한다.**
-현재 AI 학습/추론, JWT, DB 테이블/시드, 관리자/작업자 기능, Dashboard UI, Docker 배포는 구현하지 않는다.
+**기능 구현 전 문서를 먼저 확인한다. 설계 변경은 팀 합의 후 코드보다 먼저 문서에 반영한다.**
+AI 학습/추론, JWT, DB 테이블/시드, 관리자/작업자 기능, Dashboard UI, Docker/Jenkins는 최종 구현 예정이며 현재 뼈대 단계에서는 미구현이다. 최종 제외 기능은 REQUIREMENTS의 별도 목록을 따른다.
 
 ## Git branch 전략
 | Branch | 용도 |
@@ -81,10 +82,11 @@ VITE_ 환경변수에 비밀 값을 넣지 않는다.
 `dev`에서 `feature/*`를 분기하고 검토 후 `dev`로 통합한다. 안정화한 버전을 `main`에 반영한다.
 
 ## 초기 실행 검증
+검증 범위는 서버 health 응답·Frontend 빌드·HTTP 응답이다. AI 탐지, JWT, 업무 기능 및 파트 간 E2E를 검증한 것은 아니다.
 2026-09-30 로컬 환경(Python 3.14.7, Java 17.0.20, Node.js 24.20.0)에서 확인했다.
 - AI: 의존성 검사 및 OpenCV import 성공, Uvicorn 실행 후 GET /health → 200 / `{"status":"ok"}`.
 - Backend: Gradle build 성공, bootRun 실행 후 GET /api/health → 200 / `{"status":"ok"}`.
-- Frontend: 초기 npm install 및 build 성공, Vite 실행 후 네 페이지 경로 모두 HTTP 200.
+- Frontend: 최초에는 npm으로 검증했으나 현재 실행 기준은 Yarn + Vite이다. 전환 후 Yarn 설치·빌드 및 네 경로 HTTP 200도 확인했다.
 - .gitignore: 실제 환경 파일/모델/이벤트 이미지·영상 제외와 예제/.gitkeep/Wrapper 보존 확인.
 - 브라우저 렌더링 자동 검증은 실행 환경의 Chromium 시작 중 SIGSEGV로 완료하지 못했다.
 - 검증용 서버는 확인 후 종료했다. 자동 테스트 스위트는 현재 포함하지 않는다.
