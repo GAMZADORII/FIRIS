@@ -47,11 +47,12 @@ Windows는 `gradlew.bat bootRun`. 메모리 H2를 사용하며 테이블은 생�
 ### Frontend
 ```bash
 cd frontend
-npm ci
-npm run dev
+corepack enable
+yarn install --immutable
+yarn start
 ```
 http://localhost:5173 에서 `/login`, `/dashboard`, `/history`, `/admin` 확인.
-빌드 검증은 Backend `./gradlew build`, Frontend `npm run build`.
+빌드 검증은 Backend `./gradlew build`, Frontend `yarn build`.
 파트별 설정/Windows 안내는 각 폴더의 README를 참고한다.
 
 ## 환경변수 및 파일
@@ -83,10 +84,12 @@ VITE_ 환경변수에 비밀 값을 넣지 않는다.
 2026-09-30 로컬 환경(Python 3.14.7, Java 17.0.20, Node.js 24.20.0)에서 확인했다.
 - AI: 의존성 검사 및 OpenCV import 성공, Uvicorn 실행 후 GET /health → 200 / `{"status":"ok"}`.
 - Backend: Gradle build 성공, bootRun 실행 후 GET /api/health → 200 / `{"status":"ok"}`.
-- Frontend: npm install 및 build 성공, Vite 실행 후 네 페이지 경로 모두 HTTP 200.
+- Frontend: 초기 npm install 및 build 성공, Vite 실행 후 네 페이지 경로 모두 HTTP 200.
 - .gitignore: 실제 환경 파일/모델/이벤트 이미지·영상 제외와 예제/.gitkeep/Wrapper 보존 확인.
 - 브라우저 렌더링 자동 검증은 실행 환경의 Chromium 시작 중 SIGSEGV로 완료하지 못했다.
 - 검증용 서버는 확인 후 종료했다. 자동 테스트 스위트는 현재 포함하지 않는다.
 
 호환성 참고: [Spring Boot 3.5 실행 요구사항](https://docs.spring.io/spring-boot/3.5/system-requirements.html),
 [Vite 실행 안내](https://vite.dev/guide/).
+
+Frontend 패키지 관리는 Yarn으로 전환했다. Corepack이 없으면 `npm install -g corepack`으로 먼저 설치한다.

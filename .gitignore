@@ -63,3 +63,10 @@ ai/model/*
 !ai/model/.gitkeep
 ai/storage/events/*
 !ai/storage/events/.gitkeep
+
+# Yarn generated files
+**/.yarn/cache/
+**/.yarn/unplugged/
+**/.yarn/install-state.gz
+**/.yarn/build-state.yml
+.pnp.*

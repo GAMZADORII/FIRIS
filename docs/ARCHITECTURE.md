@@ -53,7 +53,7 @@ CCTV 스트리밍 및 Overlay 전송 방식, 실시간 갱신 프로토콜, 공�
 - Spring Web/JPA/Security/Validation과 개발용 메모리 H2를 포함한다.
 - `ddl-auto: none`, SQL 초기화 비활성화. Entity, 테이블, 계정 시드는 없다.
 - Spring Security는 GET /api/health만 허용하고 나머지는 차단한다. 기본 사용자 자동 생성과 폼/Basic 로그인은 사용하지 않는다. JWT는 구현하지 않는다.
-- Frontend: React/Vite/JavaScript, React Router, Axios, 5173 포트. API 연동과 CORS 정책은 아직 구현하지 않는다.
+- Frontend: React/Vite/JavaScript, React Router, Axios, Yarn, 5173 포트. API 연동과 CORS 정책은 아직 구현하지 않는다.
 - `docker-compose.yml`은 `services: {}` 예약 파일이며 배포 구성은 없다.
 
 ## 환경 및 저장소 원칙
@@ -65,3 +65,8 @@ AI 환경변수는 향후 통합용 예약 항목으로 현재 health check에�
 
 ## 변경 원칙
 기능 구현 전에 네 설계 문서를 확인한다. 설계 변경을 문서에 먼저 반영하고 이후 코드로 구현한다.
+
+## Frontend 파일 및 패키지 관리
+Yarn으로 의존성을 관리하며 yarn.lock을 커밋한다. Vite는 개발 서버와 빌드 도구로 유지한다.
+페이지는 Dashboard/History/Admin/Login 폴더에 같은 이름의 .js 및 .css 파일로 둔다.
+현재 .js placeholder는 JSX 변환 설정 없이 실행되도록 React.createElement를 사용한다.
