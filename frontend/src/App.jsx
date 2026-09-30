@@ -1,8 +1,8 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
-import Login from './pages/Login/Login.js';
-import Dashboard from './pages/Dashboard/Dashboard.js';
-import History from './pages/History/History.js';
-import Admin from './pages/Admin/Admin.js';
+import Login from './pages/Login/Login.jsx';
+import Dashboard from './pages/Dashboard/Dashboard.jsx';
+import History from './pages/History/History.jsx';
+import Admin from './pages/Admin/Admin.jsx';
 
 export default function App() {
   return (

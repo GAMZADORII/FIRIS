@@ -28,6 +28,7 @@ WORKER의 Admin 메뉴 숨김 및 서버 권한 검증은 향후 구현한다.
 패키지 관리에는 Yarn 4를 사용하고 Vite는 실행·빌드 도구로 유지한다.
 `yarn dev`로도 실행할 수 있다. `yarn.lock`과 `.yarnrc.yml`은 Git에 커밋한다.
 Corepack이 없으면 먼저 `npm install -g corepack`으로 설치한다.
-페이지 폴더에는 .js/.css를 사용하고 App.jsx와 main.jsx는 React 진입점으로 유지한다.
-현재 페이지 .js는 React.createElement 기반의 제목 placeholder이며 CSS는 주석만 포함한다.
+페이지 폴더에는 .jsx/.css를 사용하고 App.jsx와 main.jsx는 React 진입점으로 유지한다.
+현재 페이지 .jsx는 JSX 기반의 제목 placeholder이며 CSS는 주석만 포함한다.
+API 클라이언트(client.js), Vite 설정(vite.config.js), JSX 없는 일반 로직은 .js를 사용한다.
 Yarn 설치 안내: https://yarnpkg.com/getting-started/install

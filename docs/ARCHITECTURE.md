@@ -68,5 +68,5 @@ AI 환경변수는 향후 통합용 예약 항목으로 현재 health check에�
 
 ## Frontend 파일 및 패키지 관리
 Yarn으로 의존성을 관리하며 yarn.lock을 커밋한다. Vite는 개발 서버와 빌드 도구로 유지한다.
-페이지는 Dashboard/History/Admin/Login 폴더에 같은 이름의 .js 및 .css 파일로 둔다.
-현재 .js placeholder는 JSX 변환 설정 없이 실행되도록 React.createElement를 사용한다.
+페이지는 Dashboard/History/Admin/Login 폴더에 같은 이름의 .jsx 및 .css 파일로 둔다.
+화면 컴포넌트는 JSX 문법을 사용하는 .jsx 파일로 작성한다. API 클라이언트, 일반 로직, Vite 설정은 .js를 사용한다.
