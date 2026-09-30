@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 public enum ErrorCode {
     INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "아이디 또는 비밀번호가 올바르지 않습니다."),
     ACCOUNT_INACTIVE(HttpStatus.FORBIDDEN, "비활성화된 계정입니다. 관리자에게 문의해 주세요."),
+    PASSWORD_CHANGE_REQUIRED(HttpStatus.FORBIDDEN, "최초 로그인 비밀번호 변경이 필요합니다."),
     FORBIDDEN(HttpStatus.FORBIDDEN, "해당 기능에 접근할 권한이 없습니다."),
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다."),
     INVALID_CURRENT_PASSWORD(HttpStatus.BAD_REQUEST, "현재 비밀번호가 일치하지 않습니다."),

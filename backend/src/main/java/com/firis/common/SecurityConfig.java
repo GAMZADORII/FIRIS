@@ -63,6 +63,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.PATCH, "/api/auth/password").hasRole("WORKER")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers(
+                                "/api/cameras/**",
+                                "/api/events/**",
+                                "/api/statistics/**"
+                        ).hasAnyRole("ADMIN", "WORKER")
                         .anyRequest().denyAll())
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())

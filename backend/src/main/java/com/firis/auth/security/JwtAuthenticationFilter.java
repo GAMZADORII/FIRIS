@@ -2,6 +2,7 @@ package com.firis.auth.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.firis.account.entity.Account;
+import com.firis.account.entity.Role;
 import com.firis.account.repository.AccountRepository;
 import com.firis.common.dto.ErrorResponse;
 import com.firis.common.exception.ErrorCode;
@@ -75,6 +76,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             writeError(response, ErrorCode.ACCOUNT_INACTIVE, ErrorCode.ACCOUNT_INACTIVE.getMessage());
             return;
         }
+        if (account.getRole() == Role.WORKER
+                && account.isMustChangePassword()
+                && !isPasswordChangeRequest(request)) {
+            writeError(
+                    response,
+                    ErrorCode.PASSWORD_CHANGE_REQUIRED,
+                    ErrorCode.PASSWORD_CHANGE_REQUIRED.getMessage()
+            );
+            return;
+        }
 
         var authentication = new UsernamePasswordAuthenticationToken(
                 account.getLoginId(),
@@ -83,6 +94,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         );
         SecurityContextHolder.getContext().setAuthentication(authentication);
         filterChain.doFilter(request, response);
+    }
+
+    private boolean isPasswordChangeRequest(HttpServletRequest request) {
+        return "PATCH".equalsIgnoreCase(request.getMethod())
+                && "/api/auth/password".equals(request.getRequestURI());
     }
 
     private String resolveToken(HttpServletRequest request) {
