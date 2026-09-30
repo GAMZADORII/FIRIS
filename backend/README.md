@@ -19,4 +19,4 @@ JWT_SECRET, AI_API_KEY는 예약 항목이며 현재 인증에 사용하지 않�
 
 `com.firis` 하위 common/auth/account/camera/event/review/statistics 패키지를 사용한다.
 GET /api/health만 공개하고 다른 요청은 차단한다. JWT, Entity, 계정/테이블 생성은 미구현이다.
-개발 전 [요구사항](../docs/REQUIREMENTS.md)과 다른 설계 문서를 확인하고 설계를 먼저 갱신한다.
+개발 전 [PROJECT_CONTEXT](../docs/PROJECT_CONTEXT.md)와 요구사항·아키텍처·ERD·API 명세를 확인한다. 설계 변경은 팀 합의 → 문서 → 코드 순서를 따른다.

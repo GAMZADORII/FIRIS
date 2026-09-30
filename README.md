@@ -9,6 +9,7 @@ FIRIS/
 ├── backend/            # Spring Boot, 향후 계정/이벤트/검수 관리
 ├── frontend/           # React 관제 화면
 ├── docs/               # 개발 기준 문서
+├── .gitattributes      # WSL/Windows 줄바꿈 규칙
 ├── .gitignore
 ├── .env.example        # 전체 환경변수 안내
 ├── docker-compose.yml  # 예약 파일, 배포 서비스 없음
@@ -47,12 +48,11 @@ Windows는 `gradlew.bat bootRun`. 메모리 H2를 사용하며 테이블은 생�
 ### Frontend
 ```bash
 cd frontend
-corepack enable
-yarn install --immutable
-yarn start
+corepack yarn install --immutable
+corepack yarn start
 ```
 http://localhost:5173 에서 `/login`, `/dashboard`, `/history`, `/admin` 확인.
-빌드 검증은 Backend `./gradlew build`, Frontend `yarn build`.
+빌드 검증은 Backend `./gradlew build`, Frontend `corepack yarn build`.
 파트별 설정/Windows 안내는 각 폴더의 README를 참고한다.
 
 ## 환경변수 및 파일
@@ -63,13 +63,14 @@ VITE_ 환경변수에 비밀 값을 넣지 않는다.
 모델 weight와 이벤트 영상/이미지는 Git에서 제외하며 필요한 빈 폴더는 `.gitkeep`으로 유지한다.
 
 ## 개발 기준 문서
+- [PROJECT_CONTEXT](docs/PROJECT_CONTEXT.md): 팀 합의 전체, 담당 분담 및 개발 원칙
 - [REQUIREMENTS](docs/REQUIREMENTS.md): 계정, CCTV, 탐지, 화면, 제외 범위
 - [ARCHITECTURE](docs/ARCHITECTURE.md): 파트 책임과 이벤트/미디어 흐름
 - [ERD](docs/ERD.md): 향후 테이블과 관계 (Entity/DDL 없음)
 - [API_SPEC](docs/API_SPEC.md): 현재 health check와 향후 이벤트 API
 
-**기능 구현 전 문서를 먼저 확인한다. 설계 변경은 코드보다 먼저 문서에 반영한다.**
-현재 AI 학습/추론, JWT, DB 테이블/시드, 관리자/작업자 기능, Dashboard UI, Docker 배포는 구현하지 않는다.
+**기능 구현 전 문서를 먼저 확인한다. 설계 변경은 팀 합의 후 코드보다 먼저 문서에 반영한다.**
+AI 학습/추론, JWT, DB 테이블/시드, 관리자/작업자 기능, Dashboard UI, Docker/Jenkins는 최종 구현 예정이며 현재 뼈대 단계에서는 미구현이다. 최종 제외 기능은 REQUIREMENTS의 별도 목록을 따른다.
 
 ## Git branch 전략
 | Branch | 용도 |
