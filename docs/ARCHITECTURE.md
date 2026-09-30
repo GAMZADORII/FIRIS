@@ -1,14 +1,17 @@
 # FIRIS 아키텍처
 
+> 현재 Backend 구현 범위: health check, AI 이벤트 생성·미디어 갱신 및 CAMERA/FIRE_EVENT/EVENT_MEDIA 매핑. [구현·검증 안내](AI_EVENT_IMPLEMENTATION.md)를 함께 확인한다. 금빈님 계정/JWT 및 MySQL 설정이 dev에 병합되어 이 브랜치에도 포함된다.
+
+
 기준: [PROJECT_CONTEXT](PROJECT_CONTEXT.md). 팀 합의 → 문서 변경 → 코드 변경을 따른다.
 
 ## 문서 상태 구분
 
-- **현재 실행 상태**: health check와 네 페이지 placeholder만 구현되어 있다. 연동 완료를 의미하지 않는다.
+- **현재 실행 상태**: health check, AI 이벤트 생성·미디어 갱신 코드와 네 페이지 placeholder가 있다. 이벤트 API의 서비스 단위 테스트는 DB 없이 검증했다. MySQL 통합 테스트는 전용 테스트 DB가 있을 때 실행하도록 구성했으나 아직 실제 MySQL에서 실행하지 않았다. 서버 실행에는 MySQL·카메라 데이터·API Key 설정이 필요하다. 실제 AI/Frontend 연동 완료를 의미하지 않는다.
 - **최종 합의**: 앞으로 구현할 요구사항이다. 현재 구현 여부와 구분한다.
 - **예시**: JSON의 비밀번호·ID·파일명, 탐지 수치 등 설명용 값이다. 실제 설정으로 확정하지 않는다.
 - **확인 필요**: 담당자와 합의 후 문서에 반영할 사항이다. 임의 구현하지 않는다.
-- **DB 현재 상태**: H2는 초기 실행 확인용 임시 DB이다. 최종 DB 선정이 아니다. MySQL은 검토 중이며 채택·버전 확정은 아직 문서에 반영되지 않았다.
+- **DB 현재 상태**: backend 기본 연결은 MySQL이다. 이벤트 API DB 통합 테스트는 별도 MySQL 테스트 DB에서 선택적으로 실행한다. MySQL 버전과 운영 스키마 관리 정책은 별도 확인이 필요하다.
 
 
 ## Monorepo 및 개발 환경
@@ -80,17 +83,17 @@ Buffer와 Snapshot/Video 생성 책임은 AI에 있다.
 ## 인증 및 도메인 경계
 
 사용자 인증은 Authorization: Bearer {accessToken} JWT, 비밀번호는 BCrypt hash를 사용한다.
-AI 인증은 X-AI-API-KEY 방식이 후보이며 세부 검증 규칙은 구현 전에 확정한다.
+이번 이벤트 API는 X-AI-API-KEY를 AI_API_KEY와 비교한다. 미설정·누락·불일치는 401로 차단한다.
 ACCOUNT/CAMERA/FIRE_EVENT/EVENT_MEDIA/EVENT_REVIEW 다섯 테이블을 사용한다.
 Statistics Table 없이 집계하며, 검수 행이 없으면 UNREVIEWED이다.
-현재 단계에서는 인증·도메인 로직과 Entity를 구현하지 않는다.
+AI API Key 인증과 이벤트 저장·미디어 갱신 및 세 Entity는 구현했다. 사용자 JWT와 다른 도메인은 이번 범위 밖이다.
 
 ## 현재 실행 구성
 - AI: FastAPI/Uvicorn, 8000 포트. OpenCV 의존성만 준비하고 모델 추론은 없다.
 - Backend: Java 17, Spring Boot, Gradle Wrapper, 8080 포트.
-- Spring Web/JPA/Security/Validation과 초기 실행 확인용 임시 메모리 H2를 포함한다. 최종 DB는 별도로 확정한다.
-- `ddl-auto: none`, SQL 초기화 비활성화. Entity, 테이블, 계정 시드는 없다.
-- Spring Security는 GET /api/health만 허용하고 나머지는 차단한다. 기본 사용자 자동 생성과 폼/Basic 로그인은 사용하지 않는다. JWT는 최종 구현 예정이며 현재 단계에서는 미구현이다.
+- Spring Web/JPA/Security/Validation과 MySQL 런타임 드라이버를 포함한다. 이벤트 API DB 통합 테스트는 별도 MySQL 테스트 DB에서 선택적으로 실행한다.
+- `ddl-auto`는 dev 기본값 update이며 SQL 초기화는 비활성화되어 있다. ACCOUNT 및 이벤트 관련 세 Entity가 있고 관리자 계정은 최초 시작 시 생성된다. CAMERA 시드는 아직 없다. MySQL 통합 테스트만 전용 firis_test DB에서 create-drop을 사용한다.
+- 공통 Spring Security 설정에는 사용자 JWT·역할 권한이 있다. 별도 우선순위 체인이 /api/ai/**의 API Key를 검증한다. GET /api/health는 공개된다.
 - Frontend: React/Vite/JavaScript, React Router, Axios, Yarn, 5173 포트. API 연동과 CORS 정책은 아직 구현하지 않는다.
 - `docker-compose.yml`은 `services: {}` 예약 파일이며 배포 구성은 없다.
 
@@ -116,15 +119,15 @@ main은 안정 버전, dev는 통합, feature/*는 기능 개발 브랜치이다
 dev 최신화 → feature 생성 → 담당 기능 개발 → commit/push → PR → dev 병합을 따른다.
 main/dev 직접 기능 개발은 피한다. 팀원 Write 권한 및 main/dev 보호 규칙을 사용할 수 있으며 feature/* 생성은 막지 않는다.
 CI/CD 담당은 신종건이며 Docker/Compose/Jenkins/GitHub로 Build/Test/Deploy를 자동화할 예정이다.
-현재 Dockerfile/Jenkins Pipeline은 만들지 않고 docker-compose.yml은 예약 파일로 둔다.
+AI/Backend Dockerfile은 dev에 있다. Jenkins Pipeline과 실제 docker-compose.yml 서비스 구성은 아직 없다.
 전체 담당 분담과 담당 API는 PROJECT_CONTEXT 5절을 따른다.
 
 ## 구현 전에 확인할 미정 사항
 
-- 실제 운영 DB 종류 및 마이그레이션 도구 (현재 Skeleton은 H2)
+- 실제 운영 DB 종류 및 마이그레이션 도구 (현재 기본 연결은 MySQL)
 - 모델 상세/추론 인터페이스, Confidence/지속 시간 임계값, 버퍼 길이
 - 스트리밍/Overlay/신규 이벤트 전달, 파일 저장소 공유 및 브라우저 미디어 접근
 - 이벤트 중복 방지, 재시도, 영상 생성 실패 처리, 파일명 및 eventId 매핑
-- JWT 수명/저장/갱신, 비밀번호 변경 전 접근 제한, 비활성화·초기화 이후 기존 토큰 처리
+- JWT 저장/갱신, 비활성화·초기화 이후 기존 토큰 처리
 
 미정 사항을 임의로 구현하거나 기존 계약을 바꾸지 않는다. 관련 담당자 및 사용자 확인 후 문서를 먼저 수정한다.
