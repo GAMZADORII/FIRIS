@@ -61,6 +61,8 @@ $RECYCLE.BIN/
 *.mkv
 ai/model/*
 !ai/model/.gitkeep
+!ai/model/*.pt
+!ai/model/*.joblib
 ai/storage/events/*
 !ai/storage/events/.gitkeep
 
