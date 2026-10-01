@@ -1,1 +1,807 @@
-/* Dashboard 페이지 스타일은 추후 구현합니다. */
+* {
+	box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+	margin: 0;
+	min-height: 100%;
+	width: 100%;
+}
+
+body {
+	background: #121316;
+	color: #e3e2e6;
+	font-family: Inter, 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+}
+
+.dashboard {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	height: calc(100dvh - 68px);
+	min-height: 560px;
+	overflow: hidden;
+	padding: 12px 18px 16px;
+}
+
+.dashboard__eyebrow {
+	color: #ffb300;
+	font-family: 'JetBrains Mono', Consolas, monospace;
+	font-size: 10px;
+	font-weight: 700;
+	line-height: 14px;
+	margin: 0 0 4px;
+}
+
+.dashboard-hero {
+	align-items: center;
+	background: #1b1b1f;
+	border: 1px solid #2a2d34;
+	display: flex;
+	flex: 0 0 80px;
+	gap: 14px;
+	min-width: 0;
+	padding: 10px 16px 10px 24px;
+	position: relative;
+}
+
+.dashboard-hero::before {
+	background: repeating-linear-gradient(135deg, #d32f2f 0 5px, #121316 5px 10px);
+	content: '';
+	inset: 0 auto 0 0;
+	position: absolute;
+	width: 8px;
+}
+
+.dashboard-hero__mark {
+	align-items: center;
+	background: #d32f2f;
+	color: #fff;
+	display: flex;
+	flex: 0 0 42px;
+	font-family: 'JetBrains Mono', Consolas, monospace;
+	font-size: 22px;
+	font-weight: 700;
+	height: 42px;
+	justify-content: center;
+}
+
+.dashboard-hero__copy {
+	min-width: 0;
+}
+
+.dashboard-hero__meta {
+	align-items: center;
+	color: #ffd799;
+	display: flex;
+	font-family: 'JetBrains Mono', Consolas, monospace;
+	font-size: 9px;
+	gap: 9px;
+	margin-bottom: 3px;
+}
+
+.dashboard-hero__status {
+	background: #ffb300;
+	color: #121316;
+	font-weight: 700;
+	padding: 2px 5px;
+}
+
+.dashboard-hero h1 {
+	color: #fff;
+	font-size: 18px;
+	font-weight: 700;
+	letter-spacing: 0;
+	line-height: 22px;
+	margin: 0;
+}
+
+.dashboard-hero__copy > p {
+	color: #c4c7ca;
+	font-size: 10px;
+	line-height: 14px;
+	margin: 1px 0 0;
+}
+
+.dashboard-hero__clock {
+	align-items: flex-end;
+	color: #c4c7ca;
+	display: flex;
+	flex-direction: column;
+	font-family: 'JetBrains Mono', Consolas, monospace;
+	gap: 3px;
+	margin-left: auto;
+}
+
+.dashboard-hero__clock span {
+	color: #ab8985;
+	font-size: 9px;
+}
+
+.dashboard-hero__clock strong {
+	color: #fff;
+	font-size: 15px;
+}
+
+.dashboard-layout {
+	display: grid;
+	flex: 1 1 auto;
+	gap: 12px;
+	grid-template-columns: minmax(0, 1fr) minmax(224px, 270px);
+	grid-template-rows: minmax(0, 1fr);
+	min-height: 0;
+}
+
+.dashboard-statistics {
+	background: #0d0e11;
+	border: 1px solid #2a2d34;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	min-height: 0;
+	padding: 12px;
+}
+
+.dashboard-statistics__heading {
+	align-items: flex-end;
+	border-bottom: 1px solid #3e434d;
+	display: flex;
+	flex: 0 0 42px;
+	justify-content: space-between;
+	padding-bottom: 9px;
+}
+
+.dashboard-statistics__heading .dashboard__eyebrow {
+	font-size: 10px;
+	margin: 0 0 4px;
+}
+
+.dashboard-statistics__heading h2 {
+	color: #fff;
+	font-size: 16px;
+	letter-spacing: 0;
+	line-height: 20px;
+	margin: 0;
+}
+
+.dashboard-statistics__heading > span {
+	border: 1px solid #5b403d;
+	color: #e4beba;
+	font-family: 'JetBrains Mono', Consolas, monospace;
+	font-size: 8px;
+	padding: 4px 5px;
+}
+
+.dashboard-statistics__cards {
+	display: grid;
+	flex: 1 1 auto;
+	gap: 8px;
+	grid-template-columns: minmax(0, 1fr);
+	grid-template-rows: minmax(142px, 1.5fr) repeat(4, minmax(0, 1fr));
+	min-height: 0;
+}
+
+.stat-card {
+	background: #1e2024;
+	border: 1px solid #2a2d34;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	min-height: 0;
+	min-width: 0;
+	overflow: hidden;
+	padding: 8px 9px;
+}
+
+.stat-card--red {
+	border-left: 3px solid #d32f2f;
+}
+
+.stat-card--amber {
+	border-left: 3px solid #ffb300;
+}
+
+.stat-card__heading {
+	align-items: flex-start;
+	display: flex;
+	gap: 6px;
+	justify-content: space-between;
+}
+
+.stat-card__heading h3 {
+	color: #f4f5f7;
+	font-family: 'JetBrains Mono', Consolas, monospace;
+	font-size: 9px;
+	font-weight: 700;
+	line-height: 13px;
+	margin: 0;
+}
+
+.stat-card__heading > span {
+	background: #c4c7ca;
+	flex: 0 0 8px;
+	height: 8px;
+	margin-top: 1px;
+	width: 8px;
+}
+
+.stat-card--red .stat-card__heading > span {
+	background: #d32f2f;
+}
+
+.stat-card--amber .stat-card__heading > span {
+	background: #ffb300;
+}
+
+.stat-card__value {
+	align-items: baseline;
+	display: flex;
+	gap: 5px;
+	margin: 3px 0 0;
+}
+
+.stat-card__value strong {
+	color: #fff;
+	font-family: 'JetBrains Mono', Consolas, monospace;
+	font-size: 23px;
+	font-weight: 700;
+	line-height: 30px;
+}
+
+.stat-card__value small {
+	color: #c4c7ca;
+	font-family: 'JetBrains Mono', Consolas, monospace;
+	font-size: 10px;
+}
+
+.stat-card--red .stat-card__value strong {
+	color: #ffb3ac;
+}
+
+.stat-card--amber .stat-card__value strong {
+	color: #ffd799;
+}
+
+.stat-card__detail {
+	border-top: 1px solid #343538;
+	color: #c4c7ca;
+	font-size: 8px;
+	line-height: 11px;
+	margin: 3px 0 0;
+	padding-top: 4px;
+}
+
+.stat-card--risk {
+	border-left-color: #d32f2f;
+}
+
+.stat-card--risk .stat-card__value {
+	display: none;
+}
+
+.stat-card__risk-content {
+	align-items: center;
+	display: flex;
+	flex: 1 1 auto;
+	gap: 10px;
+	justify-content: space-between;
+	min-height: 0;
+}
+
+.stat-card__gauge {
+	align-items: center;
+	background: conic-gradient(#ffb300 0deg var(--risk-progress), #383a3f var(--risk-progress) 360deg);
+	border-radius: 50%;
+	display: flex;
+	flex: 0 0 94px;
+	height: 94px;
+	justify-content: center;
+	position: relative;
+	width: 94px;
+}
+
+.stat-card__gauge::before {
+	background: #1e2024;
+	border-radius: 50%;
+	content: '';
+	inset: 9px;
+	position: absolute;
+}
+
+.stat-card__gauge > div {
+	align-items: center;
+	display: flex;
+	flex-direction: column;
+	position: relative;
+}
+
+.stat-card__gauge span,
+.stat-card__gauge small {
+	color: #c4c7ca;
+	font-size: 8px;
+}
+
+.stat-card__gauge strong {
+	color: #f4f5f7;
+	font-family: 'JetBrains Mono', Consolas, monospace;
+	font-size: 23px;
+	line-height: 27px;
+}
+
+.stat-card__metrics {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	gap: 7px;
+	max-width: 140px;
+	min-width: 0;
+}
+
+.stat-card__metric {
+	align-items: stretch;
+	color: #f4f5f7;
+	display: flex;
+	flex-direction: column;
+	font-size: 9px;
+	gap: 3px;
+}
+
+.stat-card__metric > div {
+	align-items: center;
+	display: flex;
+	justify-content: space-between;
+}
+
+.stat-card__metric strong {
+	color: #ffd799;
+	font-family: 'JetBrains Mono', Consolas, monospace;
+	font-size: 9px;
+}
+
+.stat-card__metric--red strong {
+	color: #ffb3ac;
+}
+
+.stat-card__metric strong {
+	font-weight: 700;
+}
+
+.stat-card__metric i {
+	background: #383a3f;
+	 height: 4px;
+	position: relative;
+}
+
+.stat-card__metric i::after {
+	background: #ffb300;
+	content: '';
+	height: 100%;
+	position: absolute;
+	width: var(--metric-fill);
+}
+
+.stat-card__metric--red i::after {
+	background: #d32f2f;
+}
+
+.stat-card__footnote {
+	background: #121316;
+	color: #ffd799;
+	font-family: 'JetBrains Mono', Consolas, monospace;
+	font-size: 8px;
+	font-weight: 700;
+	margin: 3px 0 0;
+	padding: 4px 6px;
+}
+
+.stat-card:nth-child(4) .stat-card__value strong {
+	font-family: Inter, 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+	font-size: 16px;
+}
+
+.dashboard-cctv {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	min-height: 0;
+}
+
+.dashboard-cctv__heading {
+	align-items: center;
+	display: flex;
+	flex: 0 0 40px;
+	justify-content: space-between;
+}
+
+.dashboard-cctv__heading .dashboard__eyebrow {
+	font-size: 9px;
+	line-height: 12px;
+	margin-bottom: 2px;
+}
+
+.dashboard-cctv__heading h2 {
+	color: #fff;
+	font-size: 14px;
+	letter-spacing: 0;
+	line-height: 18px;
+	margin: 0;
+}
+
+.dashboard-cctv__legend {
+	align-items: center;
+	color: #c4c7ca;
+	display: flex;
+	font-family: 'JetBrains Mono', Consolas, monospace;
+	font-size: 9px;
+	gap: 14px;
+}
+
+.dashboard-cctv__legend span {
+	align-items: center;
+	display: inline-flex;
+	gap: 6px;
+}
+
+.dashboard-cctv__legend i {
+	display: inline-block;
+	height: 8px;
+	width: 8px;
+}
+
+.dashboard-cctv__legend-fire {
+	background: #d32f2f;
+}
+
+.dashboard-cctv__legend-smoke {
+	background: #ffb300;
+}
+
+.dashboard__feeds {
+	display: grid;
+	flex: 1 1 auto;
+	gap: 9px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	grid-template-rows: repeat(2, minmax(0, 1fr));
+	min-height: 0;
+	min-width: 0;
+}
+
+.camera-feed {
+	background: #1e2024;
+	border: 1px solid #2a2d34;
+	box-shadow: 0 4px 0 rgba(0, 0, 0, 0.6);
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+	min-width: 0;
+	overflow: hidden;
+}
+
+.camera-feed__heading {
+	align-items: center;
+	background: #121316;
+	border-bottom: 1px solid #2a2d34;
+	display: flex;
+	flex: 0 0 32px;
+	gap: 8px;
+	justify-content: space-between;
+	min-width: 0;
+	padding: 0 10px;
+}
+
+.camera-feed__name {
+	align-items: center;
+	display: flex;
+	gap: 6px;
+	min-width: 0;
+}
+
+.camera-feed__status-dot {
+	background: #c4c7ca;
+	border-radius: 50%;
+	flex: 0 0 7px;
+	height: 7px;
+}
+
+.camera-feed--fire .camera-feed__status-dot {
+	background: #d32f2f;
+}
+
+.camera-feed--smoke .camera-feed__status-dot {
+	background: #ffb300;
+}
+
+.camera-feed__name h3 {
+	color: #f4f5f7;
+	font-family: 'JetBrains Mono', Consolas, monospace;
+	font-size: 10px;
+	font-weight: 700;
+	margin: 0;
+}
+
+.camera-feed__location,
+.camera-feed__format {
+	color: #c4c7ca;
+	font-family: 'JetBrains Mono', Consolas, monospace;
+	font-size: 9px;
+	white-space: nowrap;
+}
+
+.camera-feed__location {
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.camera-feed__format {
+	color: #ffd799;
+	flex: 0 0 auto;
+}
+
+.camera-feed__viewport {
+	background: #101114;
+	flex: 1 1 auto;
+	min-height: 0;
+	overflow: hidden;
+	position: relative;
+}
+
+.camera-feed__image {
+	height: 100%;
+	object-fit: cover;
+	position: absolute;
+	width: 100%;
+}
+
+.camera-feed__viewport::after {
+	background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(255, 255, 255, 0.035) 3px 4px);
+	content: '';
+	inset: 0;
+	pointer-events: none;
+	position: absolute;
+	z-index: 1;
+}
+
+.camera-feed__viewport-status {
+	color: #e3e2e6;
+	display: flex;
+	flex-direction: column;
+	font-family: 'JetBrains Mono', Consolas, monospace;
+	font-size: 8px;
+	gap: 3px;
+	left: 10px;
+	position: absolute;
+	text-shadow: 0 1px 3px #000;
+	top: 8px;
+	z-index: 2;
+}
+
+.camera-feed__viewport-status span:first-child {
+	color: #ffb300;
+	font-weight: 700;
+}
+
+.camera-feed__timestamp {
+	bottom: 7px;
+	color: #e3e2e6;
+	font-family: 'JetBrains Mono', Consolas, monospace;
+	font-size: 9px;
+	position: absolute;
+	right: 9px;
+	text-shadow: 0 1px 3px #000;
+	z-index: 2;
+}
+
+.detection-overlay {
+	border: 1px solid currentColor;
+	position: absolute;
+	z-index: 2;
+}
+
+.detection-overlay::before {
+	background: currentColor;
+	content: '';
+	height: 1px;
+	left: -1px;
+	position: absolute;
+	top: -1px;
+	width: 8px;
+}
+
+.detection-overlay > span {
+	background: rgba(13, 14, 17, 0.94);
+	border: 1px solid currentColor;
+	color: #fff;
+	font-family: 'JetBrains Mono', Consolas, monospace;
+	font-size: 9px;
+	font-weight: 700;
+	left: -1px;
+	padding: 3px 6px;
+	position: absolute;
+	text-shadow: 0 1px 2px #000;
+	text-transform: uppercase;
+	top: -19px;
+	white-space: nowrap;
+}
+
+.detection-overlay--fire {
+	color: #e53935;
+}
+
+.detection-overlay--smoke {
+	color: #ffb300;
+}
+
+.camera-feed__footer {
+	align-items: center;
+	background: #1b1b1f;
+	color: #c4c7ca;
+	display: flex;
+	flex: 0 0 24px;
+	font-family: 'JetBrains Mono', Consolas, monospace;
+	font-size: 8px;
+	justify-content: space-between;
+	padding: 0 9px;
+}
+
+@media (max-width: 1000px) {
+	.dashboard {
+		height: auto;
+		min-height: calc(100dvh - 68px);
+		min-height: 0;
+		overflow: visible;
+	}
+
+	.dashboard-layout {
+		flex: 0 0 auto;
+		grid-template-columns: minmax(0, 1fr);
+		grid-template-rows: minmax(420px, 60dvh) auto;
+	}
+
+	.dashboard-statistics {
+		padding: 12px;
+	}
+
+	.dashboard-statistics__cards {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		grid-template-rows: none;
+	}
+
+	.stat-card {
+		min-height: 104px;
+	}
+
+	.dashboard__feeds {
+		flex: 1 1 auto;
+	}
+
+	.dashboard-cctv {
+		min-height: 0;
+	}
+}
+
+@media (max-width: 600px) {
+	.dashboard {
+		gap: 8px;
+		padding: 10px 10px 16px;
+	}
+
+	.dashboard-hero {
+		flex-basis: 76px;
+		gap: 9px;
+		padding: 8px 8px 8px 18px;
+	}
+
+	.dashboard-hero__mark {
+		flex-basis: 34px;
+		font-size: 18px;
+		height: 34px;
+	}
+
+	.dashboard-hero__meta {
+		font-size: 7px;
+		gap: 5px;
+	}
+
+	.dashboard-hero h1 {
+		font-size: 13px;
+		line-height: 18px;
+	}
+
+	.dashboard-hero__copy > p {
+		font-size: 8px;
+	}
+
+	.dashboard-hero__clock {
+		display: none;
+	}
+
+	.dashboard-statistics__cards {
+		gap: 6px;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		grid-template-rows: auto;
+	}
+
+	.stat-card {
+		min-height: 100px;
+		padding: 8px;
+	}
+
+	.stat-card--risk {
+		grid-column: 1 / -1;
+		min-height: 152px;
+	}
+
+	.stat-card__risk-content {
+		justify-content: center;
+	}
+
+	.stat-card__gauge {
+		flex-basis: 92px;
+		height: 92px;
+		width: 92px;
+	}
+
+	.stat-card__metrics {
+		max-width: 220px;
+	}
+
+	.stat-card__heading h3 {
+		font-size: 8px;
+	}
+
+	.stat-card__value strong {
+		font-size: 22px;
+		line-height: 25px;
+	}
+
+	.dashboard-cctv__heading {
+		align-items: flex-end;
+		flex-basis: 42px;
+	}
+
+	.dashboard-cctv__heading h2 {
+		font-size: 12px;
+	}
+
+	.dashboard-cctv__legend {
+		font-size: 8px;
+		gap: 8px;
+	}
+
+	.dashboard__feeds {
+		gap: 6px;
+		grid-auto-rows: minmax(150px, 35vw);
+	}
+
+	.camera-feed__heading {
+		flex-basis: 27px;
+		gap: 4px;
+		padding: 0 6px;
+	}
+
+	.camera-feed__name {
+		gap: 4px;
+	}
+
+	.camera-feed__name h3,
+	.camera-feed__location,
+	.camera-feed__format {
+		font-size: 7px;
+	}
+
+	.camera-feed__status-dot {
+		flex-basis: 5px;
+		height: 5px;
+	}
+
+	.camera-feed__footer {
+		font-size: 6px;
+		padding: 0 5px;
+	}
+
+	.detection-overlay > span {
+		font-size: 7px;
+	}
+}

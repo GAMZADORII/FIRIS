@@ -7,7 +7,7 @@
 ## 현재 구현 범위
 AI `GET /health`, Backend `GET /api/health`, Frontend 네 페이지의 placeholder와 라우팅만 구현한다.
 아래 항목은 향후 개발 요구사항이며 현재 구현 완료를 의미하지 않는다.
-AI 학습/추론, Entity, 테이블/시드 생성, JWT 인증, 작업자/관리자 기능, Dashboard UI, Docker 배포는 구현하지 않는다.
+AI 학습/추론, Entity, 테이블/시드 생성, JWT 인증, 작업자/관리자 기능, Docker 배포는 구현하지 않는다.
 
 ## 계정 및 인증
 - ADMIN은 DB에 1개 사전 등록할 예정이다. 관리자 회원가입·추가·비밀번호 변경·찾기 기능은 없고 비밀번호는 고정한다.
@@ -41,6 +41,8 @@ AI 학습/추론, Entity, 테이블/시드 생성, JWT 인증, 작업자/관리�
 ## Frontend
 - `/login`: Login. 향후 로그인 및 최초/초기화 후 비밀번호 변경 흐름을 제공한다.
 - `/dashboard`: 별도 실시간 관제 페이지로 분리하지 않는 통합 관제 화면이다. 전체 페이지의 세로 스크롤이 발생하지 않도록 설계한다.
+- Dashboard 화면 배치: 제목/관제 상태 배너, 가로 통계 스트립, 아래쪽 CCTV 4분할(2×2) 순서로 구성하고 데스크톱 첫 화면 안에 배치한다.
+- CCTV 스트림과 통계 API가 연결되기 전에는 실제 데이터처럼 보이는 샘플 수치를 표시하지 않고 대기 상태와 빈 값(`—`)을 표시한다. 정적 임시 CCTV 사진은 포함하지 않으며 FIRE/SMOKE 감지 오버레이의 색상 예시만 제공한다.
 - Dashboard에 실시간 CCTV, FIRE/SMOKE Bounding Box 또는 Detection Overlay, 오늘 발생 이벤트, 미검수 이벤트, 실제 화재, 오탐, ONLINE CCTV, 최근 위험 이벤트를 표시한다.
 - `/history`: 날짜, CCTV, 이벤트 타입, 검수 상태 필터와 이벤트 이력을 제공한다.
 - 이벤트 상세에는 Snapshot, Event Video, Confidence, 발생 시각, 검수 결과를 표시한다. 상세 표시 방식은 미정이다.
