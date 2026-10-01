@@ -17,3 +17,7 @@
 *.lock text eol=lf
 *.bat text eol=crlf
 *.jar binary
+
+# AI 모델 - 학습 가중치 Git LFS 전달 설정
+ai/model/*.pt filter=lfs diff=lfs merge=lfs -text
+ai/model/*.joblib filter=lfs diff=lfs merge=lfs -text
