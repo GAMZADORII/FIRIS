@@ -96,3 +96,5 @@ AI 학습/추론, CAMERA 초기 데이터, 이벤트 조회·검수, Dashboard U
 [Vite 실행 안내](https://vite.dev/guide/).
 
 Frontend 패키지 관리는 Yarn으로 전환했다. Corepack이 없으면 `npm install -g corepack`으로 먼저 설치한다.
+
+Jenkins Poll SCM을 통해 dev 브랜치 변경 시 CI 자동 빌드를 수행한다.
