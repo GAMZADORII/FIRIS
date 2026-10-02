@@ -17,7 +17,7 @@
 ## 구현 단계와 최종 범위
 
 **초기 뼈대 이후 AI 이벤트 생성·미디어 갱신 구현을 시작했다. JWT 인증과 작업자/관리자 Backend 기능은 금빈님 PR 병합으로 dev에 포함됐다.**
-현재 AI GET /health, Backend GET /api/health 및 POST /api/ai/events·PATCH /api/ai/events/{eventId}/media, Frontend 네 페이지 placeholder와 라우팅이 있다.
+현재 AI GET /health·단일 이미지 추론·영상 시간 창 판정과 Backend 이벤트 호출 코드, Backend GET /api/health 및 POST /api/ai/events·PATCH /api/ai/events/{eventId}/media, Frontend 네 페이지 placeholder와 라우팅이 있다. 실제 모델·MySQL·CCTV 통합 검증은 아직 필요하다.
 이번 작업은 이벤트 관련 세 Entity와 두 AI 수신 API에 한정한다. 운영 테이블/시드, 학습/추론, 조회/검수 UI, 배포 구성은 별도 작업이다.
 
 ## 목적 및 일정

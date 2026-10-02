@@ -1,6 +1,7 @@
 # FIRIS 프로젝트 기준 문서
 
 > 현재 Backend 구현 범위: health check, AI 이벤트 생성·미디어 갱신 및 CAMERA/FIRE_EVENT/EVENT_MEDIA 매핑. [구현·검증 안내](AI_EVENT_IMPLEMENTATION.md)를 함께 확인한다. 금빈님 계정/JWT 및 MySQL 설정이 dev에 병합되어 이 브랜치에도 포함된다.
+> AI 영상 판정·Backend 호출 코드는 `feature/ai-backend-integration`에서 작업 중이다. 실행 설정과 검증 범위는 [AI 연동 안내](AI_INTEGRATION.md)를 따른다.
 
 
 사용자가 제공한 팀 합의 내용을 기준으로 정리한 원문 보존 문서이다. 최종 발표 예정일은 **2026-10-16**이다.
@@ -1662,7 +1663,9 @@ BACKEND_URL=
 
 AI_API_KEY=
 
-MODEL_PATH=
+AI_MODELS_DIR=
+
+EVENT_STORAGE_DIR=
 
 Frontend:
 

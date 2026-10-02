@@ -7,7 +7,7 @@
 
 ## 문서 상태 구분
 
-- **현재 실행 상태**: health check, AI 이벤트 생성·미디어 갱신 코드와 네 페이지 placeholder가 있다. 이벤트 API의 서비스 단위 테스트는 DB 없이 검증했다. MySQL 통합 테스트는 전용 테스트 DB가 있을 때 실행하도록 구성했으나 아직 실제 MySQL에서 실행하지 않았다. 서버 실행에는 MySQL·카메라 데이터·API Key 설정이 필요하다. 실제 AI/Frontend 연동 완료를 의미하지 않는다.
+- **현재 실행 상태**: health check, AI 이벤트 생성·미디어 갱신, 최신 박스 JPEG 조회 코드와 네 페이지 placeholder가 있다. 로컬 AVI 영상으로 실제 YOLO → Backend → MySQL 연동을 확인했다. 전용 테스트 DB의 자동 통합 테스트, 실제 CCTV RTSP, 프론트 화면 표시는 아직 검증하지 않았다. 서버 실행에는 MySQL·카메라 데이터·API Key 설정이 필요하다.
 - **최종 합의**: 앞으로 구현할 요구사항이다. 현재 구현 여부와 구분한다.
 - **예시**: JSON의 비밀번호·ID·파일명, 탐지 수치 등 설명용 값이다. 실제 설정으로 확정하지 않는다.
 - **확인 필요**: 담당자와 합의 후 문서에 반영할 사항이다. 임의 구현하지 않는다.
@@ -68,7 +68,7 @@ sequenceDiagram
     Note over B: JWT 사용자로 EVENT_REVIEW 기록, 통계 집계
 ```
 
-Frontend 실시간 전송 프로토콜은 아직 정하지 않았다. 위 다이어그램은 특정 push/stream 방식을 확정하지 않는다.
+Dashboard의 현재 박스 영상 전달은 AI 영상 처리기 → 카메라별 최신 박스 JPEG → AI 인증 API → Backend JWT 프록시 → 프론트 주기적 조회 방식이다. `GET /api/cameras/{cameraId}/frame`을 프론트에서 Blob으로 받아 표시한다. 서버 푸시 방식으로 변경할지는 실제 CCTV 지연·부하 검증 후 결정한다. 이벤트 Snapshot/MP4는 원본을 보관하며 최신 프레임 API와 구분한다.
 Snapshot 파일명 예시 event_31.jpg는 계약상 eventId 기반 선행 파일 생성을 요구하는 것이 아니다.
 실제 파일명 생성과 eventId 매핑 방식은 구현 전에 확인한다.
 Backend는 미디어 Binary를 DB에 저장하지 않으며 영상 완성을 기다리지 않는다.
@@ -80,6 +80,8 @@ PyTorch/TensorFlow 선택과 모델 인터페이스 구현은 담당 기능 개�
 Temporal Validation의 3초/70%, 버퍼 전후 5초는 실험·조정 가능한 예시이다.
 Buffer와 Snapshot/Video 생성 책임은 AI에 있다.
 
+AI 영상 처리의 현재 연동 시작값은 초당 5회 추론, 최근 2초의 10회 중 7회 이상 탐지이다. 추론이 조금 느려지면 실제 수집된 결과의 70%를 적용하되 최소 6개가 필요하다. 이는 2026-10-01 발표자료의 추가 탐지 지연 3초 이내 목표를 시험하기 위한 값이며 최종 임계값이 아니다. FIRE/SMOKE는 따로 집계하고 Bounding Box가 있으면 같은 영역의 탐지로 묶는다. 확정 후 같은 위험이 지속되는 동안 중복 이벤트를 만들지 않는다. 영상 버퍼는 추론 샘플과 별도로 JPEG 압축 프레임을 보관한다. AI는 스냅샷 저장 직후 Backend에서 eventId를 받고 메타데이터에 기록한 다음, 이후 프레임을 수집해 영상을 저장하고 해당 eventId로 미디어를 갱신한다. 실제 CCTV 영상에서 지연·오탐/시간·누락률을 측정해 임계값을 조정한다.
+
 ## 인증 및 도메인 경계
 
 사용자 인증은 Authorization: Bearer {accessToken} JWT, 비밀번호는 BCrypt hash를 사용한다.
@@ -89,7 +91,7 @@ Statistics Table 없이 집계하며, 검수 행이 없으면 UNREVIEWED이다.
 AI API Key 인증과 이벤트 저장·미디어 갱신 및 세 Entity는 구현했다. 사용자 JWT와 다른 도메인은 이번 범위 밖이다.
 
 ## 현재 실행 구성
-- AI: FastAPI/Uvicorn, 8000 포트. OpenCV 의존성만 준비하고 모델 추론은 없다.
+- AI: FastAPI/Uvicorn, 8000 포트. 모델 추론과 영상 시간 창 판정·Backend 호출, 박스 JPEG 발행 코드가 있다. 로컬 AVI에서 YOLO 추론과 Backend/MySQL 이벤트 저장을 확인했다. 실제 CCTV RTSP 검증은 아직 없다.
 - Backend: Java 17, Spring Boot, Gradle Wrapper, 8080 포트.
 - Spring Web/JPA/Security/Validation과 MySQL 런타임 드라이버를 포함한다. 이벤트 API DB 통합 테스트는 별도 MySQL 테스트 DB에서 선택적으로 실행한다.
 - `ddl-auto`는 dev 기본값 update이며 SQL 초기화는 비활성화되어 있다. ACCOUNT 및 이벤트 관련 세 Entity가 있고 관리자 계정은 최초 시작 시 생성된다. CAMERA 시드는 아직 없다. MySQL 통합 테스트만 전용 firis_test DB에서 create-drop을 사용한다.
@@ -101,7 +103,7 @@ AI API Key 인증과 이벤트 저장·미디어 갱신 및 세 Entity는 구현
 실제 `.env`와 모델 weight, 이벤트 데이터는 커밋하지 않는다. `.env.example`과 `.gitkeep`은 커밋한다.
 Backend는 backend 작업 디렉터리의 `.env`를 Spring properties 형식으로 선택적으로 읽는다.
 Frontend는 Vite의 `.env` 로딩을 사용한다. `VITE_` 값은 브라우저에 공개되므로 비밀 값을 넣지 않는다.
-AI 환경변수는 향후 통합용 예약 항목으로 현재 health check에서는 사용하지 않는다.
+AI는 `.env`에서 BACKEND_URL/AI_API_KEY, AI_MODELS_DIR/EVENT_STORAGE_DIR을 읽는다. health check는 모델 경로의 파일 존재와 Git LFS 포인터 여부만 확인한다.
 루트 `.env.example`은 전체 항목 안내이며 세 파트가 자동으로 공유하지 않는다.
 
 
