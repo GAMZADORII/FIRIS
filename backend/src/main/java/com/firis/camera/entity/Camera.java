@@ -17,5 +17,18 @@ public class Camera {
     private String status;
 
     protected Camera() {}
+    public static Camera create(String cameraId, String cameraName, String location, String streamUrl, String status) {
+        Camera camera = new Camera();
+        camera.cameraId = cameraId;
+        camera.cameraName = cameraName;
+        camera.location = location;
+        camera.streamUrl = streamUrl;
+        camera.status = status;
+        return camera;
+    }
     public String getCameraId() { return cameraId; }
+    public String getCameraName() { return cameraName; }
+    public String getLocation() { return location; }
+    public String getStreamUrl() { return streamUrl; }
+    public String getStatus() { return status; }
 }

@@ -25,6 +25,8 @@ security:
     expiration-seconds: ${JWT_EXPIRATION_SECONDS:3600}
 
 app:
+  camera:
+    video-directory: ${CAMERA_VIDEO_DIRECTORY:./storage/videos}
   admin:
     login-id: ${ADMIN_LOGIN_ID:admin}
     password: ${ADMIN_PASSWORD:admin1234}
