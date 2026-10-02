@@ -1,6 +1,6 @@
 # FIRIS
 AI 기반 화재·연기 조기 감지 관제 서비스. AI / Backend / Frontend를 하나의 Repository에서 독립적으로 개발한다.
-현재 health check와 네 페이지 placeholder에 더해 Backend AI 이벤트 생성·미디어 갱신 코드를 구현했다. [이벤트 API 실행 조건 및 검증](docs/AI_EVENT_IMPLEMENTATION.md)을 참고한다.
+현재 Backend AI 이벤트 API와 AI 영상 시간 창 판정·Backend 호출 코드를 구현했다. 실제 모델·MySQL·CCTV 통합 검증은 아직 필요하다. [AI 연동 검증](docs/AI_INTEGRATION.md)을 참고한다.
 
 ## 구조
 ```text
@@ -19,7 +19,7 @@ FIRIS/
 ## 기술 스택
 | 파트 | 현재 | 향후 |
 | --- | --- | --- |
-| AI | Python, FastAPI, Uvicorn, OpenCV headless | PyTorch 또는 TensorFlow, MobileNet 계열 탐지 |
+| AI | Python, FastAPI, OpenCV, PyTorch/YOLO 추론 및 이벤트 파일 저장 | 실영상 임계값 검증·운영 연동 |
 | Backend | Java 17, Spring Boot 3.5, Gradle Wrapper, Web/JPA/Security/Validation, MySQL·JWT·계정 및 AI 이벤트 API | 이벤트 조회·검수 등 후속 기능 |
 | Frontend | React, Vite, JavaScript, Axios, React Router | 통합 Dashboard, History, 계정 관리 |
 
@@ -64,6 +64,7 @@ VITE_ 환경변수에 비밀 값을 넣지 않는다.
 
 ## 개발 기준 문서
 - [AI_EVENT_IMPLEMENTATION](docs/AI_EVENT_IMPLEMENTATION.md): 이번 AI 수신 API 구현·통합·검증 범위
+- [AI_INTEGRATION](docs/AI_INTEGRATION.md): AI 영상 판정·Backend 호출 및 현장 검증 항목
 - [PROJECT_CONTEXT](docs/PROJECT_CONTEXT.md): 팀 합의 전체, 담당 분담 및 개발 원칙
 - [REQUIREMENTS](docs/REQUIREMENTS.md): 계정, CCTV, 탐지, 화면, 제외 범위
 - [ARCHITECTURE](docs/ARCHITECTURE.md): 파트 책임과 이벤트/미디어 흐름
@@ -71,7 +72,7 @@ VITE_ 환경변수에 비밀 값을 넣지 않는다.
 - [API_SPEC](docs/API_SPEC.md): 현재 health check와 향후 이벤트 API
 
 **기능 구현 전 문서를 먼저 확인한다. 설계 변경은 팀 합의 후 코드보다 먼저 문서에 반영한다.**
-AI 학습/추론, CAMERA 초기 데이터, 이벤트 조회·검수, Dashboard UI, Compose/Jenkins는 후속 작업이다. 계정/JWT 및 AI 이벤트 수신 Backend는 dev 반영 후 이 브랜치에 포함됐다. 최종 제외 기능은 REQUIREMENTS의 별도 목록을 따른다.
+실제 CCTV·모델·MySQL 통합 검증, CAMERA 초기 데이터, 이벤트 조회·검수, Dashboard UI, 배포 구성은 후속 작업이다. 최종 제외 기능은 REQUIREMENTS의 별도 목록을 따른다.
 
 ## Git branch 전략
 | Branch | 용도 |

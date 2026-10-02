@@ -4,12 +4,12 @@
 
 
 기준: [PROJECT_CONTEXT](PROJECT_CONTEXT.md) 21~32절. 아래 필드명과 경로를 임의 변경하지 않는다.
-**현재 health check 두 개와 AI 이벤트 생성·미디어 갱신 API를 구현했다. 금빈님 인증·작업자 API와 사용자 JWT는 병합된 dev에 포함됐다. 이벤트 목록·상세·검수·통계 API는 아직 미구현이다.**
+**현재 health check, AI 이벤트 생성·미디어 갱신, 최신 박스 JPEG 조회 API를 구현했다. 계정/JWT API는 병합된 dev에 포함됐다. 로컬 AVI·실제 YOLO·MySQL 연동은 확인했으며, 실제 CCTV RTSP와 프론트 표시 검증은 남아 있다. 이벤트 목록·상세·검수·통계 API는 아직 미구현이다.**
 JSON 예시는 계약을 설명하며 비밀번호·ID·경로·시각은 실제 환경 설정이 아니다.
 
 ## 문서 상태 구분
 
-- **현재 실행 상태**: health check, AI 이벤트 생성·미디어 갱신 코드와 네 페이지 placeholder가 있다. 이벤트 API의 서비스 단위 테스트는 DB 없이 검증했다. MySQL 통합 테스트는 전용 테스트 DB가 있을 때 실행하도록 구성했으나 아직 실제 MySQL에서 실행하지 않았다. 서버 실행에는 MySQL·카메라 데이터·API Key 설정이 필요하다. 실제 AI/Frontend 연동 완료를 의미하지 않는다.
+- **현재 실행 상태**: health check, AI 이벤트 생성·미디어 갱신, 최신 박스 JPEG 조회 코드와 네 페이지 placeholder가 있다. 로컬 AVI 영상으로 실제 YOLO → Backend → MySQL 연동을 확인했다. 전용 테스트 DB의 자동 통합 테스트, 실제 CCTV RTSP, 프론트 화면 표시는 아직 검증하지 않았다. 서버 실행에는 MySQL·카메라 데이터·API Key 설정이 필요하다.
 - **최종 합의**: 앞으로 구현할 요구사항이다. 현재 구현 여부와 구분한다.
 - **예시**: JSON의 비밀번호·ID·파일명, 탐지 수치 등 설명용 값이다. 실제 설정으로 확정하지 않는다.
 - **확인 필요**: 담당자와 합의 후 문서에 반영할 사항이다. 임의 구현하지 않는다.
@@ -20,12 +20,14 @@ JSON 예시는 계약을 설명하며 비밀번호·ID·경로·시각은 실제
 
 | 서비스 | Method | 경로 | 응답 |
 | --- | --- | --- | --- |
-| AI :8000 | GET | /health | 200, {"status":"ok"} |
+| AI :8000 | GET | /health | 200, status=ok/degraded 및 models 상태 |
 | Backend :8080 | GET | /api/health | 200, {"status":"ok"} |
 | Backend :8080 | POST | /api/ai/events | 201, eventId/reviewStatus (API Key 필요) |
 | Backend :8080 | PATCH | /api/ai/events/{eventId}/media | 200, eventId/videoAvailable (API Key 필요) |
+| AI :8000 | GET | /cameras/{cameraId}/frame | JPEG, X-AI-API-KEY 필요; 404 프레임 없음, 503 프레임 오래됨 |
+| Backend :8080 | GET | /api/cameras/{cameraId}/frame | JPEG, 사용자 JWT(ADMIN/WORKER) 필요; 404 카메라/프레임 없음, 503 AI 연결 실패·오래된 프레임 |
 
-Content-Type은 application/json이다. health API만 인증 없이 프로세스 응답을 확인하며 DB/모델 readiness 검사는 하지 않는다. 두 AI API는 API Key 인증과 준비된 DB를 필요로 한다.
+이벤트 API의 Content-Type은 application/json이고 프레임 API의 응답은 image/jpeg이다. Backend health는 인증 없이 프로세스 응답만 확인한다. AI health는 모델 파일의 존재와 Git LFS 포인터 여부만 확인하며 실제 추론 성공은 검사하지 않는다. 두 Backend AI 이벤트 API는 API Key 인증과 준비된 DB를 필요로 한다.
 
 ## 전체 API 및 담당 (두 AI API 외 업무 API는 별도 개발)
 
@@ -38,6 +40,7 @@ Content-Type은 application/json이다. health API만 인증 없이 프로세스
 | PATCH | /api/admin/workers/{workerId}/status | 오금빈 | ADMIN 상태 변경 |
 | PATCH | /api/admin/workers/{workerId}/password-reset | 오금빈 | ADMIN 비밀번호 초기화 |
 | GET | /api/cameras | 담당 확인 필요 | 고정 CCTV 조회 |
+| GET | /api/cameras/{cameraId}/frame | 박상현 | 최신 YOLO 박스 표시 JPEG, ADMIN/WORKER |
 | POST | /api/ai/events | 박상현 (AI 호출: 김형준) | AI 이벤트 즉시 생성 |
 | PATCH | /api/ai/events/{eventId}/media | 박상현 (AI 호출: 김형준) | AI 미디어 경로 갱신 |
 | GET | /api/events | 오금빈 | 이벤트 검색/목록 |

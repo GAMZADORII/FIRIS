@@ -20,7 +20,7 @@ YOLO_MODELS = {"yolo"}
 CLASSICAL_MODELS = {"random_forest", "lightgbm", "xgboost"}
 AVAILABLE_MODELS = DEEP_MODELS | YOLO_MODELS | CLASSICAL_MODELS
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-MODELS_DIR = Path(os.environ.get("AI_MODELS_DIR", PROJECT_ROOT / "model")).resolve()
+MODELS_DIR = Path(os.getenv("AI_MODELS_DIR") or PROJECT_ROOT / "model").resolve()
 
 
 class SmallCNN(nn.Module):
@@ -142,7 +142,12 @@ def predict(image_bytes: bytes, model_name: str = "yolo", threshold: float | Non
 
 
 def model_status():
-    return {
-        name: (MODELS_DIR / f"{name}{'.pt' if name in DEEP_MODELS | YOLO_MODELS else '.joblib'}").is_file()
-        for name in sorted(AVAILABLE_MODELS)
-    }
+    status = {}
+    for name in sorted(AVAILABLE_MODELS):
+        path = MODELS_DIR / f"{name}{'.pt' if name in DEEP_MODELS | YOLO_MODELS else '.joblib'}"
+        try:
+            with path.open("rb") as artifact:
+                status[name] = not artifact.read(64).startswith(b"version https://git-lfs.github.com/spec/v1")
+        except OSError:
+            status[name] = False
+    return status
