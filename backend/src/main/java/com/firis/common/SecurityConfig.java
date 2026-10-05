@@ -60,9 +60,13 @@ public class SecurityConfig {
                         }))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.GET, "/api/health").permitAll()
+                        // Local demo MP4 files are directly playable by a browser video element.
+                        .requestMatchers(HttpMethod.GET, "/videos/*.mp4").permitAll()
+                        .requestMatchers(HttpMethod.HEAD, "/videos/*.mp4").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.PATCH, "/api/auth/password").hasRole("WORKER")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/cameras", "/api/cameras/").hasRole("ADMIN")
                         .requestMatchers(
                                 "/api/cameras/**",
                                 "/api/events/**",
