@@ -4,7 +4,7 @@
 
 
 기준: [PROJECT_CONTEXT](PROJECT_CONTEXT.md) 19~20절. 아래 컬럼명·타입·제약은 팀이 제공한 설계이며 임의 변경하지 않는다.
-**CAMERA/FIRE_EVENT/EVENT_MEDIA Entity를 구현했다. ACCOUNT는 금빈님 코드로 구현됐고 EVENT_REVIEW는 미구현이다. 운영 DDL·migration과 CAMERA 시드는 별도 작업이다.** 현재 기본 설정은 MySQL이며 버전과 운영 스키마 관리 정책은 확인이 필요하다.
+**CAMERA/FIRE_EVENT/EVENT_MEDIA Entity를 구현했다. ACCOUNT는 금빈님 코드로 구현됐고 EVENT_REVIEW는 미구현이다. 운영 DDL·migration과 CAMERA 시드는 별도 작업이다.** 현재 기본 설정은 MySQL 8.4.11이며 운영 스키마 관리 정책은 확인이 필요하다.
 
 ## 문서 상태 구분
 
@@ -12,7 +12,7 @@
 - **최종 합의**: 앞으로 구현할 요구사항이다. 현재 구현 여부와 구분한다.
 - **예시**: JSON의 비밀번호·ID·파일명, 탐지 수치 등 설명용 값이다. 실제 설정으로 확정하지 않는다.
 - **확인 필요**: 담당자와 합의 후 문서에 반영할 사항이다. 임의 구현하지 않는다.
-- **DB 현재 상태**: backend 기본 연결은 MySQL이다. 이벤트 API DB 통합 테스트는 별도 MySQL 테스트 DB에서 선택적으로 실행한다. MySQL 버전과 운영 스키마 관리 정책은 별도 확인이 필요하다.
+- **DB 현재 상태**: backend 기본 연결은 MySQL이다. 이벤트 API DB 통합 테스트는 별도 MySQL 테스트 DB에서 선택적으로 실행한다. MySQL 버전은 8.4.11로 확정했으며, 운영 스키마 관리 정책은 별도 확인이 필요하다.
 
 
 ## ACCOUNT
