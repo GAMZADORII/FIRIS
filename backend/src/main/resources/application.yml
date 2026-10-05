@@ -8,17 +8,28 @@ spring:
   autoconfigure:
     exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
   datasource:
-    url: ${DB_URL:jdbc:h2:mem:firis}
-    username: ${DB_USERNAME:sa}
+    url: ${DB_URL:jdbc:mysql://localhost:3306/firis?serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
+    username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:}
-    driver-class-name: org.h2.Driver
+    driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: ${DDL_AUTO:update}
     open-in-view: false
   sql:
     init:
       mode: never
-  h2:
-    console:
-      enabled: false
+security:
+  jwt:
+    secret: ${JWT_SECRET:FIRIS-local-development-secret-key-2026-change-me}
+    expiration-seconds: ${JWT_EXPIRATION_SECONDS:3600}
+
+app:
+  camera:
+    video-directory: ${CAMERA_VIDEO_DIRECTORY:./storage/videos}
+  admin:
+    login-id: ${ADMIN_LOGIN_ID:admin}
+    password: ${ADMIN_PASSWORD:admin1234}
+    name: ${ADMIN_NAME:관리자}
+  worker:
+    default-password: ${WORKER_DEFAULT_PASSWORD:qwe123}

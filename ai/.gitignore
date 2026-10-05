@@ -1,0 +1,9 @@
+# AI 배포 패키지 - 실행 중 생성되는 파일과 로컬 비밀정보 제외
+storage/events/*
+!storage/events/.gitkeep
+storage/live/*
+!storage/live/.gitkeep
+__pycache__/
+*.py[cod]
+.venv/
+.env

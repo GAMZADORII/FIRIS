@@ -1,0 +1,23 @@
+* text=auto
+
+*.sh text eol=lf
+**/gradlew text eol=lf
+*.py text eol=lf
+*.java text eol=lf
+*.gradle text eol=lf
+*.properties text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.md text eol=lf
+*.lock text eol=lf
+*.bat text eol=crlf
+*.jar binary
+
+# AI 모델 - 학습 가중치 Git LFS 전달 설정
+ai/model/*.pt filter=lfs diff=lfs merge=lfs -text
+ai/model/*.joblib filter=lfs diff=lfs merge=lfs -text
