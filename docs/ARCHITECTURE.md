@@ -97,7 +97,7 @@ AI API Key 인증과 이벤트 저장·미디어 갱신 및 세 Entity는 구현
 - `ddl-auto`는 dev 기본값 update이며 SQL 초기화는 비활성화되어 있다. ACCOUNT 및 이벤트 관련 세 Entity가 있고 관리자 계정은 최초 시작 시 생성된다. CAMERA 시드는 아직 없다. MySQL 통합 테스트만 전용 firis_test DB에서 create-drop을 사용한다.
 - 공통 Spring Security 설정에는 사용자 JWT·역할 권한이 있다. 별도 우선순위 체인이 /api/ai/**의 API Key를 검증한다. GET /api/health는 공개된다.
 - Frontend: React/Vite/JavaScript, React Router, Axios, Yarn, 5173 포트. API 연동과 CORS 정책은 아직 구현하지 않는다.
-- `docker-compose.yml`은 MySQL 8.4.11, Backend, AI 서비스의 로컬 통합 실행 구성을 제공한다.
+- `docker-compose.yml`은 MySQL 8.4.11, Backend, AI, Frontend 서비스의 로컬 통합 실행 구성을 제공한다.
 
 ## 환경 및 저장소 원칙
 실제 `.env`와 모델 weight, 이벤트 데이터는 커밋하지 않는다. `.env.example`과 `.gitkeep`은 커밋한다.
@@ -121,7 +121,7 @@ main은 안정 버전, dev는 통합, feature/*는 기능 개발 브랜치이다
 dev 최신화 → feature 생성 → 담당 기능 개발 → commit/push → PR → dev 병합을 따른다.
 main/dev 직접 기능 개발은 피한다. 팀원 Write 권한 및 main/dev 보호 규칙을 사용할 수 있으며 feature/* 생성은 막지 않는다.
 CI/CD 담당은 신종건이며 Docker/Compose/Jenkins/GitHub로 Build/Test/Deploy를 자동화할 예정이다.
-AI/Backend Dockerfile과 Jenkins Pipeline이 있으며, docker-compose.yml에는 MySQL 8.4.11, Backend, AI 서비스 구성이 있다. Frontend Docker 구성은 아직 추가되지 않았다.
+AI/Backend/Frontend Dockerfile과 Jenkins Pipeline이 있으며, docker-compose.yml에는 MySQL 8.4.11, Backend, AI, Frontend 서비스 구성이 있다. Jenkins는 AI/Backend/Frontend Docker 이미지를 빌드하고 검증한다.
 전체 담당 분담과 담당 API는 PROJECT_CONTEXT 5절을 따른다.
 
 ## 구현 전에 확인할 미정 사항
