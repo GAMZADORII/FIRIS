@@ -213,18 +213,33 @@ def build_image_cache(splits: dict[str, list[Sample]], cache_dir: Path, size: in
 
 
 def optimize_thresholds(y_true: np.ndarray, y_prob: np.ndarray) -> np.ndarray:
-    thresholds = []
-    for class_index in range(y_true.shape[1]):
-        best_threshold, best_f1 = 0.5, -1.0
-        for threshold in np.linspace(0.05, 0.95, 91):
-            predicted = (y_prob[:, class_index] >= threshold).astype(np.int8)
-            score = precision_recall_fscore_support(
-                y_true[:, class_index], predicted, average="binary", zero_division=0
-            )[2]
-            if score > best_f1:
-                best_threshold, best_f1 = float(threshold), float(score)
-        thresholds.append(best_threshold)
-    return np.asarray(thresholds, dtype=np.float32)
+    best_thresholds = np.asarray([0.5, 0.5], dtype=np.float32)
+    best_score = (-1.0, -1.0)
+    candidates = np.linspace(0.05, 0.95, 91, dtype=np.float32)
+    for smoke_threshold in candidates:
+        smoke_pred = y_prob[:, 0] >= smoke_threshold
+        for fire_threshold in candidates:
+            predicted = np.column_stack((smoke_pred, y_prob[:, 1] >= fire_threshold))
+            true = y_true.astype(bool)
+            tp = np.logical_and(predicted, true).sum(axis=0)
+            fp = np.logical_and(predicted, ~true).sum(axis=0)
+            fn = np.logical_and(~predicted, true).sum(axis=0)
+            class_f1 = np.divide(2 * tp, 2 * tp + fp + fn,
+                                 out=np.zeros(2, dtype=float), where=(2 * tp + fp + fn) != 0)
+            total_tp, total_fp, total_fn = tp.sum(), fp.sum(), fn.sum()
+            precision = total_tp / (total_tp + total_fp) if total_tp + total_fp else 0.0
+            recall = total_tp / (total_tp + total_fn) if total_tp + total_fn else 0.0
+            micro_f1 = 2 * total_tp / (2 * total_tp + total_fp + total_fn) \
+                if 2 * total_tp + total_fp + total_fn else 0.0
+            required = (float(np.all(predicted == true, axis=1).mean()), precision, recall,
+                        micro_f1, float(class_f1[0]), float(class_f1[1]))
+            score = (min(required), sum(required) / len(required))
+            if score > best_score:
+                best_score = score
+                best_thresholds = np.asarray(
+                    [smoke_threshold, fire_threshold], dtype=np.float32
+                )
+    return best_thresholds
 
 
 def metrics(

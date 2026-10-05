@@ -15,8 +15,10 @@ from torchvision import models, transforms
 
 
 LABEL_NAMES = ("smoke", "fire")
+EXPECTED_YOLO_NAMES = {0: "smoke", 1: "fire"}
 DEEP_MODELS = {"cnn", "mobilenet_v2"}
 YOLO_MODELS = {"yolo"}
+YOLO_NMS_IOU = 0.5
 CLASSICAL_MODELS = {"random_forest", "lightgbm", "xgboost"}
 AVAILABLE_MODELS = DEEP_MODELS | YOLO_MODELS | CLASSICAL_MODELS
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -81,7 +83,14 @@ def load_model(model_name: str):
     if model_name in YOLO_MODELS:
         from ultralytics import YOLO
 
-        return {"model": YOLO(str(MODELS_DIR / "yolo.pt")), "image_size": 640, "thresholds": [0.25, 0.25]}
+        model = YOLO(str(MODELS_DIR / "yolo.pt"))
+        names = {int(class_id): str(label).lower() for class_id, label in model.names.items()}
+        if names != EXPECTED_YOLO_NAMES:
+            raise RuntimeError(
+                "yolo.pt must be a FIRE/SMOKE model with classes "
+                f"{EXPECTED_YOLO_NAMES}; loaded classes are {names}"
+            )
+        return {"model": model, "image_size": 640, "thresholds": [0.4, 0.4]}
     return joblib.load(MODELS_DIR / f"{model_name}.joblib")
 
 
@@ -97,6 +106,7 @@ def predict(image_bytes: bytes, model_name: str = "yolo", threshold: float | Non
                 image,
                 imgsz=bundle["image_size"],
                 conf=float(confidence),
+                iou=YOLO_NMS_IOU,
                 verbose=False,
             )[0]
             if result.boxes is not None:
@@ -148,6 +158,10 @@ def model_status():
         try:
             with path.open("rb") as artifact:
                 status[name] = not artifact.read(64).startswith(b"version https://git-lfs.github.com/spec/v1")
+            if status[name] and name in YOLO_MODELS:
+                load_model(name)
         except OSError:
+            status[name] = False
+        except RuntimeError:
             status[name] = False
     return status
