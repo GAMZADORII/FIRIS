@@ -1,0 +1,135 @@
+.app-header {
+  align-items: center;
+  background: #121316;
+  border-bottom: 1px solid #5b403d;
+  box-shadow: inset 0 3px 0 #d32f2f;
+  display: flex;
+  height: 68px;
+  gap: 24px;
+  padding: 3px 32px 0 20px;
+}
+
+.app-header__brand {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.app-header__brand img {
+  display: block;
+  object-fit: contain;
+  object-position: left center;
+  width: 250px;
+}
+
+.app-header__navigation {
+  align-items: stretch;
+  align-self: stretch;
+  display: flex;
+  gap: 4px;
+}
+
+.app-header__link {
+  align-items: center;
+  border-bottom: 3px solid transparent;
+  color: #c4c7ca;
+  display: inline-flex;
+  font-size: 14px;
+  font-weight: 600;
+  justify-content: center;
+  min-width: 96px;
+  padding: 2px 16px 0;
+  text-decoration: none;
+}
+
+.app-header__link--active {
+  background: #1e2024;
+  border-bottom-color: #d32f2f;
+  color: #fff;
+}
+
+.app-header__link:hover:not(.app-header__link--active) {
+  background: #1b1b1f;
+  border-bottom-color: #ffb300;
+  color: #ffd799;
+}
+
+.app-header__link:focus-visible,
+.app-header button:focus-visible,
+.app-header__brand:focus-visible {
+  outline: 2px solid #ffb300;
+  outline-offset: 4px;
+}
+
+.app-header__account {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.app-header__notifications { position: relative; }
+.app-header__notification-button {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid #35363d;
+  border-radius: 5px;
+  background: #1e2024;
+  color: #d6d8e0;
+  cursor: pointer;
+}
+.app-header__notification-button:hover,
+.app-header__notification-button[aria-expanded='true'] {
+  color: #ffb3ac;
+  border-color: #d32f2f;
+}
+.app-header__user { display: flex; align-items: center; gap: 10px; border-left: 1px solid #35363d; padding-left: 18px; }
+.app-header__avatar { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: #52282d; color: #ffb3ac; font-size: 13px; font-weight: 700; }
+.app-header__user strong { display: block; font-size: 13px; }
+.app-header__user small { display: block; color: #9a9da7; font-size: 10px; margin-top: 4px; }
+.app-header__notification-panel { position: absolute; top: calc(100% + 14px); right: 0; width: 300px; padding: 16px; background: #1c1d21; border: 1px solid #3b3d45; border-top: 2px solid #d32f2f; border-radius: 4px; box-shadow: 0 12px 30px #0008; z-index: 30; }
+.app-header__notification-heading { display: flex; align-items: center; justify-content: space-between; }
+.app-header__notification-heading h2 { margin: 0; font-size: 15px; }
+.app-header__notification-heading button { background: transparent; border: 0; color: #bfc1ca; cursor: pointer; font-size: 22px; }
+.app-header__notification-panel p { text-align: center; font-size: 13px; padding: 22px 0 12px; }
+.app-header__notification-panel > small { display: block; text-align: center; color: #9a9da7; font-size: 10px; padding-bottom: 12px; }
+
+@media (max-width: 1000px) {
+  .app-header { gap: 14px; padding-right: 16px; }
+  .app-header__brand img { width: 180px; }
+  .app-header__link { min-width: 76px; padding-inline: 10px; }
+  .app-header__account { gap: 10px; }
+  .app-header__user { padding-left: 10px; }
+}
+@media (max-width: 720px) {
+  .app-header {
+    flex-wrap: wrap;
+    gap: 8px;
+    height: auto;
+    padding: 12px 16px 0;
+  }
+
+  .app-header__brand img {
+    height: 30px;
+    width: 120px;
+  }
+
+  .app-header__navigation {
+    order: 3;
+    width: 100%;
+    align-self: stretch;
+    justify-content: space-between;
+    min-height: 44px;
+  }
+
+  .app-header__link {
+    font-size: 12px;
+    min-width: 0;
+    padding: 2px 10px 0;
+  }
+  .app-header__notifications { position: static; }
+  .app-header__account { position: relative; }
+  .app-header__notification-panel { width: min(300px, calc(100vw - 32px)); }
+}
