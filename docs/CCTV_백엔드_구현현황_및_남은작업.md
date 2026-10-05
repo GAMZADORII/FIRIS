@@ -10,7 +10,7 @@
 | 이번 추가 | GET /api/cameras, 로컬 MP4 제공 및 구간 요청, DB 등록 SQL, 시연 MP4 3개 |
 | 프론트 | 로그인/대시보드/이력/관리 화면은 제목 중심 골격. 실제 CCTV 및 박스 이미지 표시 연동 미구현 |
 | 이벤트/통계 | 사용자용 이벤트 목록/상세, 검수, 통계 API 미구현 |
-| 인프라 | Compose services가 비어 있음. Jenkins는 이미지 빌드 중심이며 실제 배포 구성은 별도 필요 |
+| 인프라 | MySQL 8.4.11, Backend, AI의 Docker Compose 로컬 통합 실행 구성이 완료됨. Jenkins는 현재 이미지 빌드 중심이며 실제 배포 자동화는 별도 필요 |
 
 팀의 기존 docs/AI_INTEGRATION.md에는 로컬 영상 → AI → Backend → MySQL 및 최신 JPEG 수동 검증이 기록돼 있습니다. 이는 팀 기록이며 이번 작업에서 실제 모델/DB로 재검증한 결과는 아닙니다.
 
