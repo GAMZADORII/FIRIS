@@ -19,6 +19,8 @@ from app.services.live_frame_service import LiveFramePublisher, frame_path
 from app.services.temporal_service import TemporalValidator
 
 if TYPE_CHECKING:
+    import threading
+
     from app.services.event_service import EventStorage
 
 
@@ -29,7 +31,8 @@ def process_video(source: str | int, camera_id: str, model: str = "yolo",
                   client: BackendEventClient | None = None,
                   storage: EventStorage | None = None,
                   detector=None, publisher: LiveFramePublisher | None = None,
-                  realtime: bool = False) -> list[dict]:
+                  realtime: bool = False,
+                  stop: threading.Event | None = None) -> list[dict]:
     if not camera_id or buffer_seconds < 0 or post_seconds < 0:
         raise ValueError("camera_id is required and buffer durations must be nonnegative")
     load_dotenv(Path(__file__).resolve().parents[2] / ".env")
@@ -68,7 +71,7 @@ def process_video(source: str | int, camera_id: str, model: str = "yolo",
         pending = None
 
     try:
-        while True:
+        while stop is None or not stop.is_set():
             ok, frame = capture.read()
             if not ok:
                 break

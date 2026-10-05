@@ -59,6 +59,8 @@ async def predict_image(
         return {"filename": image.filename, **predict(payload, model, threshold)}
     except (UnidentifiedImageError, OSError) as error:
         raise HTTPException(status_code=400, detail="upload a JPG or PNG image") from error
+    except RuntimeError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
 
 
 @app.post("/events/confirm")
