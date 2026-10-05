@@ -1,2 +1,63 @@
-# Reserved for a future deployment phase. No Docker services are configured.
-services: {}
+services:
+  mysql:
+    image: mysql:8.4.11
+    container_name: firis-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: firis
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      TZ: Asia/Seoul
+    volumes:
+      - firis-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+    image: firis-backend:local
+    container_name: firis-backend
+    ports:
+      - "8080:8080"
+    environment:
+      DB_URL: "jdbc:mysql://mysql:3306/firis?serverTimezone=Asia/Seoul&characterEncoding=UTF-8"
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      AI_API_KEY: ${AI_API_KEY}
+      AI_SERVER_URL: http://ai:8000
+      CAMERA_VIDEO_DIRECTORY: /app/storage/videos
+    volumes:
+      - ./backend/storage/videos:/app/storage/videos:ro
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+
+  ai:
+    build:
+      context: ./ai
+    image: firis-ai:local
+    container_name: firis-ai
+    ports:
+      - "8000:8000"
+    environment:
+      BACKEND_URL: http://backend:8080
+      AI_API_KEY: ${AI_API_KEY}
+      AI_MODELS_DIR: /app/model
+      EVENT_STORAGE_DIR: /app/storage/events
+      LIVE_FRAME_DIR: /app/storage/live
+    volumes:
+      - ./ai/model:/app/model:ro
+      - ./ai/storage/events:/app/storage/events
+      - ./ai/storage/live:/app/storage/live
+    restart: unless-stopped
+
+volumes:
+  firis-mysql-data:

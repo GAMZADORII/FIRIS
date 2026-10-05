@@ -14,7 +14,7 @@ Windows에서는 `gradlew.bat bootRun`을 사용한다.
 현재 기본 DB는 MySQL이며 실행 전에 backend/.env의 연결 정보를 설정해야 한다. ddl-auto 기본값은 update이고 SQL 초기화는 꺼져 있다.
 설정 변경이 필요하면 이 디렉터리에서 `cp .env.example .env` 후 수정한다.
 `.env`는 properties 형식(`KEY=value`, 따옴표 없이)이며 backend 디렉터리에서 실행해야 읽힌다.
-MySQL 드라이버가 포함되어 있다. 운영 MySQL 버전과 스키마 변경 관리 방식은 팀 확인이 필요하다.
+MySQL 드라이버가 포함되어 있다. 운영 MySQL 버전은 8.4.11이며 스키마 변경 관리 방식은 팀 확인이 필요하다.
 JWT_SECRET은 사용자 인증에, AI_API_KEY는 /api/ai/** 인증에 사용한다. AI_API_KEY 미설정 시 해당 요청을 차단한다.
 `AI_SERVER_URL`은 최신 박스 표시 JPEG을 받아올 AI 서버 주소이다(기본 `http://127.0.0.1:8000`). `GET /api/cameras/{cameraId}/frame`은 ADMIN/WORKER JWT를 검사하고 등록된 카메라의 최신 JPEG을 AI에서 받아 전달한다. 프론트는 JWT 헤더를 포함해 주기적으로 요청한다.
 
