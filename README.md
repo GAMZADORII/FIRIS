@@ -12,7 +12,7 @@ FIRIS/
 ├── .gitattributes      # WSL/Windows 줄바꿈 규칙
 ├── .gitignore
 ├── .env.example        # 전체 환경변수 안내
-├── docker-compose.yml  # MySQL 8.4.11 + Backend + AI 로컬 통합 실행 구성
+├── docker-compose.yml  # MySQL 8.4.11 + Backend + AI + Frontend 로컬 통합 실행 구성
 └── README.md
 ```
 

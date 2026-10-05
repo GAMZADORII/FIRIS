@@ -35,10 +35,17 @@ pipeline {
             }
         }
 
+        stage('Build Frontend') {
+            steps {
+                sh 'docker build -t firis-frontend:ci ./frontend'
+            }
+        }
+
         stage('Verify Images') {
             steps {
                 sh 'docker image inspect firis-ai:ci > /dev/null'
                 sh 'docker image inspect firis-backend:ci > /dev/null'
+                sh 'docker image inspect firis-frontend:ci > /dev/null'
                 sh 'docker images | grep firis'
             }
         }

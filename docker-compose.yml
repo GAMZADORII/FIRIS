@@ -59,5 +59,17 @@ services:
       - ./ai/storage/live:/app/storage/live
     restart: unless-stopped
 
+
+  frontend:
+    build:
+      context: ./frontend
+    image: firis-frontend:local
+    container_name: firis-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
+    restart: unless-stopped
+
 volumes:
   firis-mysql-data:
