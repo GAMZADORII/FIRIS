@@ -2,14 +2,14 @@
 
 ## 구성
 
-backend/storage/videos의 MP4를 Spring의 정적 파일 처리기로 제공합니다.
-Camera.streamUrl에는 http://localhost:8080/videos/camera01.mp4 같은 HTTP 주소를 저장합니다.
+프로젝트 최상위 storage/videos의 MP4를 Spring의 정적 파일 처리기로 제공합니다.
+Camera.streamUrl에는 http://localhost:8080/videos/CAM001/001.mp4 같은 HTTP 주소를 저장합니다.
 GET /api/cameras로 URL을 받은 프론트가 video 요소로 재생합니다.
 파일을 재인코딩하거나 YOLO를 실행하지 않습니다. Firebase 계정/SDK/결제 설정이 필요하지 않습니다.
 
 ## 실행 순서
 
-1. ZIP을 풀고 backend 폴더에서 실행합니다. storage/videos에 영상 3개가 포함돼 있습니다.
+1. 프로젝트 최상위 storage/videos의 카메라별 폴더에 영상을 준비하고 backend 폴더에서 실행합니다.
 2. .env.example을 참고해 .env 또는 환경변수로 DB_URL, DB_USERNAME, DB_PASSWORD, JWT_SECRET, ADMIN_LOGIN_ID, ADMIN_PASSWORD를 설정합니다. JWT_SECRET은 최소 32바이트입니다.
 3. MySQL을 실행하고 아래 명령으로 백엔드를 시작합니다. 기본 포트는 8080입니다.
 
@@ -18,7 +18,7 @@ GET /api/cameras로 URL을 받은 프론트가 video 요소로 재생합니다.
 ```
 
 4. 스키마가 준비되면 앱과 동일한 MySQL DB에서 docs/camera-sample.sql을 수동 실행합니다. CAM001~003이 이미 존재하면 stream_url만 수정합니다. 실행 전 기존 ID가 원하는 시연 카메라인지 확인하세요.
-5. 브라우저에서 http://localhost:8080/videos/camera02.mp4 를 열어 재생을 확인합니다.
+5. 브라우저에서 http://localhost:8080/videos/CAM001/001.mp4 를 열어 재생을 확인합니다.
 6. 기존 로그인 API로 로그인하고 GET /api/cameras를 호출합니다.
 
 DB 컬럼에는 Windows 파일 경로나 file:// 주소를 넣지 않습니다.
@@ -36,13 +36,13 @@ DB 컬럼에는 Windows 파일 경로나 file:// 주소를 넣지 않습니다.
 
 ## 저장 폴더 설정
 
-기본값은 실행 작업 디렉터리 기준 ./storage/videos입니다.
-다른 폴더를 쓰려면 CAMERA_VIDEO_DIRECTORY를 설정합니다. Windows .env에서는 C:/FIRIS/videos처럼 슬래시 경로를 권장합니다.
+backend 디렉터리에서 실행할 때 기본값은 ../storage/videos입니다.
+다른 폴더를 쓰려면 CAMERA_VIDEO_DIRECTORY를 설정합니다.
 폴더 바로 아래의 .mp4 파일만 재생 대상으로 사용합니다.
 영상은 JAR 안에 포함되지 않으므로 JAR 실행 시에도 해당 폴더를 함께 보관하세요.
 
 ```powershell
-$env:CAMERA_VIDEO_DIRECTORY = 'C:/FIRIS/videos'
+$env:CAMERA_VIDEO_DIRECTORY = '../storage/videos'
 .\gradlew.bat bootRun
 ```
 
@@ -61,7 +61,7 @@ $env:CAMERA_VIDEO_DIRECTORY = 'C:/FIRIS/videos'
     "cameraId": "CAM001",
     "cameraName": "FWW 정상 라벨 시연",
     "location": "공장/창고/작업장 분류 샘플",
-    "streamUrl": "http://localhost:8080/videos/camera01.mp4",
+    "streamUrl": "http://localhost:8080/videos/CAM001/001.mp4",
     "status": "ONLINE"
   }
 ]
@@ -80,9 +80,9 @@ status는 DB에 저장된 값이며 파일 존재 여부를 자동 검사하지 
 
 ## 로컬 영상 제공
 
-- GET /videos/{파일명}.mp4: 200 video/mp4, 파일이 없으면 404 RESOURCE_NOT_FOUND
+- GET /videos/{cameraId}/{파일명}.mp4: 200 video/mp4, 파일이 없으면 404 RESOURCE_NOT_FOUND
 - Range 헤더로 구간 요청 시: 206 Partial Content, 잘못된 범위는 416
-- HEAD /videos/{파일명}.mp4: 파일 헤더만 반환
+- HEAD /videos/{cameraId}/{파일명}.mp4: 파일 헤더만 반환
 - Request Body 없음, video 요소로 바로 재생 가능
 
 이 경로는 로컬 시연용으로 인증 없이 GET/HEAD를 허용합니다. 일반 video src 요청에는 기존 API의 Bearer 헤더를 직접 붙일 수 없기 때문입니다. 접근 가능한 호스트에서는 주소를 아는 사람이 재생할 수 있으므로 시연용 MP4만 이 폴더에 두세요. 목록 API는 기존 JWT 인증을 유지합니다. 민감한 실사용 CCTV의 접근 제어는 별도 구현이 필요합니다.
@@ -117,7 +117,7 @@ python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
 ```powershell
-python -m app.services.video_service --source ../backend/storage/videos/camera02.mp4 --camera-id CAM002 --model yolo --realtime
+python -m app.services.multi_camera_service --model yolo --sample-fps 3
 ```
 
 현재 AI 파일 분석은 영상 끝에서 종료하며 자동 반복하지 않습니다. 최신 JPEG는 5초 이상 오래되면 제공되지 않습니다. 프론트 video의 loop와 AI 파일 분석 반복은 별개입니다.
@@ -137,7 +137,7 @@ AI 이벤트의 snapshot/video 경로는 AI 파일시스템 경로이며, 이번
 - src/test/java/com/firis/camera/CameraFrameCompatibilityTest.java 추가
 - src/test/java/com/firis/camera/LocalVideoApiTest.java 추가
 - docs/camera-api.md, docs/camera-sample.sql: 로컬 재생 안내/등록 SQL로 교체
-- storage/videos/camera01.mp4, camera02.mp4, camera03.mp4 추가
+- storage/videos/CAM001/001.mp4 같은 카메라별 영상 추가
 
 기존 CameraRepository, CameraFrameController 및 AI/프론트 코드는 유지했습니다.
 기존 설정의 고정 기본 JWT Secret과 계정 비밀번호는 실행 환경변수로 덮어써야 합니다.

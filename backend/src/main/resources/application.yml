@@ -21,17 +21,17 @@ spring:
       mode: never
 security:
   jwt:
-    secret: ${JWT_SECRET:FIRIS-local-development-secret-key-2026-change-me}
+    secret: ${JWT_SECRET:}
     expiration-seconds: ${JWT_EXPIRATION_SECONDS:3600}
 
 app:
   event:
-    storage-directory: ${EVENT_STORAGE_DIR:../ai/storage/events}
+    storage-directory: ${EVENT_STORAGE_DIR:../storage/events}
   camera:
-    video-directory: ${CAMERA_VIDEO_DIRECTORY:./storage/videos}
+    video-directory: ${CAMERA_VIDEO_DIRECTORY:../storage/videos}
   admin:
     login-id: ${ADMIN_LOGIN_ID:admin}
-    password: ${ADMIN_PASSWORD:admin1234}
+    password: ${ADMIN_PASSWORD:}
     name: ${ADMIN_NAME:관리자}
   worker:
-    default-password: ${WORKER_DEFAULT_PASSWORD:qwe123}
+    default-password: ${WORKER_DEFAULT_PASSWORD:}

@@ -26,7 +26,7 @@ public class AdminAccountInitializer implements ApplicationRunner {
             AccountRepository accountRepository,
             PasswordEncoder passwordEncoder,
             @Value("${app.admin.login-id:admin}") String adminLoginId,
-            @Value("${app.admin.password:admin1234}") String adminPassword,
+            @Value("${app.admin.password}") String adminPassword,
             @Value("${app.admin.name:관리자}") String adminName
     ) {
         this.accountRepository = accountRepository;
@@ -47,6 +47,10 @@ public class AdminAccountInitializer implements ApplicationRunner {
             throw new IllegalStateException(
                     "초기 관리자 로그인 ID '" + adminLoginId + "'가 이미 다른 계정에서 사용 중입니다."
             );
+        }
+        if (adminPassword == null || adminPassword.isBlank()) {
+            log.warn("ADMIN_PASSWORD가 설정되지 않아 초기 관리자 자동 생성을 건너뜁니다.");
+            return;
         }
 
         Account admin = Account.createAdmin(

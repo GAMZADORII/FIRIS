@@ -18,7 +18,7 @@ Content-Type: application/json
   "cameraId": "CAM004",
   "cameraName": "창고 CCTV",
   "location": "창고 A동",
-  "streamUrl": "http://localhost:8080/videos/camera04.mp4",
+  "streamUrl": "http://localhost:8080/videos/CAM004/001.mp4",
   "status": "ONLINE"
 }
 ```
@@ -58,5 +58,5 @@ SQL 샘플은 더 이상 필수 등록 수단이 아니며 그대로 초기 시�
 
 ## 범위
 이 API는 기존 Camera 테이블에 정보와 URL만 저장합니다. 영상 업로드/파일 존재 확인/자동 AI 실행/프론트 등록 화면은 포함하지 않습니다.
-camera04.mp4를 backend/storage/videos에 별도로 넣어야 위 예시 URL로 재생할 수 있습니다.
+001.mp4를 프로젝트 최상위 storage/videos/CAM004에 별도로 넣어야 위 예시 URL로 재생할 수 있습니다.
 다른 PC에서 접속하면 localhost 대신 백엔드 PC 주소를 사용하세요.

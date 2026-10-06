@@ -5,11 +5,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.firis.account.entity.Account;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.LinkedHashMap;
@@ -18,6 +21,7 @@ import java.util.Map;
 @Component
 public class JwtTokenProvider {
 
+    private static final Logger log = LoggerFactory.getLogger(JwtTokenProvider.class);
     private static final Base64.Encoder BASE64_URL_ENCODER = Base64.getUrlEncoder().withoutPadding();
     private static final Base64.Decoder BASE64_URL_DECODER = Base64.getUrlDecoder();
 
@@ -30,11 +34,19 @@ public class JwtTokenProvider {
             @Value("${security.jwt.secret}") String secret,
             @Value("${security.jwt.expiration-seconds:3600}") long expirationSeconds
     ) {
-        if (secret == null || secret.getBytes(StandardCharsets.UTF_8).length < 32) {
-            throw new IllegalArgumentException("JWT secret은 최소 32바이트 이상이어야 합니다.");
-        }
         this.objectMapper = objectMapper;
-        this.secret = secret.getBytes(StandardCharsets.UTF_8);
+        if (secret == null || secret.isBlank()) {
+            byte[] generatedSecret = new byte[32];
+            new SecureRandom().nextBytes(generatedSecret);
+            this.secret = generatedSecret;
+            log.warn("JWT_SECRET이 설정되지 않아 이번 실행에서만 사용할 임시 랜덤 키를 생성했습니다. 실제 운영/통합 환경에서는 JWT_SECRET을 반드시 설정하세요.");
+        } else {
+            byte[] configuredSecret = secret.getBytes(StandardCharsets.UTF_8);
+            if (configuredSecret.length < 32) {
+                throw new IllegalArgumentException("JWT secret은 최소 32바이트 이상이어야 합니다.");
+            }
+            this.secret = configuredSecret;
+        }
         this.expirationSeconds = expirationSeconds;
     }
 

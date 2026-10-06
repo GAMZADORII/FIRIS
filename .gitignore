@@ -63,10 +63,19 @@ ai/model/*
 !ai/model/.gitkeep
 !ai/model/*.pt
 !ai/model/*.joblib
-ai/storage/events/*
-!ai/storage/events/.gitkeep
-ai/storage/live/*
-!ai/storage/live/.gitkeep
+# CCTV 영상
+/storage/videos/**
+!/storage/videos/.gitkeep
+!/storage/videos/*/
+!/storage/videos/*/.gitkeep
+
+# 이벤트 결과
+/storage/events/**
+!/storage/events/.gitkeep
+
+# 최신 CCTV 분석 이미지
+/storage/live/**
+!/storage/live/.gitkeep
 
 # Yarn generated files
 **/.yarn/cache/

@@ -14,7 +14,7 @@ public class LocalVideoConfig implements WebMvcConfigurer {
 
     private final Path videoDirectory;
 
-    public LocalVideoConfig(@Value("${app.camera.video-directory:./storage/videos}") String videoDirectory) {
+    public LocalVideoConfig(@Value("${app.camera.video-directory:../storage/videos}") String videoDirectory) {
         this.videoDirectory = Path.of(videoDirectory).toAbsolutePath().normalize();
     }
 
@@ -24,7 +24,7 @@ public class LocalVideoConfig implements WebMvcConfigurer {
         if (!location.endsWith("/")) {
             location += "/";
         }
-        registry.addResourceHandler("/videos/*.mp4")
+        registry.addResourceHandler("/videos/**")
                 .addResourceLocations(location)
                 .setCacheControl(CacheControl.maxAge(Duration.ofHours(1)).cachePublic());
     }

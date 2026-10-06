@@ -1,10 +1,10 @@
 # FIRIS API 명세 초안
 
-> 현재 Backend 구현 범위: health check, AI 이벤트 생성·미디어 갱신 및 CAMERA/FIRE_EVENT/EVENT_MEDIA 매핑. [구현·검증 안내](AI_EVENT_IMPLEMENTATION.md)를 함께 확인한다. 금빈님 계정/JWT 및 MySQL 설정이 dev에 병합되어 이 브랜치에도 포함된다.
+> 현재 Backend에는 health check, 계정/JWT·작업자 관리, 카메라 조회/최신 프레임 프록시, AI 이벤트 생성·미디어 갱신, 이벤트 목록·상세·검수·인증된 미디어 조회가 구현되어 있다. Dashboard 통계 API는 집계 기준 확정 후 구현한다. [구현·검증 안내](AI_EVENT_IMPLEMENTATION.md)를 함께 확인한다.
 
 
 기준: [PROJECT_CONTEXT](PROJECT_CONTEXT.md) 21~32절. 아래 필드명과 경로를 임의 변경하지 않는다.
-**현재 health check, AI 이벤트 생성·미디어 갱신, 최신 박스 JPEG 조회 API를 구현했다. 계정/JWT API는 병합된 dev에 포함됐다. 로컬 AVI·실제 YOLO·MySQL 연동은 확인했으며, 실제 CCTV RTSP와 프론트 표시 검증은 남아 있다. 이벤트 목록·상세·검수·통계 API는 아직 미구현이다.**
+**현재 health check, AI 이벤트 생성·미디어 갱신, 최신 박스 JPEG 조회, 계정/JWT, 이벤트 목록·상세·검수 및 인증된 미디어 조회 API가 구현되어 있다. 로컬 AVI·실제 YOLO·MySQL 연동은 확인했으며, 실제 CCTV RTSP와 프론트 표시 검증은 남아 있다. Dashboard 통계 API는 집계 기간과 응답 계약 확정 후 구현할 예정이다.**
 JSON 예시는 계약을 설명하며 비밀번호·ID·경로·시각은 실제 환경 설정이 아니다.
 
 ## 문서 상태 구분
