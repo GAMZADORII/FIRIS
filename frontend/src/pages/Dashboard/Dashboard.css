@@ -57,13 +57,12 @@ body {
 
 .dashboard-hero__mark {
 	align-items: center;
-	background: #d32f2f;
-	color: #fff;
+	background: #d32f2f14;
+	border: 1px solid #d32f2f40;
+	border-radius: 10px;
+	color: #ef646b;
 	display: flex;
 	flex: 0 0 42px;
-	font-family: 'JetBrains Mono', Consolas, monospace;
-	font-size: 22px;
-	font-weight: 700;
 	height: 42px;
 	justify-content: center;
 }
@@ -129,12 +128,14 @@ body {
 	display: grid;
 	flex: 1 1 auto;
 	gap: 12px;
-	grid-template-columns: minmax(0, 1fr) minmax(224px, 270px);
+	grid-template-columns: minmax(224px, 270px) minmax(0, 1fr);
+	grid-template-areas: 'statistics cctv';
 	grid-template-rows: minmax(0, 1fr);
 	min-height: 0;
 }
 
 .dashboard-statistics {
+	grid-area: statistics;
 	background: #0d0e11;
 	border: 1px solid #2a2d34;
 	display: flex;
@@ -219,20 +220,19 @@ body {
 	margin: 0;
 }
 
-.stat-card__heading > span {
-	background: #c4c7ca;
-	flex: 0 0 8px;
-	height: 8px;
-	margin-top: 1px;
-	width: 8px;
+.stat-card__icon {
+	color: #c4c7ca;
+	flex: 0 0 16px;
+	height: 16px;
+	width: 16px;
 }
 
-.stat-card--red .stat-card__heading > span {
-	background: #d32f2f;
+.stat-card--red .stat-card__icon {
+	color: #d32f2f;
 }
 
-.stat-card--amber .stat-card__heading > span {
-	background: #ffb300;
+.stat-card--amber .stat-card__icon {
+	color: #ffb300;
 }
 
 .stat-card__value {
@@ -396,12 +396,14 @@ body {
 	padding: 4px 6px;
 }
 
-.stat-card:nth-child(4) .stat-card__value strong {
+.stat-card:nth-child(4) .stat-card__value strong,
+.stat-card:nth-child(5) .stat-card__value strong {
 	font-family: Inter, 'Noto Sans KR', 'Malgun Gothic', sans-serif;
 	font-size: 16px;
 }
 
 .dashboard-cctv {
+	grid-area: cctv;
 	display: flex;
 	flex: 1 1 auto;
 	flex-direction: column;
@@ -656,6 +658,7 @@ body {
 	.dashboard-layout {
 		flex: 0 0 auto;
 		grid-template-columns: minmax(0, 1fr);
+		grid-template-areas: 'cctv' 'statistics';
 		grid-template-rows: minmax(420px, 60dvh) auto;
 	}
 
@@ -695,8 +698,12 @@ body {
 
 	.dashboard-hero__mark {
 		flex-basis: 34px;
-		font-size: 18px;
 		height: 34px;
+	}
+
+	.dashboard-hero__mark svg {
+		width: 22px;
+		height: 22px;
 	}
 
 	.dashboard-hero__meta {

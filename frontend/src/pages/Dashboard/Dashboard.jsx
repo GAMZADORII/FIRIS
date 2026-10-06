@@ -56,11 +56,24 @@ const statistics = [
   { label: 'SECURITY DEFCON', value: '2단계 경계', unit: '', detail: '자율대응군 현장 출동 대기 병행', tone: 'amber' },
 ];
 
+const statisticIconPaths = {
+  'RISK INDEX TELEMETRY': 'M12 3 20 6v5c0 5-4 8-8 10-4-2-8-5-8-10V6l8-3Z M12 8v5 M12 16h.01',
+  'CCTV FEED INTEGRITY': 'M4 6h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z M16 10l6-3v10l-6-3',
+  'DAILY DETECTION': 'M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9 M10 21h4 M12 2V1',
+  '119 DIRECT TRUNK': 'M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2Z',
+  'SECURITY DEFCON': 'M12 3 20 6v5c0 5-4 8-8 10-4-2-8-5-8-10V6l8-3Z',
+};
+
 export default function Dashboard() {
   return (
     <main className="dashboard">
       <section className="dashboard-hero" aria-labelledby="dashboard-title">
-        <div className="dashboard-hero__mark" aria-hidden="true">F</div>
+        <div className="dashboard-hero__mark" aria-hidden="true">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" focusable="false">
+            <path d="M12 2.5 20 6v5.5c0 4.5-3.3 8-8 10-4.7-2-8-5.5-8-10V6l8-3.5Z" />
+            <path d="M12.5 7.5c.5 3-3.5 3.5-3.5 6a3 3 0 0 0 6 0c0-1.2-.5-2.3-1.5-3-.1 1-.6 1.5-1 1.7.5-1.7.5-3.2 0-4.7Z" />
+          </svg>
+        </div>
         <div className="dashboard-hero__copy">
           <div className="dashboard-hero__meta">
             <span className="dashboard-hero__status">SYSTEM STANDBY</span>
@@ -128,7 +141,7 @@ export default function Dashboard() {
           <div className="dashboard-statistics__heading">
             <div>
               <p className="dashboard__eyebrow">SYSTEM OVERVIEW</p>
-              <h2 id="statistics-title">오늘 통계</h2>
+              <h2 id="statistics-title">관제 현황</h2>
             </div>
             <span>DEMO DATA</span>
           </div>
@@ -137,7 +150,9 @@ export default function Dashboard() {
               <article className={`stat-card stat-card--${statistic.tone}${statistic.metrics ? ' stat-card--risk' : ''}`} key={statistic.label}>
                 <div className="stat-card__heading">
                   <h3>{statistic.label}</h3>
-                  <span aria-hidden="true" />
+                  <svg className="stat-card__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+                    <path d={statisticIconPaths[statistic.label]} />
+                  </svg>
                 </div>
                 {statistic.metrics ? (
                   <div className="stat-card__risk-content">
