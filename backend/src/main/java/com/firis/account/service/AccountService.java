@@ -32,7 +32,7 @@ public class AccountService {
     public AccountService(
             AccountRepository accountRepository,
             PasswordEncoder passwordEncoder,
-            @Value("${app.worker.default-password:qwe123}") String defaultWorkerPassword
+            @Value("${app.worker.default-password}") String defaultWorkerPassword
     ) {
         this.accountRepository = accountRepository;
         this.passwordEncoder = passwordEncoder;
@@ -41,6 +41,7 @@ public class AccountService {
 
     @Transactional
     public synchronized CreateWorkerResponse createWorker(CreateWorkerRequest request) {
+        requireDefaultWorkerPassword();
         String loginId = generateNextWorkerLoginId();
 
         Account worker = Account.createWorker(
@@ -76,6 +77,7 @@ public class AccountService {
 
     @Transactional
     public ResetPasswordResponse resetWorkerPassword(Long workerId) {
+        requireDefaultWorkerPassword();
         Account worker = findWorker(workerId);
         worker.resetToTemporaryPassword(passwordEncoder.encode(defaultWorkerPassword));
 
@@ -85,6 +87,12 @@ public class AccountService {
                 true,
                 "비밀번호가 초기화되었습니다."
         );
+    }
+
+    private void requireDefaultWorkerPassword() {
+        if (defaultWorkerPassword == null || defaultWorkerPassword.isBlank()) {
+            throw new IllegalStateException("WORKER_DEFAULT_PASSWORD 환경변수를 설정해야 합니다.");
+        }
     }
 
     private Account findWorker(Long workerId) {

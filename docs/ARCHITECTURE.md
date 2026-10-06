@@ -30,7 +30,7 @@ VS Code는 WSL: Ubuntu 연결을 권장한다. Frontend 담당자는 Windows도 
 | ai/app/models | 향후 모델 로딩/추론 어댑터. Classification에 종속하지 않음 |
 | ai/app/utils | 향후 공통 유틸리티 |
 | ai/model | Git에서 제외되는 모델 weight |
-| ai/storage/events | Git에서 제외되는 이벤트 Snapshot/영상 |
+| storage/events | Git에서 제외되는 이벤트 Snapshot/영상 |
 | backend/.../common | health check 및 공통 설정 |
 | backend/.../auth | 향후 인증 및 비밀번호 변경 흐름 |
 | backend/.../account | 향후 ADMIN/WORKER 계정 관리 |

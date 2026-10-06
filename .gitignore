@@ -63,10 +63,12 @@ ai/model/*
 !ai/model/.gitkeep
 !ai/model/*.pt
 !ai/model/*.joblib
-ai/storage/events/*
-!ai/storage/events/.gitkeep
-ai/storage/live/*
-!ai/storage/live/.gitkeep
+/storage/videos/*
+!/storage/videos/.gitkeep
+/storage/events/*
+!/storage/events/.gitkeep
+/storage/live/*
+!/storage/live/.gitkeep
 
 # Yarn generated files
 **/.yarn/cache/
