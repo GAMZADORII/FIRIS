@@ -54,7 +54,7 @@ export default function Login() {
       return;
     }
     setMessage(
-      "로그인 서비스 연결 준비 중입니다. 관제 화면 미리보기를 이용해 주세요.",
+      "로그인 서비스 연결 대기 중입니다.",
     );
   }
   return (
@@ -69,7 +69,7 @@ export default function Login() {
               AI 기반 화재 감지 및 통합 관제 시스템
             </span>
           </div>
-          <span className="login-statusbar__mode">PREVIEW MODE</span>
+          <span className="login-statusbar__mode">연결 대기</span>
         </header>
         <div className="login-layout">
           <section
@@ -195,7 +195,7 @@ export default function Login() {
         </div>
         <footer className="login-footer">
           <div>
-            <span className="login-footer__badge">SYSTEM PREVIEW</span>
+            <span className="login-footer__badge">SYSTEM STANDBY</span>
             <span>화재 감지 · 실시간 관제 · 이벤트 관리</span>
           </div>
           <span>FIRIS / INTEGRATED MONITORING</span>

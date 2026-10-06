@@ -112,24 +112,24 @@ export default function Dashboard() {
                   </div>
                   <span className="camera-feed__format">{camera.format}</span>
                 </div>
-                <div className="camera-feed__viewport" role="img" aria-label={`${camera.label} 임시 이미지${camera.detection ? `, ${camera.detection.label} 오버레이 예시` : ''}`}>
+                <div className="camera-feed__viewport" role="img" aria-label={`${camera.label} 영상 연결 대기${camera.detection ? `, ${camera.detection.label} 오버레이 예시` : ''}`}>
                   <img className="camera-feed__image" src={camera.image} alt="" />
                   {camera.detection && (
                     <div
                       className={`detection-overlay detection-overlay--${camera.detection.type}`}
                       style={camera.detection.position}
                     >
-                      <span>{camera.detection.label} / DEMO</span>
+                      <span>{camera.detection.label}</span>
                     </div>
                   )}
                   <div className="camera-feed__viewport-status">
-                    <span>SAMPLE IMAGE</span>
-                    <span>{camera.detection ? 'DETECTION OVERLAY DEMO' : 'LIVE STREAM 연결 대기'}</span>
+                    <span>영상 연결 대기</span>
+                    <span>{camera.detection ? '감지 서비스 연결 대기' : 'LIVE STREAM 연결 대기'}</span>
                   </div>
                   <span className="camera-feed__timestamp">--:--:--</span>
                 </div>
                 <div className="camera-feed__footer">
-                  <span>{camera.id.toUpperCase()} / SAMPLE FEED</span>
+                  <span>{camera.id.toUpperCase()} / STANDBY</span>
                   <span>{camera.detection ? `${camera.detection.label} 오버레이 예시` : 'FIRE · SMOKE 감지 대기'}</span>
                 </div>
               </article>
@@ -143,7 +143,7 @@ export default function Dashboard() {
               <p className="dashboard__eyebrow">SYSTEM OVERVIEW</p>
               <h2 id="statistics-title">관제 현황</h2>
             </div>
-            <span>DEMO DATA</span>
+            <span>데이터 연결 대기</span>
           </div>
           <div className="dashboard-statistics__cards">
             {statistics.map((statistic) => (

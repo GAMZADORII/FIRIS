@@ -90,7 +90,7 @@ export default function Header({ user = null }) {
         </div>
         <div className="app-header__user">
           <span className="app-header__avatar" aria-hidden="true">{(user?.name || '김진우').slice(0, 1)}</span>
-          <div><strong>{user?.name || '김진우'}</strong><small>{user?.name ? '로그인 사용자' : '샘플 계정'}</small></div>
+          <div><strong>{user?.name || '김진우'}</strong><small>{user?.name ? '로그인 사용자' : '미연결 계정'}</small></div>
         </div>
       </div>
     </header>

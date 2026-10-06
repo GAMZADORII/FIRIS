@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import {
   Badge,
   Modal,
@@ -92,7 +92,7 @@ export default function History() {
         eyebrow="FIRIS EVENT ARCHIVE / INCIDENT INTELLIGENCE"
         title="이벤트 이력 조회"
       >
-        <span className="console-muted">샘플 데이터 · KST 기준</span>
+        <span className="console-muted">데이터 연결 대기 · KST 기준</span>
         <button onClick={exportEvents}>↓ 이력 내보내기</button>
       </PageHeading>
       <section className="history-summary" aria-label="이벤트 요약">
@@ -291,7 +291,7 @@ export default function History() {
       </div>
       <footer className="console-foot">
         <span>
-          총 {filtered.length}건 · 샘플 변경 사항은 페이지를 나가면
+          총 {filtered.length}건 · 변경 사항은 페이지를 나가면
           초기화됩니다.
         </span>
         <span>FIRIS / EVENT AUDIT LOG</span>
@@ -305,7 +305,7 @@ export default function History() {
         >
           <div className="console-modal__body">
             <div className="history-report-meta">
-              <span>분석 화면 캡처 · 샘플 이미지</span>
+              <span>분석 화면 캡처</span>
               <span>
                 {selected.camera} / {selected.time}
               </span>
@@ -314,10 +314,10 @@ export default function History() {
               <div className="history-capture">
                 <img
                   src={selected.type === "화재" ? camera1 : camera2}
-                  alt={`${selected.location} CCTV 샘플 화면`}
+                  alt={`${selected.location} CCTV 화면`}
                 />
                 <span className="history-capture__label">
-                  ◉ SAMPLE ANALYSIS
+                  ◉ ANALYSIS
                 </span>
                 <div className="history-target">
                   <span>
@@ -362,7 +362,7 @@ export default function History() {
             <section className="history-timeline">
               <div>
                 <h3>◷ 사고 대응 블랙박스 기록</h3>
-                <span>KST TIMESTAMP / SAMPLE</span>
+                <span>KST TIMESTAMP</span>
               </div>
               <ol>
                 <li>
@@ -388,7 +388,7 @@ export default function History() {
               </ol>
             </section>
             <p className="console-muted">
-              샘플 리포트입니다. 상태 변경은 현재 화면에만 반영됩니다.
+              서버 연결 대기 중입니다. 상태 변경은 현재 화면에만 반영됩니다.
             </p>
           </div>
           <footer className="console-modal__footer">
@@ -402,7 +402,7 @@ export default function History() {
               onClick={() =>
                 downloadFile(
                   `${selected.id}.txt`,
-                  `FIRIS 사고 상세 리포트 (샘플)\n${Object.entries(selected)
+                  `FIRIS 사고 상세 리포트\n${Object.entries(selected)
                     .map(([k, v]) => `${k}: ${v}`)
                     .join("\n")}`,
                 )
