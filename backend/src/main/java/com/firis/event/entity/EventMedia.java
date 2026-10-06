@@ -33,4 +33,8 @@ public class EventMedia {
     public void updateVideo(String path, int pre, int post, LocalDateTime now) {
         videoPath = path; preSeconds = pre; postSeconds = post; updatedAt = now;
     }
+    public String getSnapshotPath() { return snapshotPath; }
+    public String getVideoPath() { return videoPath; }
+    public Integer getPreSeconds() { return preSeconds; }
+    public Integer getPostSeconds() { return postSeconds; }
 }

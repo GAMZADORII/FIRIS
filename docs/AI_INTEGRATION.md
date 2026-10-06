@@ -13,7 +13,7 @@ Dashboard 박스 표시 계약: AI 영상 처리기는 추론한 프레임에 FI
 - Backend MySQL에 `cameraId`가 등록되어 있고, Backend가 정상 실행 중이어야 한다.
 - AI `.env`의 `BACKEND_URL`/`AI_API_KEY`가 실제 Backend와 일치해야 한다. 로컬 파일 경로는 `.env.example`을 따른다.
 - Git LFS 실제 모델 가중치를 받아야 한다. 포인터만 있는 경우 추론할 수 없다.
-- AI와 파일 소비자가 같은 저장소를 볼 수 있어야 한다. 현재 Backend는 미디어 파일 서빙을 제공하지 않는다.
+- AI와 Backend가 같은 이벤트 저장소를 볼 수 있어야 한다. Backend는 JWT가 필요한 `/api/events/{eventId}/snapshot` 및 `/video`로 저장된 파일을 제공한다. Docker에서는 이벤트 저장소를 Backend에 읽기 전용으로 마운트한다.
 - Docker 이미지에는 모델 파일이나 이벤트 저장소를 넣지 않는다. 컨테이너 실행 시 둘을 볼륨으로 연결해야 한다.
 
 ## 검증 범위와 실패 동작
