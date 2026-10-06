@@ -25,6 +25,8 @@ security:
     expiration-seconds: ${JWT_EXPIRATION_SECONDS:3600}
 
 app:
+  event:
+    storage-directory: ${EVENT_STORAGE_DIR:../ai/storage/events}
   camera:
     video-directory: ${CAMERA_VIDEO_DIRECTORY:./storage/videos}
   admin:

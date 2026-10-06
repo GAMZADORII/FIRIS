@@ -1,12 +1,12 @@
 # FIRIS
 AI 기반 화재·연기 조기 감지 관제 서비스. AI / Backend / Frontend를 하나의 Repository에서 독립적으로 개발한다.
-현재 Backend AI 이벤트 API와 AI 영상 시간 창 판정·Backend 호출 코드를 구현했다. 실제 모델·MySQL·CCTV 통합 검증은 아직 필요하다. [AI 연동 검증](docs/AI_INTEGRATION.md)을 참고한다.
+현재 AI 탐지·Backend 이벤트 저장과 사용자 이벤트 이력·검수 API가 있다. Frontend 연동은 디자인 작업 이후 진행한다. [AI 연동 검증](docs/AI_INTEGRATION.md)을 참고한다.
 
 ## 구조
 ```text
 FIRIS/
-├── ai/                 # FastAPI, 향후 탐지/버퍼/미디어 처리
-├── backend/            # Spring Boot, 향후 계정/이벤트/검수 관리
+├── ai/                 # FastAPI, 탐지/버퍼/미디어 처리
+├── backend/            # Spring Boot, 계정/이벤트/검수 관리
 ├── frontend/           # React 관제 화면
 ├── docs/               # 개발 기준 문서
 ├── .gitattributes      # WSL/Windows 줄바꿈 규칙
@@ -20,8 +20,8 @@ FIRIS/
 | 파트 | 현재 | 향후 |
 | --- | --- | --- |
 | AI | Python, FastAPI, OpenCV, PyTorch/YOLO 추론 및 이벤트 파일 저장 | 실영상 임계값 검증·운영 연동 |
-| Backend | Java 17, Spring Boot 3.5, Gradle Wrapper, Web/JPA/Security/Validation, MySQL·JWT·계정 및 AI 이벤트 API | 이벤트 조회·검수 등 후속 기능 |
-| Frontend | React, Vite, JavaScript, Axios, React Router | 통합 Dashboard, History, 계정 관리 |
+| Backend | Java 17, Spring Boot 3.5, Gradle Wrapper, Web/JPA/Security/Validation, MySQL·JWT·이벤트 조회/검수 API | 관제 통계와 추가 운영 기능 |
+| Frontend | React, Vite, JavaScript, Axios, React Router, 화면 디자인 | Backend API 연동 |
 
 ## 실행
 각각 별도 터미널에서 루트 기준으로 실행한다. 첫 설치에는 인터넷이 필요하다.

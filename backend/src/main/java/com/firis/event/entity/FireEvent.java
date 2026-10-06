@@ -32,4 +32,9 @@ public class FireEvent {
         this.detectedAt = detectedAt; this.modelVersion = modelVersion; this.createdAt = createdAt;
     }
     public Long getEventId() { return eventId; }
+    public Camera getCamera() { return camera; }
+    public EventType getEventType() { return eventType; }
+    public double getConfidence() { return confidence; }
+    public LocalDateTime getDetectedAt() { return detectedAt; }
+    public String getModelVersion() { return modelVersion; }
 }

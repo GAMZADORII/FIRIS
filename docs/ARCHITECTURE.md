@@ -7,7 +7,7 @@
 
 ## 문서 상태 구분
 
-- **현재 실행 상태**: health check, AI 이벤트 생성·미디어 갱신, 최신 박스 JPEG 조회 코드와 네 페이지 placeholder가 있다. 로컬 AVI 영상으로 실제 YOLO → Backend → MySQL 연동을 확인했다. 전용 테스트 DB의 자동 통합 테스트, 실제 CCTV RTSP, 프론트 화면 표시는 아직 검증하지 않았다. 서버 실행에는 MySQL·카메라 데이터·API Key 설정이 필요하다.
+- **현재 실행 상태**: AI 이벤트 생성·미디어 갱신과 최신 박스 JPEG 조회, Backend 이벤트 이력·상세·검수·미디어 조회 API가 있다. Frontend와 이벤트 API의 연결은 디자인 작업 이후 진행한다. 실제 RTSP는 아직 검증하지 않았다.
 - **최종 합의**: 앞으로 구현할 요구사항이다. 현재 구현 여부와 구분한다.
 - **예시**: JSON의 비밀번호·ID·파일명, 탐지 수치 등 설명용 값이다. 실제 설정으로 확정하지 않는다.
 - **확인 필요**: 담당자와 합의 후 문서에 반영할 사항이다. 임의 구현하지 않는다.
@@ -94,9 +94,9 @@ AI API Key 인증과 이벤트 저장·미디어 갱신 및 세 Entity는 구현
 - AI: FastAPI/Uvicorn, 8000 포트. 모델 추론과 영상 시간 창 판정·Backend 호출, 박스 JPEG 발행 코드가 있다. 로컬 AVI에서 YOLO 추론과 Backend/MySQL 이벤트 저장을 확인했다. 실제 CCTV RTSP 검증은 아직 없다.
 - Backend: Java 17, Spring Boot, Gradle Wrapper, 8080 포트.
 - Spring Web/JPA/Security/Validation과 MySQL 런타임 드라이버를 포함한다. 이벤트 API DB 통합 테스트는 별도 MySQL 테스트 DB에서 선택적으로 실행한다.
-- `ddl-auto`는 dev 기본값 update이며 SQL 초기화는 비활성화되어 있다. ACCOUNT 및 이벤트 관련 세 Entity가 있고 관리자 계정은 최초 시작 시 생성된다. CAMERA 시드는 아직 없다. MySQL 통합 테스트만 전용 firis_test DB에서 create-drop을 사용한다.
+- `ddl-auto`는 dev 기본값 update이며 SQL 초기화는 비활성화되어 있다. ACCOUNT, CAMERA 및 FIRE_EVENT/EVENT_MEDIA/EVENT_REVIEW Entity가 있고 관리자 계정은 최초 시작 시 생성된다. CAMERA 시드는 아직 없다. MySQL 통합 테스트만 전용 firis_test DB에서 create-drop을 사용한다.
 - 공통 Spring Security 설정에는 사용자 JWT·역할 권한이 있다. 별도 우선순위 체인이 /api/ai/**의 API Key를 검증한다. GET /api/health는 공개된다.
-- Frontend: React/Vite/JavaScript, React Router, Axios, Yarn, 5173 포트. API 연동과 CORS 정책은 아직 구현하지 않는다.
+- Frontend: React/Vite/JavaScript, React Router, Axios, Yarn, 5173 포트. 현재 이벤트 API 연동 전이며 디자인 완료 후 연결한다. Backend CORS는 localhost:5173을 허용한다.
 - `docker-compose.yml`은 MySQL 8.4.11, Backend, AI, Frontend 서비스의 로컬 통합 실행 구성을 제공한다.
 
 ## 환경 및 저장소 원칙

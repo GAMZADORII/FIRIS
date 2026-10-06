@@ -9,7 +9,7 @@ JSON 예시는 계약을 설명하며 비밀번호·ID·경로·시각은 실제
 
 ## 문서 상태 구분
 
-- **현재 실행 상태**: health check, AI 이벤트 생성·미디어 갱신, 최신 박스 JPEG 조회 코드와 네 페이지 placeholder가 있다. 로컬 AVI 영상으로 실제 YOLO → Backend → MySQL 연동을 확인했다. 전용 테스트 DB의 자동 통합 테스트, 실제 CCTV RTSP, 프론트 화면 표시는 아직 검증하지 않았다. 서버 실행에는 MySQL·카메라 데이터·API Key 설정이 필요하다.
+- **현재 실행 상태**: health check, AI 이벤트 생성·미디어 갱신, 최신 박스 JPEG 조회, 로그인, 이벤트 이력·상세·검수 및 인증된 미디어 조회 Backend 코드가 있다. Frontend 이벤트 연동은 디자인 작업 이후 진행한다. 로컬 MySQL에서 검수 성공·중복 검수 409·검수자 저장을 임시 이벤트로 검증하고 해당 데이터를 삭제했다. Docker 컨테이너 실행, 전용 테스트 DB의 자동 통합 테스트와 실제 CCTV RTSP는 아직 검증하지 않았다.
 - **최종 합의**: 앞으로 구현할 요구사항이다. 현재 구현 여부와 구분한다.
 - **예시**: JSON의 비밀번호·ID·파일명, 탐지 수치 등 설명용 값이다. 실제 설정으로 확정하지 않는다.
 - **확인 필요**: 담당자와 합의 후 문서에 반영할 사항이다. 임의 구현하지 않는다.
@@ -26,10 +26,13 @@ JSON 예시는 계약을 설명하며 비밀번호·ID·경로·시각은 실제
 | Backend :8080 | PATCH | /api/ai/events/{eventId}/media | 200, eventId/videoAvailable (API Key 필요) |
 | AI :8000 | GET | /cameras/{cameraId}/frame | JPEG, X-AI-API-KEY 필요; 404 프레임 없음, 503 프레임 오래됨 |
 | Backend :8080 | GET | /api/cameras/{cameraId}/frame | JPEG, 사용자 JWT(ADMIN/WORKER) 필요; 404 카메라/프레임 없음, 503 AI 연결 실패·오래된 프레임 |
+| Backend :8080 | GET | /api/events, /api/events/{eventId} | 이벤트 이력·상세, 사용자 JWT 필요 |
+| Backend :8080 | PATCH | /api/events/{eventId}/review | 단일 최종 검수, 사용자 JWT 필요 |
+| Backend :8080 | GET | /api/events/{eventId}/snapshot, /video | 이벤트 미디어, 사용자 JWT 필요 |
 
 이벤트 API의 Content-Type은 application/json이고 프레임 API의 응답은 image/jpeg이다. Backend health는 인증 없이 프로세스 응답만 확인한다. AI health는 모델 파일의 존재와 Git LFS 포인터 여부만 확인하며 실제 추론 성공은 검사하지 않는다. 두 Backend AI 이벤트 API는 API Key 인증과 준비된 DB를 필요로 한다.
 
-## 전체 API 및 담당 (두 AI API 외 업무 API는 별도 개발)
+## 전체 API 및 담당
 
 | Method | 경로 | 담당 | 용도/권한 |
 | --- | --- | --- | --- |
@@ -263,6 +266,8 @@ to
 
 필터 조합 가능.
 
+응답은 페이지 형식(`content`, `totalElements`, `totalPages`, `number`, `size`)이다. `content` 항목은 `eventId`, `cameraId`, `cameraName`, `location`, `eventType`, `confidence`(0~1), `detectedAt`(KST 로컬 시각), `modelVersion`, `reviewStatus`를 포함한다. 최신 발생 시각과 eventId 역순으로 정렬한다. `from`/`to`는 `YYYY-MM-DD`이며 양 끝 날짜를 포함한다. `size` 최대값은 100이다.
+
 reviewStatus:
 
 UNREVIEWED
@@ -289,6 +294,10 @@ GET /api/events/{eventId}
 - postSeconds
 - Review 상태
 - Review 정보
+
+응답은 목록 항목의 필드에 `snapshotPath`, `videoPath`, `preSeconds`, `postSeconds`, `review`를 더한다. `review`는 미검수 시 `null`, 검수 시 `result`, `falsePositiveReason`, `note`, `reviewerId`, `reviewerName`, `reviewedAt`을 포함한다. 경로는 파일 경로일 뿐 브라우저 URL이 아니다.
+
+인증된 미디어 조회: `GET /api/events/{eventId}/snapshot`은 JPEG, `GET /api/events/{eventId}/video`는 MP4를 반환한다. 두 요청 모두 사용자 JWT가 필요하며, 파일이 아직 없거나 공유 저장소에서 읽을 수 없으면 404이다. Backend의 `EVENT_STORAGE_DIR`은 AI와 같은 이벤트 저장소를 가리켜야 한다.
 
 ## 31. Review API
 
@@ -318,6 +327,8 @@ TRUE_FIRE 예:
 reviewerId를 Frontend Request에서 받지 않는다.
 
 JWT의 로그인 사용자에서 accountId를 확인하여 저장한다.
+
+첫 검수만 허용하며 이미 검수된 이벤트의 재요청은 409를 반환한다. `FALSE_POSITIVE`는 사유가 필수이고, `TRUE_FIRE`에는 사유를 넣을 수 없다. 응답은 갱신된 이벤트 상세 형식이다.
 
 ## 32. Dashboard 통계 API
 
