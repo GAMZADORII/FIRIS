@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import './Dashboard.css';
 import cameraImage01 from '../../assets/images/cctv/cctv-01.png';
 import cameraImage02 from '../../assets/images/cctv/cctv-02.png';
@@ -64,6 +65,30 @@ const statisticIconPaths = {
   'SECURITY DEFCON': 'M12 3 20 6v5c0 5-4 8-8 10-4-2-8-5-8-10V6l8-3Z',
 };
 
+const localTimeFormatter = new Intl.DateTimeFormat('ko-KR', {
+  timeZone: 'Asia/Seoul',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hourCycle: 'h23',
+});
+
+function LocalClock() {
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="dashboard-hero__clock" aria-label="현재 한국 시간">
+      <span>LOCAL TIME</span>
+      <strong><time dateTime={now.toISOString()}>{localTimeFormatter.format(now)}</time></strong>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   return (
     <main className="dashboard">
@@ -82,10 +107,7 @@ export default function Dashboard() {
           <h1 id="dashboard-title">종합 화재 관제 모니터링 콘솔</h1>
           <p>실시간 센서 인텔리전스 · 통합 상황 모니터링</p>
         </div>
-        <div className="dashboard-hero__clock" aria-label="시스템 시간 연결 대기">
-          <span>LOCAL TIME</span>
-          <strong>--:--:--</strong>
-        </div>
+        <LocalClock />
       </section>
 
       <div className="dashboard-layout">
