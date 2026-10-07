@@ -8,6 +8,7 @@ import {
 import "./Admin.css";
 
 const MEMBERS_PAGE_SIZE = 4;
+const CAMERAS_PAGE_SIZE = 4;
 
 const initialUsers = [
   [
@@ -17,7 +18,7 @@ const initialUsers = [
     "통합방재관제팀 / 총괄팀장",
     "시스템 총괄",
     "ACTIVE",
-    "010-4829-1192",
+    "010-0000-0000",
     "현재 세션 연결 중",
   ],
   [
@@ -27,7 +28,7 @@ const initialUsers = [
     "방재운영 1조 / 선임 관제관",
     "당직 관제관",
     "ACTIVE",
-    "010-9941-8172",
+    "010-0000-0000",
     "2025-05-14 08:30:11",
   ],
   [
@@ -37,7 +38,7 @@ const initialUsers = [
     "방재운영 2조 / 관제 주임",
     "당직 관제관",
     "STANDBY",
-    "010-3312-9014",
+    "010-0000-0000",
     "2025-05-13 22:15:48",
   ],
   [
@@ -47,7 +48,7 @@ const initialUsers = [
     "기계안전설비반 / 엔지니어",
     "유지보수원",
     "ACTIVE",
-    "010-7781-4450",
+    "010-0000-0000",
     "2025-05-14 11:20:05",
   ],
   [
@@ -57,7 +58,7 @@ const initialUsers = [
     "네트워크통신망 / 기술원",
     "유지보수원",
     "OFFLINE",
-    "010-5209-1830",
+    "010-0000-0000",
     "2025-05-12 17:45:09",
   ],
   [
@@ -67,7 +68,7 @@ const initialUsers = [
     "소방안전처 / 소방시설관리사",
     "당직 관제관",
     "ACTIVE",
-    "010-6188-7290",
+    "010-0000-0000",
     "2025-05-14 06:00:18",
   ],
 ].map(([id, name, email, department, role, status, phone, last]) => ({
@@ -132,6 +133,7 @@ export default function Admin() {
   const [tab, setTab] = useState("members");
   const [query, setQuery] = useState("");
   const [membersPage, setMembersPage] = useState(1);
+  const [camerasPage, setCamerasPage] = useState(1);
   const [editor, setEditor] = useState(null);
   const [form, setForm] = useState(emptyUser);
   const [notice, setNotice] = useState("");
@@ -233,16 +235,23 @@ export default function Admin() {
     membersPageStart,
     membersPageStart + MEMBERS_PAGE_SIZE,
   );
+  const camerasPageCount = Math.max(1, Math.ceil(cameras.length / CAMERAS_PAGE_SIZE));
+  const currentCamerasPage = Math.min(camerasPage, camerasPageCount);
+  const camerasPageStart = (currentCamerasPage - 1) * CAMERAS_PAGE_SIZE;
+  const visibleCameras = cameras.slice(
+    camerasPageStart,
+    camerasPageStart + CAMERAS_PAGE_SIZE,
+  );
   const tabs = [
-    ["members", "♙", "회원 관리", String(users.length).padStart(2, "0")],
-    ["cameras", "▣", "CCTV 관리", `${cameras.length} CH`],
+    ["members", "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0 M20 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75", "회원 관리", String(users.length).padStart(2, "0")],
+    ["cameras", "M4 5h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z M16 9l6-3v12l-6-3", "CCTV 관리", `${cameras.length} CH`],
     [
       "reviews",
-      "◎",
+      "M12 3 20 6v5c0 5-4 8-8 10-4-2-8-5-8-10V6l8-3Z M8 12l3 3 5-5",
       "오탐 관리 및 AI 학습",
       `${reviews.filter((r) => r.status === "검토 대기").length} 대기`,
     ],
-    ["stats", "▤", "통계 분석", "KPI"],
+    ["stats", "M3 3v18h18 M7 16v-5 M12 16V7 M17 16v-8", "통계 분석", "KPI"],
   ];
   return (
     <main className="console-page admin-page">
@@ -265,7 +274,10 @@ export default function Admin() {
             record("현재 설정 백업을 다운로드했습니다.");
           }}
         >
-          ♧ 시스템 설정 백업
+          <svg className="admin-action-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+            <path d="M12 3v12 M7 10l5 5 5-5 M4 16v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4" />
+          </svg>
+          시스템 설정 백업
         </button>
         <button
           onClick={() =>
@@ -276,7 +288,10 @@ export default function Admin() {
             )
           }
         >
-          ▤ 감사 로그 내보내기
+          <svg className="admin-action-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+            <path d="M12 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9l5 5v3 M14 3v5h5 M7 12h5 M7 16h3 M14 17h8 M19 14l3 3-3 3" />
+          </svg>
+          감사 로그 내보내기
         </button>
       </PageHeading>
       <nav className="admin-tabs" aria-label="관리 메뉴">
@@ -287,7 +302,22 @@ export default function Admin() {
             aria-current={tab === id ? "page" : undefined}
             onClick={() => setTab(id)}
           >
-            <span aria-hidden="true">{icon}</span> {label}{" "}
+            <svg
+              className="admin-tabs__icon"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.7"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path d={icon} />
+            </svg>
+            {label}
             <small>{count}</small>
           </button>
         ))}
@@ -356,7 +386,7 @@ export default function Admin() {
                         </span>
                         <div>
                           <strong>{user.name}</strong>
-                          <small>{user.email}</small>
+                          <small title={user.email}>{user.email}</small>
                         </div>
                       </div>
                     </td>
@@ -433,9 +463,6 @@ export default function Admin() {
                   aria-current={
                     currentMembersPage === number ? "page" : undefined
                   }
-                  className={
-                    currentMembersPage === number ? "console-primary" : ""
-                  }
                   disabled={!filtered.length}
                   onClick={() => setMembersPage(number)}
                 >
@@ -449,6 +476,9 @@ export default function Admin() {
                 다음 ›
               </button>
             </nav>
+            <span className="console-muted admin-pagination__signature">
+              FIRIS / ACCESS CONTROL SYSTEM
+            </span>
           </div>
         </>
       )}
@@ -464,7 +494,7 @@ export default function Admin() {
             </Badge>
           </section>
           <div className="console-table-wrap">
-            <table className="console-table">
+            <table className="console-table admin-table">
               <thead>
                 <tr>
                   {[
@@ -479,7 +509,7 @@ export default function Admin() {
                 </tr>
               </thead>
               <tbody>
-                {cameras.map((camera) => (
+                {visibleCameras.map((camera) => (
                   <tr key={camera.id}>
                     <td className="console-mono">{camera.id}</td>
                     <td>{camera.location}</td>
@@ -514,6 +544,44 @@ export default function Admin() {
             </table>
           </div>
         </>
+      )}
+      {tab === "cameras" && (
+        <div className="admin-pagination">
+          <span className="console-muted" aria-live="polite">
+            총 {cameras.length}개 중 {cameras.length ? camerasPageStart + 1 : 0}–
+            {Math.min(camerasPageStart + CAMERAS_PAGE_SIZE, cameras.length)}개 표시
+          </span>
+          <nav aria-label="CCTV 목록 페이지">
+            <button
+              disabled={currentCamerasPage === 1}
+              onClick={() => setCamerasPage(currentCamerasPage - 1)}
+            >
+              ‹ 이전
+            </button>
+            {Array.from({ length: camerasPageCount }, (_, index) => index + 1).map(
+              (number) => (
+                <button
+                  key={number}
+                  aria-label={`${number}페이지`}
+                  aria-current={currentCamerasPage === number ? "page" : undefined}
+                  disabled={!cameras.length}
+                  onClick={() => setCamerasPage(number)}
+                >
+                  {number}
+                </button>
+              ),
+            )}
+            <button
+              disabled={currentCamerasPage === camerasPageCount}
+              onClick={() => setCamerasPage(currentCamerasPage + 1)}
+            >
+              다음 ›
+            </button>
+          </nav>
+          <span className="console-muted admin-pagination__signature">
+            FIRIS / ACCESS CONTROL SYSTEM
+          </span>
+        </div>
       )}
       {tab === "reviews" && (
         <>
@@ -609,10 +677,11 @@ export default function Admin() {
           </section>
         </>
       )}
-      <footer className="console-foot">
-        <span>서버 연결 대기 · 변경 사항은 페이지를 나가면 초기화됩니다.</span>
-        <span>FIRIS / ACCESS CONTROL SYSTEM</span>
-      </footer>
+      {tab !== "members" && tab !== "cameras" && (
+        <footer className="console-foot admin-footer">
+          <span>FIRIS / ACCESS CONTROL SYSTEM</span>
+        </footer>
+      )}
       {editor && (
         <Modal
           title={
