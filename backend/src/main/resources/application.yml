@@ -33,6 +33,6 @@ app:
   admin:
     login-id: ${ADMIN_LOGIN_ID:admin}
     password: ${ADMIN_PASSWORD:}
-    name: ${ADMIN_NAME:관리자}
+    name: ${ADMIN_NAME:김진우}
   worker:
     default-password: ${WORKER_DEFAULT_PASSWORD:}
