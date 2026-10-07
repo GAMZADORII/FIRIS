@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import {
   Badge,
   Modal,
@@ -209,12 +209,12 @@ export default function Admin() {
           last: "접속 기록 없음",
         },
       ]);
-      record(`${clean.name} 관제관을 등록했습니다. (샘플)`);
+      record(`${clean.name} 관제관을 등록했습니다.`);
     } else {
       setUsers((prev) =>
         prev.map((user) => (user.id === editor ? { ...user, ...clean } : user)),
       );
-      record(`${clean.name} 계정 정보를 수정했습니다. (샘플)`);
+      record(`${clean.name} 계정 정보를 수정했습니다.`);
     }
     setEditor(null);
   }
@@ -250,11 +250,11 @@ export default function Admin() {
         eyebrow="FIRIS ROOT CONSOLE / SECURE LAYER"
         title="시스템 관리자 통제 센터"
       >
-        <span className="console-muted">◉ 데모 모드 · 서버 연결 대기</span>
+        <span className="console-muted">◉ 서버 연결 대기</span>
         <button
           onClick={() => {
             downloadFile(
-              "FIRIS-demo-backup.json",
+              "FIRIS-backup.json",
               JSON.stringify(
                 { sample: true, users, cameras, reviews },
                 null,
@@ -262,7 +262,7 @@ export default function Admin() {
               ),
               "application/json",
             );
-            record("샘플 설정 백업을 다운로드했습니다.");
+            record("현재 설정 백업을 다운로드했습니다.");
           }}
         >
           ♧ 시스템 설정 백업
@@ -457,7 +457,7 @@ export default function Admin() {
           <section className="console-toolbar">
             <div>
               <h2>CCTV 채널 및 관제 구역 관리</h2>
-              <p>채널별 감지 활성화 설정 · 샘플 스트림</p>
+              <p>채널별 감지 활성화 설정 · 스트림 연결 대기</p>
             </div>
             <Badge tone="amber">
               {cameras.filter((c) => c.enabled).length} / {cameras.length} 활성
@@ -501,7 +501,7 @@ export default function Admin() {
                             ),
                           );
                           record(
-                            `${camera.id} 감지 설정을 변경했습니다. (샘플)`,
+                            `${camera.id} 감지 설정을 변경했습니다.`,
                           );
                         }}
                       >
@@ -551,7 +551,7 @@ export default function Admin() {
                           : r,
                       ),
                     );
-                    record(`${review.id}을 학습 후보로 지정했습니다. (샘플)`);
+                    record(`${review.id}을 학습 후보로 지정했습니다.`);
                   }}
                 >
                   ✓ 학습 후보로 지정
@@ -566,7 +566,7 @@ export default function Admin() {
           <section className="console-toolbar">
             <div>
               <h2>관제 운영 통계</h2>
-              <p>현재 샘플 계정 및 관리 설정을 기준으로 집계합니다.</p>
+              <p>현재 화면의 계정 및 관리 설정을 기준으로 집계합니다.</p>
             </div>
           </section>
           <div className="admin-stats">
@@ -610,7 +610,7 @@ export default function Admin() {
         </>
       )}
       <footer className="console-foot">
-        <span>샘플 데이터 · 변경 사항은 페이지를 나가면 초기화됩니다.</span>
+        <span>서버 연결 대기 · 변경 사항은 페이지를 나가면 초기화됩니다.</span>
         <span>FIRIS / ACCESS CONTROL SYSTEM</span>
       </footer>
       {editor && (
@@ -618,7 +618,7 @@ export default function Admin() {
           title={
             editor === "new" ? "신규 관제관 등록" : "관제관 계정 및 권한 수정"
           }
-          subtitle="PERSONNEL ACCESS MANAGEMENT / DEMO"
+          subtitle="PERSONNEL ACCESS MANAGEMENT"
           onClose={() => setEditor(null)}
         >
           <form onSubmit={saveUser}>
@@ -663,7 +663,7 @@ export default function Admin() {
                 </label>
               )}
               <p className="console-muted">
-                샘플 계정 정보입니다. 실제 계정 생성 및 접근 권한은 변경되지
+                서버 연결 대기 중입니다. 실제 계정 생성 및 접근 권한은 변경되지
                 않습니다.
               </p>
               {error && (
