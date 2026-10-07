@@ -1,4 +1,7 @@
 import unittest
+import cv2
+import tempfile
+from pathlib import Path
 from unittest.mock import patch
 
 import numpy as np
@@ -40,9 +43,12 @@ class Storage:
     def save_metadata(self, metadata):
         self.calls.append(("metadata", metadata["backend_event_id"]))
 
-    def write_video(self, metadata, frames, fps):
+    def write_video(self, metadata, frames, fps, annotated_frames=None):
         self.calls.append(("video", len(frames), fps))
+        self.frames = frames
+        self.annotated_frames = annotated_frames
         metadata["video"] = "/shared/events/local-1/event.mp4"
+        metadata["annotated_video"] = "/shared/events/local-1/event_annotated.mp4"
         return metadata
 
 
@@ -64,6 +70,27 @@ class Publisher:
 
 
 class VideoServiceTest(unittest.TestCase):
+    def test_process_video_generates_both_real_mp4s(self):
+        from app.services.event_service import EventStorage
+        capture = Capture(40)
+        capture.frames = [np.zeros((100, 100, 3), dtype=np.uint8) for _ in capture.frames]
+        def detector(*_args):
+            return {"detected": ["fire"], "probabilities": {"fire": 0.9}, "boxes": [
+                {"label": "fire", "confidence": 0.9, "xyxy": [10, 20, 80, 90]}
+            ]}
+        with tempfile.TemporaryDirectory() as directory, patch(
+            "app.services.video_service.cv2.VideoCapture", return_value=capture
+        ):
+            events = process_video(
+                "sample.mp4", "CAM001", buffer_seconds=2, post_seconds=1,
+                client=Client([]), storage=EventStorage(Path(directory)),
+                detector=detector, publisher=Publisher(),
+            )
+            self.assertEqual(len(events), 1)
+            paths = [events[0][key] for key in ("video", "annotated_video")]
+            self.assertTrue(all(Path(path).is_file() for path in paths))
+        # Storage codec decoding/frame equality is independently tested in EventStorageTest.
+
     def test_snapshot_post_postframes_video_patch_order(self):
         calls = []
         capture = Capture()
@@ -105,6 +132,56 @@ class VideoServiceTest(unittest.TestCase):
                 process_video("sample.mp4", "camera-1", client=FailingClient(calls),
                               storage=Storage(calls), detector=detector, publisher=Publisher())
         self.assertEqual([call[0] for call in calls], ["snapshot", "post"])
+        self.assertTrue(capture.released)
+
+
+    def test_annotated_buffers_match_and_reuse_samples_without_extra_inference(self):
+        calls = []
+        capture = Capture(40)
+        capture.frames = [np.zeros((100, 100, 3), dtype=np.uint8) for _ in capture.frames]
+        storage = Storage(calls)
+        samples = 0
+
+        def detector(*_args):
+            nonlocal samples
+            samples += 1
+            active = samples <= 11
+            return {
+                "detected": ["fire"] if active else [],
+                "probabilities": {"fire": 0.9 if active else 0.0},
+                "boxes": [{"label": "fire", "confidence": 0.9, "xyxy": [10, 20, 80, 90]}] if active else [],
+            }
+
+        with patch("app.services.video_service.cv2.VideoCapture", return_value=capture):
+            events = process_video(
+                "sample.mp4", "CAM001", buffer_seconds=2, post_seconds=1,
+                client=Client(calls), storage=storage, detector=detector, publisher=Publisher(),
+            )
+        self.assertEqual(samples, 20)  # 40 frames at 10fps, sampled at 5fps
+        self.assertEqual(len(events), 1)
+        self.assertEqual(len(storage.frames), len(storage.annotated_frames))
+        original = cv2.imdecode(np.frombuffer(storage.frames[0], dtype=np.uint8), cv2.IMREAD_COLOR)
+        annotated = cv2.imdecode(np.frombuffer(storage.annotated_frames[0], dtype=np.uint8), cv2.IMREAD_COLOR)
+        self.assertLess(int(original[20, 30, 2]), 20)
+        self.assertGreater(int(annotated[20, 30, 2]), 100)
+        # Last frames follow a no-detection sample: old boxes must be cleared.
+        last = cv2.imdecode(np.frombuffer(storage.annotated_frames[-1], dtype=np.uint8), cv2.IMREAD_COLOR)
+        self.assertLess(int(last[20, 30, 2]), 20)
+        self.assertEqual(calls[-1][2], "/shared/events/local-1/event.mp4")
+        self.assertTrue(all(not frame.any() for frame in capture.frames))
+
+    def test_short_input_finishes_both_buffers_at_eof(self):
+        capture = Capture(21)
+        storage = Storage([])
+        def detector(*_args):
+            return {"detected": ["fire"], "probabilities": {"fire": 0.9}, "boxes": []}
+        with patch("app.services.video_service.cv2.VideoCapture", return_value=capture):
+            events = process_video(
+                "short.mp4", "CAM001", post_seconds=5, client=Client([]),
+                storage=storage, detector=detector, publisher=Publisher(),
+            )
+        self.assertEqual(len(events), 1)
+        self.assertEqual(len(storage.frames), len(storage.annotated_frames))
         self.assertTrue(capture.released)
 
 

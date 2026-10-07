@@ -10,12 +10,15 @@ from pathlib import Path
 import cv2
 
 
-ROOT = Path(__file__).resolve().parents[2]
+AI_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = AI_ROOT.parent
 CAMERA_ID = re.compile(r"^[A-Za-z0-9_-]{1,30}$")
 
 
 def live_frame_dir() -> Path:
-    return Path(os.getenv("LIVE_FRAME_DIR") or ROOT / "storage" / "live").resolve()
+    configured = os.getenv("LIVE_FRAME_DIR")
+    path = Path(configured) if configured else PROJECT_ROOT / "storage" / "live"
+    return (path if path.is_absolute() else AI_ROOT / path).resolve()
 
 
 def frame_path(camera_id: str) -> Path:
