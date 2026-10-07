@@ -116,7 +116,6 @@ def predict(image_bytes: bytes, model_name: str = "yolo", threshold: float | Non
                     result.boxes.conf.cpu().numpy(),
                 ):
                     if class_id in (0, 1):
-                        class_id = 1 - class_id  # 학습 라벨 반대라 맞바꿈
                         probabilities[class_id] = max(probabilities[class_id], float(confidence))
                         boxes.append({
                             "label": LABEL_NAMES[class_id],
