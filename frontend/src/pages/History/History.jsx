@@ -12,12 +12,12 @@ import "./History.css";
 const PAGE_SIZE = 3;
 
 const initialEvents = [
-  ["004", "2025-05-18 14:32:01", "화재", "대응 중", "98.4", "김진우"],
-  ["003", "2025-05-18 11:24:18", "연기", "확인 대기", "94.2", "박성민"],
-  ["002", "2025-05-18 09:16:42", "화재", "처리 완료", "96.8", "이하은"],
+  ["004", "2025-05-18 14:32:01", "화재", "미처리", "98.4", "김진우"],
+  ["003", "2025-05-18 11:24:18", "연기", "미처리", "94.2", "박성민"],
+  ["002", "2025-05-18 09:16:42", "화재", "처리완료", "96.8", "이하은"],
   ["001", "2025-05-18 08:03:11", "연기", "오탐", "72.1", "김진우"],
-  ["002", "2025-05-17 17:42:08", "연기", "처리 완료", "91.7", "박성민"],
-  ["001", "2025-05-17 10:15:32", "화재", "처리 완료", "97.3", "이하은"],
+  ["002", "2025-05-17 17:42:08", "연기", "처리완료", "91.7", "박성민"],
+  ["001", "2025-05-17 10:15:32", "화재", "처리완료", "97.3", "이하은"],
 ].map(([id, time, type, status, confidence, person]) => ({
   id: `EVT-${time.slice(0, 10).replaceAll("-", "")}-${id}`,
   time,
@@ -29,13 +29,7 @@ const initialEvents = [
   location: type === "화재" ? "중앙 물류창고 A구역" : "제2 공정 도장라인",
 }));
 const tone = (status) =>
-  status === "대응 중"
-    ? "red"
-    : status === "확인 대기"
-      ? "amber"
-      : status === "처리 완료"
-        ? "green"
-        : "";
+  status === "처리완료" ? "green" : status === "미처리" ? "amber" : "";
 export default function History() {
   const [events, setEvents] = useState(initialEvents);
   const [query, setQuery] = useState("");
@@ -104,13 +98,13 @@ export default function History() {
             "FIRE DETECTED",
           ],
           [
-            "확인 대기",
-            events.filter((e) => e.status === "확인 대기").length,
-            "AWAITING REVIEW",
+            "미처리",
+            events.filter((e) => e.status === "미처리").length,
+            "UNPROCESSED",
           ],
           [
-            "처리 완료",
-            events.filter((e) => e.status === "처리 완료").length,
+            "처리완료",
+            events.filter((e) => e.status === "처리완료").length,
             "RESOLVED",
           ],
         ].map(([label, value, english], i) => (
@@ -163,7 +157,7 @@ export default function History() {
         <label>
           처리 상태
           <select value={status} onChange={(e) => setStatus(e.target.value)}>
-            {["전체", "확인 대기", "대응 중", "처리 완료", "오탐"].map((x) => (
+            {["전체", "미처리", "처리완료", "오탐"].map((x) => (
               <option key={x}>{x}</option>
             ))}
           </select>
@@ -221,7 +215,7 @@ export default function History() {
                 </td>
                 <td>
                   <Badge tone={e.type === "화재" ? "red" : "amber"}>
-                    ◆ {e.type} 감지
+                    {e.type} 감지
                   </Badge>
                 </td>
                 <td>
@@ -273,7 +267,6 @@ export default function History() {
                 key={number}
                 aria-label={`${number}페이지`}
                 aria-current={currentPage === number ? "page" : undefined}
-                className={currentPage === number ? "console-primary" : ""}
                 disabled={!filtered.length}
                 onClick={() => setPage(number)}
               >
@@ -288,14 +281,10 @@ export default function History() {
             다음 ›
           </button>
         </nav>
-      </div>
-      <footer className="console-foot">
-        <span>
-          총 {filtered.length}건 · 변경 사항은 페이지를 나가면
-          초기화됩니다.
+        <span className="console-muted history-pagination__signature">
+          FIRIS / EVENT AUDIT LOG
         </span>
-        <span>FIRIS / EVENT AUDIT LOG</span>
-      </footer>
+      </div>
       {selected && (
         <Modal
           wide
@@ -399,6 +388,12 @@ export default function History() {
               오탐 처리로 변경
             </button>
             <button
+              onClick={() => updateStatus("미처리")}
+              disabled={selected.status === "미처리"}
+            >
+              미처리로 변경
+            </button>
+            <button
               onClick={() =>
                 downloadFile(
                   `${selected.id}.txt`,
@@ -413,10 +408,10 @@ export default function History() {
             <button onClick={() => setSelectedId(null)}>창 닫기</button>
             <button
               className="console-primary"
-              onClick={() => updateStatus("처리 완료")}
-              disabled={selected.status === "처리 완료"}
+              onClick={() => updateStatus("처리완료")}
+              disabled={selected.status === "처리완료"}
             >
-              ✓ 조치 완료 처리
+              ✓ 처리완료로 변경
             </button>
           </footer>
         </Modal>
