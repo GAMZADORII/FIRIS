@@ -297,7 +297,7 @@ GET /api/events/{eventId}
 
 응답은 목록 항목의 필드에 `snapshotPath`, `videoPath`, `preSeconds`, `postSeconds`, `review`를 더한다. `review`는 미검수 시 `null`, 검수 시 `result`, `falsePositiveReason`, `note`, `reviewerId`, `reviewerName`, `reviewedAt`을 포함한다. 경로는 파일 경로일 뿐 브라우저 URL이 아니다.
 
-인증된 미디어 조회: `GET /api/events/{eventId}/snapshot`은 JPEG, `GET /api/events/{eventId}/video`는 MP4를 반환한다. 두 요청 모두 사용자 JWT가 필요하며, 파일이 아직 없거나 공유 저장소에서 읽을 수 없으면 404이다. Backend의 `EVENT_STORAGE_DIR`은 AI와 같은 이벤트 저장소를 가리켜야 한다.
+인증된 미디어 조회: `GET /api/events/{eventId}/snapshot`은 JPEG, `GET /api/events/{eventId}/video`는 원본 MP4, `GET /api/events/{eventId}/video/annotated`는 바운딩 박스 MP4를 반환한다. 세 요청 모두 사용자 JWT가 필요하며, 파일이 아직 없거나 공유 저장소에서 읽을 수 없으면 404이다. 박스 MP4는 저장된 원본 `event.mp4`와 같은 이벤트 폴더의 `event_annotated.mp4`만 조회한다. Backend의 `EVENT_STORAGE_DIR`은 AI와 같은 이벤트 저장소를 가리켜야 한다.
 
 ## 31. Review API
 

@@ -31,24 +31,35 @@ public class EventMediaController {
 
     @GetMapping(value = "/{eventId}/snapshot", produces = MediaType.IMAGE_JPEG_VALUE)
     public ResponseEntity<Resource> snapshot(@PathVariable Long eventId) {
-        return serve(eventId, false);
+        return serve(eventId, "snapshot.jpg");
     }
 
     @GetMapping(value = "/{eventId}/video", produces = "video/mp4")
     public ResponseEntity<Resource> video(@PathVariable Long eventId) {
-        return serve(eventId, true);
+        return serve(eventId, "event.mp4");
     }
 
-    private ResponseEntity<Resource> serve(Long eventId, boolean video) {
+    @GetMapping(value = "/{eventId}/video/annotated", produces = "video/mp4")
+    public ResponseEntity<Resource> annotatedVideo(@PathVariable Long eventId) {
+        return serve(eventId, "event_annotated.mp4");
+    }
+
+    private ResponseEntity<Resource> serve(Long eventId, String fileName) {
         if (!events.existsById(eventId)) throw new ApiException(ErrorCode.EVENT_NOT_FOUND);
         var eventMedia = media.findByEvent_EventId(eventId).orElse(null);
+        boolean video = !fileName.equals("snapshot.jpg");
         var storedPath = eventMedia == null ? null : video ? eventMedia.getVideoPath() : eventMedia.getSnapshotPath();
         if (storedPath == null || storedPath.isBlank()) throw new ApiException(ErrorCode.RESOURCE_NOT_FOUND);
         try {
             var root = storageRoot.toRealPath();
-            var path = Path.of(storedPath).toRealPath();
+            var stored = Path.of(storedPath).toRealPath();
+            if (!stored.getFileName().toString().equals(video ? "event.mp4" : "snapshot.jpg")) {
+                throw new ApiException(ErrorCode.RESOURCE_NOT_FOUND);
+            }
+            var path = video && fileName.equals("event_annotated.mp4")
+                    ? stored.resolveSibling(fileName).toRealPath() : stored;
             if (!path.startsWith(root) || !Files.isRegularFile(path) || !Files.isReadable(path)
-                    || !path.getFileName().toString().equals(video ? "event.mp4" : "snapshot.jpg")) {
+                    || !path.getFileName().toString().equals(fileName)) {
                 throw new ApiException(ErrorCode.RESOURCE_NOT_FOUND);
             }
             return ResponseEntity.ok().cacheControl(CacheControl.noStore())

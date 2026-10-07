@@ -50,13 +50,14 @@ class SharedDetector:
 
 
 def run_camera(camera_id: str, folder: Path, stop: threading.Event, **options) -> None:
+    loop = options.pop('loop', False)
     # The folder is rescanned every round, so new files are picked up without a restart.
     processed: set[Path] = set()
     while not stop.is_set():
         try:
             videos = sorted(
                 p for p in folder.iterdir()
-                if p.is_file() and p.suffix.lower() in VIDEO_EXTENSIONS and p not in processed
+                if p.is_file() and p.suffix.lower() in VIDEO_EXTENSIONS and (loop or p not in processed)
             )
         except OSError:
             log.exception("%s: cannot read %s", camera_id, folder)
@@ -69,7 +70,8 @@ def run_camera(camera_id: str, folder: Path, stop: threading.Event, **options) -
                 return
             log.info("%s -> %s", camera_id, video.name)
             try:
-                process_video(str(video), camera_id, realtime=True, stop=stop, **options)
+                process_video(str(video), camera_id, realtime=True, stop=stop,
+                              emit_events=video not in processed, **options)
                 processed.add(video)
             except Exception:
                 # A broken file or a backend hiccup skips this video, not the whole camera.
@@ -82,6 +84,7 @@ def main() -> None:
     parser.add_argument("--root", help="override VIDEO_STORAGE_DIR; relative to the working directory")
     parser.add_argument("--model", default="yolo")
     parser.add_argument("--sample-fps", type=float, default=3.0)
+    parser.add_argument("--loop", action="store_true", help="repeat camera playlists for continuous demonstrations")
     parser.add_argument("--threshold", type=float, default=None,
                         help="detection confidence cutoff (for example 0.9); default uses model thresholds")
     args = parser.parse_args()
@@ -114,7 +117,7 @@ def main() -> None:
     for sig in (signal.SIGINT, signal.SIGTERM):
         signal.signal(sig, lambda *_: stop.set())
 
-    workers = [threading.Thread(target=run_camera, name=f.name, args=(f.name, f, stop), kwargs=options)
+    workers = [threading.Thread(target=run_camera, name=f.name, args=(f.name, f, stop), kwargs={**options, 'loop': args.loop})
                for f in folders]
     for worker in workers:
         worker.start()

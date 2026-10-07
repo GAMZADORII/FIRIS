@@ -63,6 +63,28 @@ services:
       - ./storage/live:/app/storage/live
     restart: unless-stopped
 
+  ai-worker:
+    build:
+      context: ./ai
+    image: firis-ai:local
+    command: ["python", "-m", "app.services.multi_camera_service", "--model", "yolo", "--sample-fps", "3", "--loop"]
+    environment:
+      BACKEND_URL: http://backend:8080
+      AI_API_KEY: ${AI_API_KEY}
+      AI_MODELS_DIR: /app/model
+      EVENT_STORAGE_DIR: /app/storage/events
+      LIVE_FRAME_DIR: /app/storage/live
+      VIDEO_STORAGE_DIR: /app/storage/videos
+    volumes:
+      - ./ai/model:/app/model:ro
+      - ./storage/videos:/app/storage/videos:ro
+      - ./storage/events:/app/storage/events
+      - ./storage/live:/app/storage/live
+    depends_on:
+      - backend
+      - ai
+    restart: unless-stopped
+
 
   frontend:
     build:

@@ -180,7 +180,7 @@ body {
 	flex: 1 1 auto;
 	gap: 8px;
 	grid-template-columns: minmax(0, 1fr);
-	grid-template-rows: minmax(142px, 1.5fr) repeat(4, minmax(0, 1fr));
+	grid-template-rows: repeat(5, minmax(0, 1fr)) minmax(90px, 1.6fr);
 	min-height: 0;
 }
 

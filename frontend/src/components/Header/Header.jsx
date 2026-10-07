@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { clearSession } from '../../api/client.js';
 import firisLogo from '../../assets/images/firis-logo.png';
 import './Header.css';
 
@@ -10,6 +11,7 @@ const navigationItems = [
 ];
 
 export default function Header({ user = null }) {
+  const navigate = useNavigate();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const notificationRef = useRef(null);
   const notificationButtonRef = useRef(null);
@@ -46,7 +48,7 @@ export default function Header({ user = null }) {
         <img src={firisLogo} alt="FIRIS" />
       </NavLink>
       <nav className="app-header__navigation" aria-label="주요 메뉴">
-        {navigationItems.map(({ to, label }) => (
+        {navigationItems.filter(({ to }) => to !== '/admin' || user?.role === 'ADMIN').map(({ to, label }) => (
           <NavLink
             key={to}
             to={to}
@@ -89,9 +91,10 @@ export default function Header({ user = null }) {
           )}
         </div>
         <div className="app-header__user">
-          <span className="app-header__avatar" aria-hidden="true">{(user?.name || '김진우').slice(0, 1)}</span>
-          <div><strong>{user?.name || '김진우'}</strong><small>{user?.name ? '로그인 사용자' : '미연결 계정'}</small></div>
+          <span className="app-header__avatar" aria-hidden="true">{(user?.name || '?').slice(0, 1)}</span>
+          <div><strong>{user?.name || '사용자'}</strong><small>{user?.role === 'ADMIN' ? '관리자' : '작업자'}</small></div>
         </div>
+        <button type="button" onClick={() => { clearSession(); navigate('/login', { replace: true }); }}>로그아웃</button>
       </div>
     </header>
   );

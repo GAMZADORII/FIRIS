@@ -1,13 +1,13 @@
 # FIRIS 요구사항
 
-> 현재 Backend 구현 범위: health check, AI 이벤트 생성·미디어 갱신 및 CAMERA/FIRE_EVENT/EVENT_MEDIA 매핑. [구현·검증 안내](AI_EVENT_IMPLEMENTATION.md)를 함께 확인한다. 금빈님 계정/JWT 및 MySQL 설정이 dev에 병합되어 이 브랜치에도 포함된다.
+> 현재 실행 범위와 남은 현장 검증은 [AI 연동 안내](AI_INTEGRATION.md)를 함께 확인한다.
 
 
 기준: [PROJECT_CONTEXT](PROJECT_CONTEXT.md). 설계 변경은 팀 합의 → 문서 → 코드 순서로 진행한다.
 
 ## 문서 상태 구분
 
-- **현재 실행 상태**: AI 이벤트 생성·미디어 갱신과 Backend 이벤트 이력·상세·검수·미디어 조회 API가 있다. Frontend의 이벤트 API 연동은 디자인 작업 이후 진행한다. 로컬 MySQL에서 이벤트 조회·미디어 조회를 수동 확인했고, 자동 DB 통합 테스트는 별도 전용 DB가 있을 때만 실행한다.
+- **현재 실행 상태**: AI 영상 분석·이벤트 생성/미디어 갱신, Backend 로그인·카메라·이벤트·검수·미디어 API, Frontend의 JWT 로그인·관제·이력·관리자 연결이 있다. 로컬 영상 1개로 AI→Backend→미디어 조회를 확인했다. Docker와 4개 영상 브라우저 시연은 아직 검증하지 않았다.
 - **최종 합의**: 앞으로 구현할 요구사항이다. 현재 구현 여부와 구분한다.
 - **예시**: JSON의 비밀번호·ID·파일명, 탐지 수치 등 설명용 값이다. 실제 설정으로 확정하지 않는다.
 - **확인 필요**: 담당자와 합의 후 문서에 반영할 사항이다. 임의 구현하지 않는다.
@@ -16,9 +16,7 @@
 
 ## 구현 단계와 최종 범위
 
-**초기 뼈대 이후 AI 이벤트 생성·미디어 갱신 구현을 시작했다. JWT 인증과 작업자/관리자 Backend 기능은 금빈님 PR 병합으로 dev에 포함됐다.**
-현재 AI GET /health·단일 이미지 추론·영상 시간 창 판정과 Backend 이벤트 호출 코드, Backend GET /api/health 및 POST /api/ai/events·PATCH /api/ai/events/{eventId}/media, Frontend 네 페이지 placeholder와 라우팅이 있다. 실제 모델·MySQL·CCTV 통합 검증은 아직 필요하다.
-이번 작업은 이벤트 관련 세 Entity와 두 AI 수신 API에 한정한다. 운영 테이블/시드, 학습/추론, 조회/검수 UI, 배포 구성은 별도 작업이다.
+초기 뼈대 이후 AI 영상 판정·멀티카메라 worker, Backend 이벤트/계정/카메라 API, Frontend 네 주요 화면의 API 연결을 구현했다. CAM001~CAM004는 Backend 시작 시 없으면 등록한다. Docker의 4채널 실영상·브라우저 전체 시연과 모델 정확도 검증은 남아 있다.
 
 ## 목적 및 일정
 
@@ -40,8 +38,7 @@
 
 ## Camera
 
-CCTV는 camera-1 등 ID를 가진 고정 Reference Data이다. 추가·수정·삭제 기능은 없다.
-카메라 이름, 위치, 스트림 URL을 관리하며 상태는 ONLINE/OFFLINE이다. 현재 시드는 생성하지 않는다.
+CCTV는 CAM001~CAM004를 시연용 기본 ID로 사용하며 Backend 시작 시 없으면 등록한다. 이름, 위치, 스트림 URL과 ONLINE/OFFLINE 상태를 보관한다. 확장용 등록 API는 있으나 시연 화면은 조회만 제공한다.
 
 ## AI 및 이벤트
 
@@ -85,7 +82,7 @@ History Table에는 ID, Snapshot Thumbnail, 발생 시간, CCTV, 위치, 유형,
 검수 UI에는 실제 화재/오탐 선택과 사유·Note 입력을 둔다.
 White 약 80%, Gray 약 15%, Red 약 5%의 산업용 안전 관제 디자인을 지향한다.
 Red는 경고/Primary Button/유형 강조/선택 메뉴/위험 Border/중요 Badge에 사용한다.
-현재 placeholder에는 위 UI와 인증·권한 동작이 구현되어 있지 않다.
+현재 1차 연동 화면에는 JWT 인증·권한, AI JPEG 4분할, 이벤트 목록·상세·검수, 작업자 관리가 연결되어 있다. 위험 알림 Toast, 유형별 상세 통계, 학습 후보 지정 API/화면은 아직 구현되지 않았다.
 
 ## 최종 제외 기능
 

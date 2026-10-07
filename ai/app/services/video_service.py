@@ -32,6 +32,7 @@ def process_video(source: str | int, camera_id: str, model: str = "yolo",
                   storage: EventStorage | None = None,
                   detector=None, publisher: LiveFramePublisher | None = None,
                   realtime: bool = False,
+                  emit_events: bool = True,
                   stop: threading.Event | None = None) -> list[dict]:
     if not camera_id or buffer_seconds < 0 or post_seconds < 0:
         raise ValueError("camera_id is required and buffer durations must be nonnegative")
@@ -112,7 +113,7 @@ def process_video(source: str | int, camera_id: str, model: str = "yolo",
                 if timestamp - pending["timestamp"] >= post_seconds:
                     finish_event()
 
-            if not sampled:
+            if not sampled or not emit_events:
                 continue
             result = latest_result
             confirmation = validator.observe(timestamp, result)

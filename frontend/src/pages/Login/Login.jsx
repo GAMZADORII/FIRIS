@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { apiClient, apiError, getSession, saveSession } from "../../api/client.js";
 import logo from "../../assets/images/firis-logo.png";
 import loginImage from "../../assets/images/login.png";
 import "./Login.css";
@@ -42,20 +44,34 @@ function LoginIcon({ type, ...props }) {
   );
 }
 
-export default function Login() {
+export default function Login({ changePassword = false }) {
+  const navigate = useNavigate();
   const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState("");
-  function handleSubmit(event) {
+  const [nextPassword, setNextPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  async function handleSubmit(event) {
     event.preventDefault();
-    if (!loginId.trim() || !password.trim()) {
-      setMessage("로그인 ID와 비밀번호를 입력해 주세요.");
-      return;
+    setBusy(true);
+    setMessage('');
+    try {
+      if (changePassword) {
+        await apiClient.patch('/api/auth/password', { currentPassword: password, newPassword: nextPassword });
+        const session = getSession();
+        saveSession({ ...session, account: { ...session.account, mustChangePassword: false } });
+        navigate('/dashboard', { replace: true });
+      } else {
+        const { data } = await apiClient.post('/api/auth/login', { loginId: loginId.trim(), password });
+        saveSession(data);
+        navigate(data.account.mustChangePassword ? '/change-password' : '/dashboard', { replace: true });
+      }
+    } catch (error) {
+      setMessage(apiError(error));
+    } finally {
+      setBusy(false);
     }
-    setMessage(
-      "로그인 서비스 연결 대기 중입니다.",
-    );
   }
   return (
     <main className="login-page">
@@ -69,7 +85,7 @@ export default function Login() {
               AI 기반 화재 감지 및 통합 관제 시스템
             </span>
           </div>
-          <span className="login-statusbar__mode">연결 대기</span>
+          <span className="login-statusbar__mode">{changePassword ? '비밀번호 변경' : '계정 로그인'}</span>
         </header>
         <div className="login-layout">
           <section
@@ -126,11 +142,11 @@ export default function Login() {
             </div>
             <div className="login-access__intro">
               <p className="login-eyebrow">OPERATOR ACCESS</p>
-              <h1 id="login-title">통합관제 접속</h1>
-              <p>발급받은 계정으로 FIRIS에 로그인하세요.</p>
+              <h1 id="login-title">{changePassword ? '첫 로그인 비밀번호 변경' : '통합관제 접속'}</h1>
+              <p>{changePassword ? '새 비밀번호를 설정한 뒤 관제 화면을 이용할 수 있습니다.' : '발급받은 계정으로 FIRIS에 로그인하세요.'}</p>
             </div>
             <form className="login-form" onSubmit={handleSubmit}>
-              <label htmlFor="login-id">로그인 ID</label>
+              {!changePassword && <><label htmlFor="login-id">로그인 ID</label>
               <div className="login-input">
                 <LoginIcon type="user" />
                 <input
@@ -146,8 +162,8 @@ export default function Login() {
                     setMessage("");
                   }}
                 />
-              </div>
-              <label htmlFor="login-password">비밀번호</label>
+              </div></>}
+              <label htmlFor="login-password">{changePassword ? '현재 비밀번호' : '비밀번호'}</label>
               <div className="login-input">
                 <LoginIcon type="lock" />
                 <input
@@ -175,6 +191,7 @@ export default function Login() {
                   <LoginIcon type="eye" />
                 </button>
               </div>
+              {changePassword && <><label htmlFor="new-password">새 비밀번호</label><div className="login-input"><LoginIcon type="lock" /><input id="new-password" type="password" required minLength={6} value={nextPassword} onChange={(e) => setNextPassword(e.target.value)} autoComplete="new-password" /></div></>}
               <p className="login-account-help">
                 계정 발급 및 비밀번호 초기화는 관리자에게 문의하세요.
               </p>
@@ -183,8 +200,8 @@ export default function Login() {
                   {message}
                 </p>
               )}
-              <button type="submit" className="login-submit">
-                <LoginIcon type="power" /> 로그인 <span>SYSTEM ACCESS</span>
+              <button type="submit" className="login-submit" disabled={busy}>
+                <LoginIcon type="power" /> {changePassword ? '비밀번호 변경' : '로그인'} <span>SYSTEM ACCESS</span>
               </button>
             </form>
             <div className="login-access__footer">

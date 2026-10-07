@@ -1,6 +1,6 @@
 # FIRIS
 AI 기반 화재·연기 조기 감지 관제 서비스. AI / Backend / Frontend를 하나의 Repository에서 독립적으로 개발한다.
-현재 AI 탐지·Backend 이벤트 저장과 사용자 이벤트 이력·검수 API가 있다. Frontend 연동은 디자인 작업 이후 진행한다. [AI 연동 검증](docs/AI_INTEGRATION.md)을 참고한다.
+현재 AI 탐지·Backend 이벤트 저장과 프론트엔드의 로그인·카메라 분석 화면·이벤트 이력/검수 연동이 있다. [AI 연동 검증](docs/AI_INTEGRATION.md)을 참고한다.
 
 ## 구조
 ```text
@@ -21,7 +21,7 @@ FIRIS/
 | --- | --- | --- |
 | AI | Python, FastAPI, OpenCV, PyTorch/YOLO 추론 및 이벤트 파일 저장 | 실영상 임계값 검증·운영 연동 |
 | Backend | Java 17, Spring Boot 3.5, Gradle Wrapper, Web/JPA/Security/Validation, MySQL·JWT·이벤트 조회/검수 API | 관제 통계와 추가 운영 기능 |
-| Frontend | React, Vite, JavaScript, Axios, React Router, 화면 디자인 | Backend API 연동 |
+| Frontend | React, Vite, JavaScript, Axios, React Router, JWT 및 관제 API 연결 | 현장 시연·화면 조정 |
 
 ## 실행
 각각 별도 터미널에서 루트 기준으로 실행한다. 첫 설치에는 인터넷이 필요하다.
@@ -36,6 +36,8 @@ python -m pip install -r requirements.txt
 python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 `curl http://localhost:8000/health` → `{"status":"ok"}`.
+
+영상 자동 분석은 별도 터미널에서 `cd ai && .venv/bin/python -m app.services.multi_camera_service --model yolo --sample-fps 3 --loop`로 실행한다. 원본 영상은 `storage/videos/CAM001`~`CAM004`에 넣는다. Docker Compose는 `ai-worker`를 별도 서비스로 실행한다. 자세한 준비물과 검증 순서는 [AI 연동 안내](docs/AI_INTEGRATION.md)에 있다.
 
 ### Backend
 ```bash
@@ -56,9 +58,8 @@ http://localhost:5173 에서 `/login`, `/dashboard`, `/history`, `/admin` 확인
 파트별 설정/Windows 안내는 각 폴더의 README를 참고한다.
 
 ## 환경변수 및 파일
-`.env`는 커밋하지 않고 `.env.example`만 관리한다. 기본 실행에는 `.env`가 필요 없다.
-Backend/Frontend는 필요 시 해당 폴더의 예제를 `.env`로 복사한다.
-루트 예제는 안내용이며 공통 자동 로더는 없다. AI 서버 환경변수는 향후 연동용이다. Backend JWT_SECRET은 사용자 인증에, AI_API_KEY는 AI 수신 API에 사용한다.
+`.env`는 커밋하지 않고 `.env.example`만 관리한다. 통합 시연에는 루트 Compose용 `.env`와 AI/Backend가 사용할 환경변수가 필요하다.
+로컬 실행은 `ai/.env`와 `backend/.env`를 각 예제를 참고해 설정한다. 루트 예제는 안내용이며 세 파트의 자동 공통 로더는 아니다. Backend JWT_SECRET은 사용자 인증에, AI_API_KEY는 AI 수신 API에 사용한다.
 VITE_ 환경변수에 비밀 값을 넣지 않는다.
 모델 weight와 이벤트 영상/이미지는 Git에서 제외하며 필요한 빈 폴더는 `.gitkeep`으로 유지한다.
 
@@ -72,7 +73,7 @@ VITE_ 환경변수에 비밀 값을 넣지 않는다.
 - [API_SPEC](docs/API_SPEC.md): 현재 health check와 향후 이벤트 API
 
 **기능 구현 전 문서를 먼저 확인한다. 설계 변경은 팀 합의 후 코드보다 먼저 문서에 반영한다.**
-실제 CCTV·모델·MySQL 통합 검증, CAMERA 초기 데이터, 이벤트 조회·검수, Dashboard UI, 배포 구성은 후속 작업이다. 최종 제외 기능은 REQUIREMENTS의 별도 목록을 따른다.
+카메라 초기 등록과 이벤트 조회·검수, Dashboard API 연결은 구현했다. 4개 실제 영상과 Docker·브라우저를 함께 사용한 현장 시연, RTSP와 모델 정확도 검증은 후속 작업이다. 최종 제외 기능은 REQUIREMENTS의 별도 목록을 따른다.
 
 ## Git branch 전략
 | Branch | 용도 |

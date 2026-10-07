@@ -28,6 +28,7 @@ app:
   event:
     storage-directory: ${EVENT_STORAGE_DIR:../storage/events}
   camera:
+    base-url: ${CAMERA_BASE_URL:http://localhost:8080}
     video-directory: ${CAMERA_VIDEO_DIRECTORY:../storage/videos}
   admin:
     login-id: ${ADMIN_LOGIN_ID:admin}
