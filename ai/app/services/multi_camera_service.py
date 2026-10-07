@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import signal
 import threading
 from pathlib import Path
@@ -14,6 +15,19 @@ from dotenv import load_dotenv
 from app.services.backend_client import BackendEventClient
 from app.services.live_frame_service import CAMERA_ID
 from app.services.video_service import process_video
+
+AI_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = AI_ROOT.parent
+
+
+def video_storage_dir(root: str | None = None) -> Path:
+    """CLI paths use the working directory; env paths are relative to ai/."""
+    if root is not None:
+        return Path(root).resolve()
+    configured = os.getenv("VIDEO_STORAGE_DIR")
+    path = Path(configured) if configured else PROJECT_ROOT / "storage" / "videos"
+    return (path if path.is_absolute() else AI_ROOT / path).resolve()
+
 
 VIDEO_EXTENSIONS = {".mp4", ".avi", ".mov", ".mkv"}
 MAX_CAMERAS = 4
@@ -65,7 +79,7 @@ def run_camera(camera_id: str, folder: Path, stop: threading.Event, **options) -
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Analyze several video folders as parallel cameras")
-    parser.add_argument("--root", default="videos", help="folder with one subfolder per camera id")
+    parser.add_argument("--root", help="override VIDEO_STORAGE_DIR; relative to the working directory")
     parser.add_argument("--model", default="yolo")
     parser.add_argument("--sample-fps", type=float, default=3.0)
     parser.add_argument("--threshold", type=float, default=None,
@@ -76,9 +90,9 @@ def main() -> None:
         parser.error("--threshold must be between 0 and 1")
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(threadName)s] %(message)s")
-    load_dotenv(Path(__file__).resolve().parents[2] / ".env")
+    load_dotenv(AI_ROOT / ".env")
 
-    root = Path(args.root)
+    root = video_storage_dir(args.root)
     folders = sorted(p for p in root.iterdir() if p.is_dir()) if root.is_dir() else []
     invalid = [p.name for p in folders if not CAMERA_ID.fullmatch(p.name)]
     if not folders or invalid or len(folders) > MAX_CAMERAS:

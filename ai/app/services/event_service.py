@@ -10,13 +10,19 @@ import cv2
 import numpy as np
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-EVENT_STORAGE = Path(os.getenv("EVENT_STORAGE_DIR") or PROJECT_ROOT / "storage" / "events").resolve()
+AI_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = AI_ROOT.parent
+
+
+def event_storage_dir() -> Path:
+    configured = os.getenv("EVENT_STORAGE_DIR")
+    path = Path(configured) if configured else PROJECT_ROOT / "storage" / "events"
+    return (path if path.is_absolute() else AI_ROOT / path).resolve()
 
 
 class EventStorage:
-    def __init__(self, root: Path = EVENT_STORAGE):
-        self.root = root
+    def __init__(self, root: Path | None = None):
+        self.root = Path(root).resolve() if root is not None else event_storage_dir()
         self.root.mkdir(parents=True, exist_ok=True)
 
     def save_snapshot(self, frame, detection: dict) -> dict:
@@ -30,6 +36,7 @@ class EventStorage:
             "event_id": event_id,
             "snapshot": str(snapshot),
             "video": None,
+            "annotated_video": None,
             "detection": detection,
         }
         self.save_metadata(metadata)
@@ -41,26 +48,44 @@ class EventStorage:
         temporary.write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
         temporary.replace(event_dir / "event.json")
 
-    def write_video(self, metadata: dict, frames: list[bytes], fps: float) -> dict:
+    def write_video(self, metadata: dict, frames: list[bytes], fps: float,
+                    annotated_frames: list[bytes] | None = None) -> dict:
         if not frames or fps <= 0:
             raise ValueError("Video needs frames and a positive FPS")
+        if annotated_frames is not None and len(annotated_frames) != len(frames):
+            raise ValueError("Original and annotated videos must have matching frame counts")
         event_dir = Path(metadata["snapshot"]).parent
         video = event_dir / "event.mp4"
+        self._write_mp4(video, frames, fps)
+        metadata["video"] = str(video)
+        if annotated_frames is not None:
+            annotated_video = event_dir / "event_annotated.mp4"
+            self._write_mp4(annotated_video, annotated_frames, fps)
+            metadata["annotated_video"] = str(annotated_video)
+        self.save_metadata(metadata)
+        return metadata
+
+    @staticmethod
+    def _write_mp4(video: Path, frames: list[bytes], fps: float) -> None:
         first = cv2.imdecode(np.frombuffer(frames[0], dtype=np.uint8), cv2.IMREAD_COLOR)
         if first is None:
             raise ValueError("Buffered video frame is not a valid JPEG")
         height, width = first.shape[:2]
-        writer = cv2.VideoWriter(str(video), cv2.VideoWriter_fourcc(*"mp4v"), fps, (width, height))
+        temporary = video.with_name(video.stem + ".tmp.mp4")
+        writer = cv2.VideoWriter(str(temporary), cv2.VideoWriter_fourcc(*"mp4v"), fps, (width, height))
         if not writer.isOpened():
+            temporary.unlink(missing_ok=True)
             raise RuntimeError("Failed to open event video")
         try:
-            for packed_frame in frames:
-                buffered_frame = cv2.imdecode(np.frombuffer(packed_frame, dtype=np.uint8), cv2.IMREAD_COLOR)
-                if buffered_frame is None or buffered_frame.shape[:2] != (height, width):
-                    raise ValueError("Buffered video frames must have one valid image size")
-                writer.write(buffered_frame)
-        finally:
-            writer.release()
-        metadata["video"] = str(video)
-        self.save_metadata(metadata)
-        return metadata
+            try:
+                for packed_frame in frames:
+                    buffered_frame = cv2.imdecode(np.frombuffer(packed_frame, dtype=np.uint8), cv2.IMREAD_COLOR)
+                    if buffered_frame is None or buffered_frame.shape[:2] != (height, width):
+                        raise ValueError("Buffered video frames must have one valid image size")
+                    writer.write(buffered_frame)
+            finally:
+                writer.release()
+            temporary.replace(video)
+        except Exception:
+            temporary.unlink(missing_ok=True)
+            raise

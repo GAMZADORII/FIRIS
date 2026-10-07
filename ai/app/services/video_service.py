@@ -15,7 +15,7 @@ import cv2
 from dotenv import load_dotenv
 
 from app.services.backend_client import BackendEventClient
-from app.services.live_frame_service import LiveFramePublisher, frame_path
+from app.services.live_frame_service import LiveFramePublisher, annotate
 from app.services.temporal_service import TemporalValidator
 
 if TYPE_CHECKING:
@@ -53,6 +53,8 @@ def process_video(source: str | int, camera_id: str, model: str = "yolo",
     effective_sample_fps = min(sample_fps, fps)
     validator = TemporalValidator(window_seconds, effective_sample_fps, required_ratio)
     pre_frames = deque(maxlen=max(1, ceil(fps * buffer_seconds)))
+    pre_annotated_frames = deque(maxlen=pre_frames.maxlen)
+    latest_result = {"detected": [], "probabilities": {}, "boxes": []}
     live = isinstance(source, int) or str(source).startswith(("rtsp://", "http://", "https://"))
     started = time.monotonic()
     next_sample_at = 0.0
@@ -64,7 +66,10 @@ def process_video(source: str | int, camera_id: str, model: str = "yolo",
         nonlocal pending
         if pending is None:
             return
-        metadata = storage.write_video(pending["metadata"], pending["frames"], fps)
+        metadata = storage.write_video(
+            pending["metadata"], pending["frames"], fps,
+            annotated_frames=pending["annotated_frames"],
+        )
         actual_post = round(max(0.0, pending["last_timestamp"] - pending["timestamp"]))
         client.update_media(pending["backend_id"], metadata["video"], pending["pre_seconds"], actual_post)
         events.append(metadata)
@@ -85,19 +90,31 @@ def process_video(source: str | int, camera_id: str, model: str = "yolo",
             if not encoded:
                 continue
             packed_frame = jpeg.tobytes()
+            sampled = timestamp + 1e-9 >= next_sample_at
+            if sampled:
+                next_sample_at = timestamp + 1 / effective_sample_fps
+                latest_result = detector(packed_frame, model, threshold)
+                publisher.publish(camera_id, frame, latest_result)
+            # Reuse the latest inference between samples; never run extra inference.
+            annotated_ok, annotated_jpeg = cv2.imencode(
+                ".jpg", annotate(frame, latest_result), [cv2.IMWRITE_JPEG_QUALITY, 85]
+            )
+            if not annotated_ok:
+                raise RuntimeError("Failed to encode annotated event frame")
+            packed_annotated = annotated_jpeg.tobytes()
             pre_frames.append(packed_frame)
+            pre_annotated_frames.append(packed_annotated)
 
             if pending is not None:
                 pending["frames"].append(packed_frame)
+                pending["annotated_frames"].append(packed_annotated)
                 pending["last_timestamp"] = timestamp
                 if timestamp - pending["timestamp"] >= post_seconds:
                     finish_event()
 
-            if timestamp + 1e-9 < next_sample_at:
+            if not sampled:
                 continue
-            next_sample_at = timestamp + 1 / effective_sample_fps
-            result = detector(packed_frame, model, threshold)
-            publisher.publish(camera_id, frame, result)
+            result = latest_result
             confirmation = validator.observe(timestamp, result)
             if confirmation is None or pending is not None:
                 continue
@@ -122,6 +139,7 @@ def process_video(source: str | int, camera_id: str, model: str = "yolo",
                 "last_timestamp": timestamp,
                 "pre_seconds": round(max(0.0, (len(pre_frames) - 1) / fps)),
                 "frames": list(pre_frames),
+                "annotated_frames": list(pre_annotated_frames),
             }
             if post_seconds == 0:
                 finish_event()
