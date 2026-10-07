@@ -35,8 +35,8 @@ services:
       CAMERA_VIDEO_DIRECTORY: /app/storage/videos
       EVENT_STORAGE_DIR: /app/storage/events
     volumes:
-      - ./backend/storage/videos:/app/storage/videos:ro
-      - ./ai/storage/events:/app/storage/events:ro
+      - ./storage/videos:/app/storage/videos:ro
+      - ./storage/events:/app/storage/events:ro
     depends_on:
       mysql:
         condition: service_healthy
@@ -55,10 +55,12 @@ services:
       AI_MODELS_DIR: /app/model
       EVENT_STORAGE_DIR: /app/storage/events
       LIVE_FRAME_DIR: /app/storage/live
+      VIDEO_STORAGE_DIR: /app/storage/videos
     volumes:
       - ./ai/model:/app/model:ro
-      - ./ai/storage/events:/app/storage/events
-      - ./ai/storage/live:/app/storage/live
+      - ./storage/videos:/app/storage/videos:ro
+      - ./storage/events:/app/storage/events
+      - ./storage/live:/app/storage/live
     restart: unless-stopped
 
 
