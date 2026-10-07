@@ -70,6 +70,25 @@ class Publisher:
 
 
 class VideoServiceTest(unittest.TestCase):
+    def test_repeat_playback_updates_live_frames_without_new_event(self):
+        calls = []
+        capture = Capture(30)
+
+        class TrackingPublisher:
+            def publish(self, camera_id, frame, detection):
+                calls.append(("frame", camera_id))
+
+        def detector(*_args):
+            return {"detected": ["fire"], "probabilities": {"fire": 0.9}, "boxes": []}
+
+        with patch("app.services.video_service.cv2.VideoCapture", return_value=capture):
+            result = process_video("sample.mp4", "CAM001", emit_events=False,
+                                   client=Client(calls), storage=Storage(calls),
+                                   detector=detector, publisher=TrackingPublisher())
+        self.assertEqual(result, [])
+        self.assertTrue(calls)
+        self.assertTrue(all(call[0] == "frame" for call in calls))
+
     def test_process_video_generates_both_real_mp4s(self):
         from app.services.event_service import EventStorage
         capture = Capture(40)

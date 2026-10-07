@@ -32,4 +32,20 @@ class EventMediaControllerTest {
         when(row.getSnapshotPath()).thenReturn(outside.toString());
         assertThatThrownBy(() -> controller.snapshot(7L)).isInstanceOf(ApiException.class);
     }
+
+    @Test void servesAnnotatedVideoOnlyBesideRecordedOriginal() throws Exception {
+        var events = mock(FireEventRepository.class);
+        var media = mock(EventMediaRepository.class);
+        var row = mock(EventMedia.class);
+        when(events.existsById(8L)).thenReturn(true);
+        when(media.findByEvent_EventId(8L)).thenReturn(Optional.of(row));
+        var folder = Files.createDirectory(root.resolve("event-2"));
+        var original = Files.writeString(folder.resolve("event.mp4"), "original");
+        var annotated = Files.writeString(folder.resolve("event_annotated.mp4"), "annotated");
+        when(row.getVideoPath()).thenReturn(original.toString());
+        var controller = new EventMediaController(events, media, root.toString());
+        assertThat(controller.annotatedVideo(8L).getBody().getFile().toPath()).isEqualTo(annotated);
+        Files.delete(annotated);
+        assertThatThrownBy(() -> controller.annotatedVideo(8L)).isInstanceOf(ApiException.class);
+    }
 }

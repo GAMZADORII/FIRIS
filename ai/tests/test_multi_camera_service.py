@@ -82,6 +82,23 @@ class MultiCameraServiceTest(unittest.TestCase):
             with patch.dict(os.environ, {"VIDEO_STORAGE_DIR": directory}):
                 self.assertEqual(video_storage_dir(), Path(directory).resolve())
 
+    def test_loop_restarts_playlist_after_last_video(self):
+        stop = threading.Event()
+        calls = []
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            (folder / "001.mp4").touch()
+            (folder / "002.mp4").touch()
+
+            def process(source, _camera_id, **options):
+                calls.append((Path(source).name, options['emit_events']))
+                if len(calls) == 3:
+                    stop.set()
+
+            with patch("app.services.multi_camera_service.process_video", side_effect=process):
+                run_camera("CAM001", folder, stop, loop=True)
+        self.assertEqual(calls, [("001.mp4", True), ("002.mp4", True), ("001.mp4", False)])
+
     def test_real_videos_continue_updating_one_camera_frame(self):
         stop = threading.Event()
         calls = []

@@ -7,7 +7,7 @@
 
 ## 문서 상태 구분
 
-- **현재 실행 상태**: AI 이벤트 생성·미디어 갱신과 최신 박스 JPEG 조회, Backend 이벤트 이력·상세·검수·미디어 조회 API가 있다. Frontend와 이벤트 API의 연결은 디자인 작업 이후 진행한다. 실제 RTSP는 아직 검증하지 않았다.
+- **현재 실행 상태**: AI 이벤트 생성·미디어 갱신과 최신 박스 JPEG 조회, Backend 이벤트 이력·상세·검수·미디어 조회 API가 있다. Frontend는 JWT 로그인, 카메라 분석 JPEG, 이벤트 조회·검수, 작업자 관리를 호출한다. 실제 RTSP와 전체 Docker 시연은 아직 검증하지 않았다.
 - **최종 합의**: 앞으로 구현할 요구사항이다. 현재 구현 여부와 구분한다.
 - **예시**: JSON의 비밀번호·ID·파일명, 탐지 수치 등 설명용 값이다. 실제 설정으로 확정하지 않는다.
 - **확인 필요**: 담당자와 합의 후 문서에 반영할 사항이다. 임의 구현하지 않는다.
@@ -38,9 +38,9 @@ VS Code는 WSL: Ubuntu 연결을 권장한다. Frontend 담당자는 Windows도 
 | backend/.../event | 향후 위험 이벤트와 미디어 경로 |
 | backend/.../review | 향후 이벤트 최종 검수 |
 | backend/.../statistics | 향후 관제 집계 |
-| frontend/src/api | Axios 클라이언트 및 향후 API 호출 |
+| frontend/src/api | Axios 클라이언트, JWT·미디어 요청 |
 | frontend/src/components, layouts | 향후 공통 컴포넌트 및 화면 배치 |
-| frontend/src/pages | Login, Dashboard, History, Admin placeholder |
+| frontend/src/pages | Login, Dashboard, History, Admin 화면·API 연결 |
 | frontend/src/hooks, utils | 향후 공통 hooks 및 유틸리티 |
 | docs | 구현에 앞서 확인·변경하는 개발 기준 문서 |
 
@@ -94,10 +94,10 @@ AI API Key 인증과 이벤트 저장·미디어 갱신 및 세 Entity는 구현
 - AI: FastAPI/Uvicorn, 8000 포트. 모델 추론과 영상 시간 창 판정·Backend 호출, 박스 JPEG 발행 코드가 있다. 로컬 AVI에서 YOLO 추론과 Backend/MySQL 이벤트 저장을 확인했다. 실제 CCTV RTSP 검증은 아직 없다.
 - Backend: Java 17, Spring Boot, Gradle Wrapper, 8080 포트.
 - Spring Web/JPA/Security/Validation과 MySQL 런타임 드라이버를 포함한다. 이벤트 API DB 통합 테스트는 별도 MySQL 테스트 DB에서 선택적으로 실행한다.
-- `ddl-auto`는 dev 기본값 update이며 SQL 초기화는 비활성화되어 있다. ACCOUNT, CAMERA 및 FIRE_EVENT/EVENT_MEDIA/EVENT_REVIEW Entity가 있고 관리자 계정은 최초 시작 시 생성된다. CAMERA 시드는 아직 없다. MySQL 통합 테스트만 전용 firis_test DB에서 create-drop을 사용한다.
+- `ddl-auto`는 dev 기본값 update이며 SQL 초기화는 비활성화되어 있다. ACCOUNT, CAMERA 및 FIRE_EVENT/EVENT_MEDIA/EVENT_REVIEW Entity가 있고 관리자 계정은 최초 시작 시 생성된다. CAMERA의 CAM001~CAM004는 없을 때 자동 등록된다. MySQL 통합 테스트만 전용 firis_test DB에서 create-drop을 사용한다.
 - 공통 Spring Security 설정에는 사용자 JWT·역할 권한이 있다. 별도 우선순위 체인이 /api/ai/**의 API Key를 검증한다. GET /api/health는 공개된다.
-- Frontend: React/Vite/JavaScript, React Router, Axios, Yarn, 5173 포트. 현재 이벤트 API 연동 전이며 디자인 완료 후 연결한다. Backend CORS는 localhost:5173을 허용한다.
-- `docker-compose.yml`은 MySQL 8.4.11, Backend, AI, Frontend 서비스의 로컬 통합 실행 구성을 제공한다.
+- Frontend: React/Vite/JavaScript, React Router, Axios, Yarn, 5173 포트. 로그인·카메라 프레임·이벤트 이력/검수·작업자 API를 호출한다. Backend CORS는 localhost:5173을 허용한다.
+- `docker-compose.yml`은 MySQL 8.4.11, Backend, AI API, AI worker, Frontend 서비스의 로컬 통합 실행 구성을 제공한다. Worker는 시연용 `--loop`로 영상 목록을 반복한다.
 
 ## 환경 및 저장소 원칙
 실제 `.env`와 모델 weight, 이벤트 데이터는 커밋하지 않는다. `.env.example`과 `.gitkeep`은 커밋한다.
@@ -121,7 +121,7 @@ main은 안정 버전, dev는 통합, feature/*는 기능 개발 브랜치이다
 dev 최신화 → feature 생성 → 담당 기능 개발 → commit/push → PR → dev 병합을 따른다.
 main/dev 직접 기능 개발은 피한다. 팀원 Write 권한 및 main/dev 보호 규칙을 사용할 수 있으며 feature/* 생성은 막지 않는다.
 CI/CD 담당은 신종건이며 Docker/Compose/Jenkins/GitHub로 Build/Test/Deploy를 자동화할 예정이다.
-AI/Backend/Frontend Dockerfile과 Jenkins Pipeline이 있으며, docker-compose.yml에는 MySQL 8.4.11, Backend, AI, Frontend 서비스 구성이 있다. Jenkins는 AI/Backend/Frontend Docker 이미지를 빌드하고 검증한다.
+AI/Backend/Frontend Dockerfile과 Jenkins Pipeline이 있으며, docker-compose.yml에는 MySQL 8.4.11, Backend, AI API, AI worker, Frontend 서비스 구성이 있다. Jenkins는 AI/Backend/Frontend Docker 이미지를 빌드하고 검증한다.
 전체 담당 분담과 담당 API는 PROJECT_CONTEXT 5절을 따른다.
 
 ## 구현 전에 확인할 미정 사항

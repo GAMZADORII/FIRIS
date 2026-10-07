@@ -60,12 +60,10 @@ $RECYCLE.BIN/
 *.mov
 *.mkv
 ai/model/*
-!ai/model/.gitkeep
 !ai/model/*.pt
 !ai/model/*.joblib
-# CCTV 영상
+# CCTV input videos and local files; keep camera directories through .gitkeep
 /storage/videos/**
-!/storage/videos/.gitkeep
 !/storage/videos/*/
 !/storage/videos/*/.gitkeep
 
