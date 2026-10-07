@@ -70,6 +70,28 @@ class Publisher:
 
 
 class VideoServiceTest(unittest.TestCase):
+    def test_live_frames_update_between_inference_samples(self):
+        capture = Capture(30)
+        inferred = []
+        published = []
+
+        class EncodedPublisher:
+            def publish_encoded(self, camera_id, jpeg):
+                published.append((camera_id, jpeg))
+
+        def detector(*_args):
+            inferred.append(True)
+            return {"detected": [], "probabilities": {}, "boxes": []}
+
+        with patch("app.services.video_service.cv2.VideoCapture", return_value=capture):
+            process_video("sample.mp4", "CAM001", sample_fps=2, display_fps=5,
+                          emit_events=False, client=Client([]), storage=Storage([]),
+                          detector=detector, publisher=EncodedPublisher())
+        self.assertEqual(len(inferred), 6)
+        self.assertEqual(len(published), 15)
+        self.assertTrue(all(camera_id == "CAM001" and jpeg.startswith(b"\xff\xd8")
+                            for camera_id, jpeg in published))
+
     def test_repeat_playback_updates_live_frames_without_new_event(self):
         calls = []
         capture = Capture(30)

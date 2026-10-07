@@ -16,6 +16,23 @@ body {
 	font-family: Inter, 'Noto Sans KR', 'Malgun Gothic', sans-serif;
 }
 
+.dashboard-error {
+	background: #441d22;
+	border: 1px solid #d32f2f;
+	color: #fff;
+	margin: 0;
+	padding: 8px 12px;
+}
+
+.stat-card__value a {
+	color: inherit;
+	text-decoration: none;
+}
+
+.stat-card__value a:hover {
+	text-decoration: underline;
+}
+
 .dashboard {
 	display: flex;
 	flex-direction: column;
@@ -180,7 +197,7 @@ body {
 	flex: 1 1 auto;
 	gap: 8px;
 	grid-template-columns: minmax(0, 1fr);
-	grid-template-rows: repeat(5, minmax(0, 1fr)) minmax(90px, 1.6fr);
+	grid-template-rows: minmax(142px, 1.5fr) repeat(4, minmax(0, 1fr));
 	min-height: 0;
 }
 
@@ -601,38 +618,32 @@ body {
 	z-index: 2;
 }
 
-.detection-overlay::before {
-	background: currentColor;
-	content: '';
-	height: 1px;
-	left: -1px;
-	position: absolute;
-	top: -1px;
-	width: 8px;
-}
-
 .detection-overlay > span {
-	background: rgba(13, 14, 17, 0.94);
-	border: 1px solid currentColor;
-	color: #fff;
-	font-family: 'JetBrains Mono', Consolas, monospace;
-	font-size: 9px;
+	background: var(--detection-color);
+	border: 1px solid var(--detection-color);
+	border-radius: 3px 3px 0 0;
+	bottom: 100%;
+	color: var(--detection-label-color);
+	font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+	font-size: 12px;
 	font-weight: 700;
-	left: -1px;
-	padding: 3px 6px;
+	line-height: 16px;
+	padding: 3px 7px;
 	position: absolute;
-	text-shadow: 0 1px 2px #000;
-	text-transform: uppercase;
-	top: -19px;
+	right: -1px;
 	white-space: nowrap;
 }
 
 .detection-overlay--fire {
-	color: #e53935;
+	--detection-color: #c62828;
+	--detection-label-color: #fff;
+	color: var(--detection-color);
 }
 
 .detection-overlay--smoke {
-	color: #ffb300;
+	--detection-color: #ffb300;
+	--detection-label-color: #16181d;
+	color: var(--detection-color);
 }
 
 .camera-feed__footer {
@@ -809,6 +820,7 @@ body {
 	}
 
 	.detection-overlay > span {
-		font-size: 7px;
+		font-size: 11px;
+		padding: 3px 6px;
 	}
 }

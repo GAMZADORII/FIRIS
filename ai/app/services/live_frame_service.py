@@ -48,14 +48,17 @@ def annotate(frame, detection: dict):
 
 class LiveFramePublisher:
     def publish(self, camera_id: str, frame, detection: dict) -> None:
-        path = frame_path(camera_id)
-        path.parent.mkdir(parents=True, exist_ok=True)
         success, jpeg = cv2.imencode(".jpg", annotate(frame, detection),
                                     [cv2.IMWRITE_JPEG_QUALITY, 85])
         if not success:
             raise RuntimeError("Failed to encode live frame")
+        self.publish_encoded(camera_id, jpeg.tobytes())
+
+    def publish_encoded(self, camera_id: str, jpeg: bytes) -> None:
+        path = frame_path(camera_id)
+        path.parent.mkdir(parents=True, exist_ok=True)
         temporary = path.with_suffix(".jpg.tmp")
-        temporary.write_bytes(jpeg.tobytes())
+        temporary.write_bytes(jpeg)
         temporary.replace(path)
 
 

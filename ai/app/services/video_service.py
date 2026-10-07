@@ -33,8 +33,9 @@ def process_video(source: str | int, camera_id: str, model: str = "yolo",
                   detector=None, publisher: LiveFramePublisher | None = None,
                   realtime: bool = False,
                   emit_events: bool = True,
+                  display_fps: float = 10.0,
                   stop: threading.Event | None = None) -> list[dict]:
-    if not camera_id or buffer_seconds < 0 or post_seconds < 0:
+    if not camera_id or buffer_seconds < 0 or post_seconds < 0 or display_fps <= 0:
         raise ValueError("camera_id is required and buffer durations must be nonnegative")
     load_dotenv(Path(__file__).resolve().parents[2] / ".env")
     client = client or BackendEventClient()
@@ -59,6 +60,7 @@ def process_video(source: str | int, camera_id: str, model: str = "yolo",
     live = isinstance(source, int) or str(source).startswith(("rtsp://", "http://", "https://"))
     started = time.monotonic()
     next_sample_at = 0.0
+    next_display_at = 0.0
     frame_index = 0
     pending = None
     events = []
@@ -95,7 +97,6 @@ def process_video(source: str | int, camera_id: str, model: str = "yolo",
             if sampled:
                 next_sample_at = timestamp + 1 / effective_sample_fps
                 latest_result = detector(packed_frame, model, threshold)
-                publisher.publish(camera_id, frame, latest_result)
             # Reuse the latest inference between samples; never run extra inference.
             annotated_ok, annotated_jpeg = cv2.imencode(
                 ".jpg", annotate(frame, latest_result), [cv2.IMWRITE_JPEG_QUALITY, 85]
@@ -103,6 +104,12 @@ def process_video(source: str | int, camera_id: str, model: str = "yolo",
             if not annotated_ok:
                 raise RuntimeError("Failed to encode annotated event frame")
             packed_annotated = annotated_jpeg.tobytes()
+            if timestamp + 1e-9 >= next_display_at:
+                next_display_at = timestamp + 1 / display_fps
+                if hasattr(publisher, "publish_encoded"):
+                    publisher.publish_encoded(camera_id, packed_annotated)
+                else:
+                    publisher.publish(camera_id, frame, latest_result)
             pre_frames.append(packed_frame)
             pre_annotated_frames.append(packed_annotated)
 

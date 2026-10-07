@@ -12,7 +12,7 @@ Docker에서는 `docker compose up --build`가 `ai` FastAPI와 `ai-worker` 분�
 
 ## 현재 구현
 
-Dashboard 박스 표시 계약: AI 영상 처리기는 추론한 프레임에 FIRE/SMOKE 박스와 신뢰도를 그려 카메라별 최신 JPEG으로 발행한다. AI `GET /cameras/{cameraId}/frame`은 `X-AI-API-KEY`가 필요하며 최신 프레임이 없거나 오래되면 404/503을 반환한다. Backend `GET /api/cameras/{cameraId}/frame`은 사용자 JWT(ADMIN/WORKER)를 확인하고 등록 카메라에 한해 AI JPEG을 프록시한다. 프론트는 이 URL을 JWT 헤더로 주기적으로 요청해 이미지 Blob을 표시하면 된다. 모델 추론 주기만큼(기본 최대 5fps) 갱신되며, 분류 모델은 박스가 없다. 저장 이벤트 Snapshot/MP4는 원본 영상이다. 파일 입력을 시연할 때는 `--realtime`으로 실제 FPS에 맞춰 재생한다. 영상 처리 프로세스와 AI API 서버는 같은 `LIVE_FRAME_DIR`을 공유해야 한다.
+Dashboard 박스 표시 계약: AI 영상 처리기는 FIRE/SMOKE 박스와 신뢰도를 그린 최신 JPEG을 카메라별로 발행한다. 추론은 설정된 샘플 주기(기본 3fps, 최대 5fps)로 수행하고, 추론 사이의 프레임에는 마지막 탐지 결과를 재사용해 화면용 JPEG을 최대 10fps로 갱신한다. 실제 갱신 속도는 영상 FPS와 4채널 추론 처리량에 따라 낮아질 수 있으며, 움직이는 물체에서는 박스가 다음 추론까지 잠시 지연될 수 있다. AI `GET /cameras/{cameraId}/frame`은 `X-AI-API-KEY`가 필요하며 최신 프레임이 없거나 오래되면 404/503을 반환한다. Backend `GET /api/cameras/{cameraId}/frame`은 사용자 JWT(ADMIN/WORKER)를 확인하고 등록 카메라에 한해 AI JPEG을 프록시한다. 프론트는 이 URL을 JWT 헤더로 주기적으로 요청해 이미지 Blob을 표시한다. 분류 모델은 박스가 없다. 저장 이벤트 Snapshot/MP4는 원본 영상이다. 파일 입력을 시연할 때는 `--realtime`으로 실제 FPS에 맞춰 재생한다. 영상 처리 프로세스와 AI API 서버는 같은 `LIVE_FRAME_DIR`을 공유해야 한다.
 
 `ai/app/services/video_service.py`를 카메라별 프로세스로 실행한다. 영상 프레임은 JPEG 압축 버퍼에 보관하고 초당 최대 5회 추론한다. 기본 시간 창 2초에서 10개 샘플 중 7개 이상이 같은 FIRE/SMOKE를 탐지하면 위험을 확정한다. 추론이 약간 느려지면 실제 창 안에 모인 결과의 70%를 사용하되 예상 10개 중 최소 6개는 필요하다(예: 9개 중 7개). Bounding Box가 있는 모델은 같은 영역(IoU 0.2 이상)의 탐지를 세고, 분류 모델은 클래스 탐지 수만 센다. 한 위험 장면에 이벤트를 반복 생성하지 않도록 확정 후 잠그고, 2초간 탐지가 사라진 후 다시 허용한다.
 
