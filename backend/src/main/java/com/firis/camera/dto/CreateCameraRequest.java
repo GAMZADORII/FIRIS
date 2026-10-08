@@ -10,6 +10,11 @@ public record CreateCameraRequest(
         @Size(max = 100) String location,
         @NotBlank @Size(max = 500)
         @Pattern(regexp = "https?://[^\\s]+") String streamUrl,
-        @NotBlank @Pattern(regexp = "ONLINE|OFFLINE") String status
+        @NotBlank @Pattern(regexp = "ONLINE|OFFLINE") String status,
+        @Size(max = 500) String reportNote
 ) {
+    public CreateCameraRequest(String cameraId, String cameraName, String location,
+            String streamUrl, String status) {
+        this(cameraId, cameraName, location, streamUrl, status, null);
+    }
 }

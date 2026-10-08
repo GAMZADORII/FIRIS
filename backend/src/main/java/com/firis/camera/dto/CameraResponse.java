@@ -7,7 +7,8 @@ public record CameraResponse(
         String cameraName,
         String location,
         String streamUrl,
-        String status
+        String status,
+        String reportNote
 ) {
     public static CameraResponse from(Camera camera) {
         return new CameraResponse(
@@ -15,7 +16,8 @@ public record CameraResponse(
                 camera.getCameraName(),
                 camera.getLocation(),
                 camera.getStreamUrl(),
-                camera.getStatus()
+                camera.getStatus(),
+                camera.getReportNote()
         );
     }
 }

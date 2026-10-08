@@ -8,7 +8,8 @@ public record LoginAccountResponse(
         String loginId,
         String name,
         Role role,
-        boolean mustChangePassword
+        boolean mustChangePassword,
+        boolean contactOnboardingRequired
 ) {
     public static LoginAccountResponse from(Account account) {
         return new LoginAccountResponse(
@@ -16,7 +17,8 @@ public record LoginAccountResponse(
                 account.getLoginId(),
                 account.getName(),
                 account.getRole(),
-                account.isMustChangePassword()
+                account.isMustChangePassword(),
+                account.isContactOnboardingRequired()
         );
     }
 }

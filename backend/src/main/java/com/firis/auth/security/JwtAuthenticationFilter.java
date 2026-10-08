@@ -11,6 +11,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.MediaType;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -26,15 +27,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
     private final AccountRepository accountRepository;
     private final ObjectMapper objectMapper;
+    private final boolean contactOnboardingEnforced;
 
     public JwtAuthenticationFilter(
             JwtTokenProvider jwtTokenProvider,
             AccountRepository accountRepository,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            @Value("${app.contact-consent.enforce-onboarding:false}") boolean contactOnboardingEnforced
     ) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.accountRepository = accountRepository;
         this.objectMapper = objectMapper;
+        this.contactOnboardingEnforced = contactOnboardingEnforced;
     }
 
     @Override
@@ -78,11 +82,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
         if (account.getRole() == Role.WORKER
                 && account.isMustChangePassword()
-                && !isPasswordChangeRequest(request)) {
+                && !isPasswordChangeRequest(request)
+                && !isContactConsentRead(request)) {
             writeError(
                     response,
                     ErrorCode.PASSWORD_CHANGE_REQUIRED,
                     ErrorCode.PASSWORD_CHANGE_REQUIRED.getMessage()
+            );
+            return;
+        }
+        if (contactOnboardingEnforced && account.getRole() == Role.WORKER
+                && account.isContactOnboardingRequired()
+                && !isPasswordChangeRequest(request)
+                && !isContactOnboardingRequest(request)
+                && !isContactRead(request)
+                && !isContactConsentRead(request)) {
+            writeError(
+                    response,
+                    ErrorCode.CONTACT_ONBOARDING_REQUIRED,
+                    ErrorCode.CONTACT_ONBOARDING_REQUIRED.getMessage()
             );
             return;
         }
@@ -99,6 +117,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private boolean isPasswordChangeRequest(HttpServletRequest request) {
         return "PATCH".equalsIgnoreCase(request.getMethod())
                 && "/api/auth/password".equals(request.getRequestURI());
+    }
+
+    private boolean isContactOnboardingRequest(HttpServletRequest request) {
+        return "PATCH".equalsIgnoreCase(request.getMethod())
+                && "/api/auth/contact".equals(request.getRequestURI());
+    }
+
+    private boolean isContactConsentRead(HttpServletRequest request) {
+        return "GET".equalsIgnoreCase(request.getMethod())
+                && "/api/auth/contact-consent".equals(request.getRequestURI());
+    }
+
+    private boolean isContactRead(HttpServletRequest request) {
+        return "GET".equalsIgnoreCase(request.getMethod())
+                && "/api/auth/contact".equals(request.getRequestURI());
     }
 
     private String resolveToken(HttpServletRequest request) {

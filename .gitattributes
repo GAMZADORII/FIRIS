@@ -21,3 +21,9 @@
 # AI 모델 - 학습 가중치 Git LFS 전달 설정
 ai/model/*.pt filter=lfs diff=lfs merge=lfs -text
 ai/model/*.joblib filter=lfs diff=lfs merge=lfs -text
+
+# CCTV demo inputs
+storage/videos/*/*.mp4 filter=lfs diff=lfs merge=lfs -text
+storage/videos/*/*.avi filter=lfs diff=lfs merge=lfs -text
+storage/videos/*/*.mov filter=lfs diff=lfs merge=lfs -text
+storage/videos/*/*.mkv filter=lfs diff=lfs merge=lfs -text

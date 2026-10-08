@@ -36,3 +36,11 @@ app:
     name: ${ADMIN_NAME:김진우}
   worker:
     default-password: ${WORKER_DEFAULT_PASSWORD:}
+  contact-consent:
+    version: ${CONTACT_CONSENT_VERSION:v1}
+    enforce-onboarding: ${CONTACT_ONBOARDING_ENFORCED:false}
+  mock-119:
+    ws-url: ${MOCK_119_WS_URL:}
+    api-key: ${MOCK_119_API_KEY:}
+    site-address: ${MOCK_119_SITE_ADDRESS:}
+    control-room-phone: ${MOCK_119_CONTROL_ROOM_PHONE:}

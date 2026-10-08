@@ -41,7 +41,7 @@ public class CameraService {
             throw new ApiException(ErrorCode.CAMERA_ALREADY_EXISTS);
         }
         Camera camera = Camera.create(request.cameraId(), request.cameraName(),
-                request.location(), request.streamUrl(), request.status());
+                request.location(), request.streamUrl(), request.status(), request.reportNote());
         try {
             // Persist rather than merge: concurrent registration must never replace an existing camera.
             entityManager.persist(camera);

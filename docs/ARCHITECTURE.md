@@ -29,15 +29,17 @@ VS Code는 WSL: Ubuntu 연결을 권장한다. Frontend 담당자는 Windows도 
 | ai/app/services | 향후 탐지 지속 확인, 이벤트 전송, 버퍼/미디어 처리 |
 | ai/app/models | 향후 모델 로딩/추론 어댑터. Classification에 종속하지 않음 |
 | ai/app/utils | 향후 공통 유틸리티 |
-| ai/model | Git에서 제외되는 모델 weight |
+| ai/model | Git LFS로 공유하는 모델 weight |
+| storage/videos | Git LFS로 공유하는 CAM001~CAM004 시연 입력 영상 |
 | storage/events | Git에서 제외되는 이벤트 Snapshot/영상 |
 | backend/.../common | health check 및 공통 설정 |
-| backend/.../auth | 향후 인증 및 비밀번호 변경 흐름 |
+| backend/.../auth | JWT 인증, 비밀번호 변경, 신규 WORKER 최초 연락처·동의 등록 및 완료 전 관제 API 차단 |
 | backend/.../account | 향후 ADMIN/WORKER 계정 관리 |
 | backend/.../camera | 향후 고정 CCTV 조회 및 상태 |
 | backend/.../event | 향후 위험 이벤트와 미디어 경로 |
 | backend/.../review | 향후 이벤트 최종 검수 |
 | backend/.../statistics | 향후 관제 집계 |
+| backend/.../report | 119 모의 신고 기록과 WebSocket 접수 확인 |
 | frontend/src/api | Axios 클라이언트, JWT·미디어 요청 |
 | frontend/src/components, layouts | 향후 공통 컴포넌트 및 화면 배치 |
 | frontend/src/pages | Login, Dashboard, History, Admin 화면·API 연결 |
@@ -86,9 +88,12 @@ AI 영상 처리의 현재 연동 시작값은 초당 5회 추론, 최근 2초�
 
 사용자 인증은 Authorization: Bearer {accessToken} JWT, 비밀번호는 BCrypt hash를 사용한다.
 이번 이벤트 API는 X-AI-API-KEY를 AI_API_KEY와 비교한다. 미설정·누락·불일치는 401로 차단한다.
-ACCOUNT/CAMERA/FIRE_EVENT/EVENT_MEDIA/EVENT_REVIEW 다섯 테이블을 사용한다.
+ACCOUNT/CAMERA/FIRE_EVENT/EVENT_MEDIA/EVENT_REVIEW와 119 모의 신고용 MOCK_119_REPORT를 사용한다.
 Statistics Table 없이 집계하며, 검수 행이 없으면 UNREVIEWED이다.
-AI API Key 인증과 이벤트 저장·미디어 갱신 및 세 Entity는 구현했다. 사용자 JWT와 다른 도메인은 이번 범위 밖이다.
+신규 WORKER는 비밀번호 변경 후 연락처·동의 등록 대상이다. 프론트의 최초 동의 화면과 확정 문안을 배포하기 전에는 `CONTACT_ONBOARDING_ENFORCED=false`로 관제 API 차단을 보류한다. 화면 배포 후 `true`로 전환하며, 기존 계정에는 소급 강제하지 않는다. 모의 신고는 플래그와 관계없이 등록된 연락처·동의를 요구한다.
+
+119 모의 신고는 WORKER가 화면에서 시작하고 Backend가 신고자 연락처를 DB에서 읽는다. 관제실 번호는 서버 설정에서 가져와 모의서버에 WebSocket 메시지를 보낸다. 같은 `requestId`의 ACK를 받은 경우에만 `ACCEPTED`로 저장한다. 실패 시 `FAILED`를 남기며 동일 이벤트는 동일 ID로만 재시도한다. 이는 실제 119 신고가 아니고, 모의서버 자체는 별도 구현 대상이다. [API 명세](API_SPEC.md)의 WebSocket 계약을 따른다.
+신고 확인 창은 이벤트·카메라·계정과 서버 설정을 조합한 preview API로 표시한다. 주소·관제실 번호는 서버 설정, 상세위치·특이사항은 카메라, 탐지시각·유형은 이벤트, 담당자 연락처는 계정에서 가져온다. 확인 후 POST는 화면 입력을 신뢰하지 않고 같은 서버 데이터를 다시 읽어 WebSocket으로 보낸다.
 
 ## 현재 실행 구성
 - AI: FastAPI/Uvicorn, 8000 포트. 모델 추론과 영상 시간 창 판정·Backend 호출, 박스 JPEG 발행 코드가 있다. 로컬 AVI에서 YOLO 추론과 Backend/MySQL 이벤트 저장을 확인했다. 실제 CCTV RTSP 검증은 아직 없다.
@@ -100,7 +105,7 @@ AI API Key 인증과 이벤트 저장·미디어 갱신 및 세 Entity는 구현
 - `docker-compose.yml`은 MySQL 8.4.11, Backend, AI API, AI worker, Frontend 서비스의 로컬 통합 실행 구성을 제공한다. Worker는 시연용 `--loop`로 영상 목록을 반복한다.
 
 ## 환경 및 저장소 원칙
-실제 `.env`와 모델 weight, 이벤트 데이터는 커밋하지 않는다. `.env.example`과 `.gitkeep`은 커밋한다.
+실제 `.env`와 이벤트 데이터는 커밋하지 않는다. 모델 weight와 시연 입력 영상은 Git LFS로 공유한다. `.env.example`과 필요한 `.gitkeep`은 커밋한다.
 Backend는 backend 작업 디렉터리의 `.env`를 Spring properties 형식으로 선택적으로 읽는다.
 Frontend는 Vite의 `.env` 로딩을 사용한다. `VITE_` 값은 브라우저에 공개되므로 비밀 값을 넣지 않는다.
 AI는 `.env`에서 BACKEND_URL/AI_API_KEY, AI_MODELS_DIR/EVENT_STORAGE_DIR을 읽는다. health check는 모델 경로의 파일 존재와 Git LFS 포인터 여부만 확인한다.
