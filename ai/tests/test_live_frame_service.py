@@ -40,6 +40,24 @@ class LiveFrameTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             frame_path("../other")
 
+    def test_publish_retries_when_windows_temporarily_locks_frame(self):
+        original_replace = Path.replace
+        attempts = 0
+
+        def temporarily_locked(source, target):
+            nonlocal attempts
+            attempts += 1
+            if attempts < 3:
+                raise PermissionError("frame is temporarily locked")
+            return original_replace(source, target)
+
+        with tempfile.TemporaryDirectory() as directory, patch.dict(
+            os.environ, {"LIVE_FRAME_DIR": directory}
+        ), patch.object(Path, "replace", new=temporarily_locked), patch("time.sleep"):
+            LiveFramePublisher().publish_encoded("CAM001", b"jpeg-data")
+            self.assertEqual(frame_path("CAM001").read_bytes(), b"jpeg-data")
+            self.assertEqual(attempts, 3)
+
 
 if __name__ == "__main__":
     unittest.main()
