@@ -36,3 +36,8 @@ app:
     name: ${ADMIN_NAME:김진우}
   worker:
     default-password: ${WORKER_DEFAULT_PASSWORD:}
+  contact-consent:
+    version: ${CONTACT_CONSENT_VERSION:v1}
+  mock-119:
+    ws-url: ${MOCK_119_WS_URL:}
+    api-key: ${MOCK_119_API_KEY:}

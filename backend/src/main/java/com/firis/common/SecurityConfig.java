@@ -65,8 +65,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.HEAD, "/videos/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.PATCH, "/api/auth/password").hasRole("WORKER")
+                        .requestMatchers(HttpMethod.GET, "/api/auth/contact-consent").hasRole("WORKER")
+                        .requestMatchers(HttpMethod.GET, "/api/auth/contact").hasRole("WORKER")
+                        .requestMatchers(HttpMethod.PATCH, "/api/auth/contact").hasRole("WORKER")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/cameras", "/api/cameras/").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/events/*/mock-119-reports").hasRole("WORKER")
                         .requestMatchers(
                                 "/api/cameras/**",
                                 "/api/events/**",

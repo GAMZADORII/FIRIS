@@ -62,10 +62,14 @@ $RECYCLE.BIN/
 ai/model/*
 !ai/model/*.pt
 !ai/model/*.joblib
-# CCTV input videos and local files; keep camera directories through .gitkeep
+# CCTV demo inputs are shared through Git LFS; other local files stay ignored.
 /storage/videos/**
 !/storage/videos/*/
 !/storage/videos/*/.gitkeep
+!/storage/videos/*/*.mp4
+!/storage/videos/*/*.avi
+!/storage/videos/*/*.mov
+!/storage/videos/*/*.mkv
 
 # 이벤트 결과
 /storage/events/**

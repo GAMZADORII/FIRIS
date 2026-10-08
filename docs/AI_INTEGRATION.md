@@ -2,7 +2,7 @@
 
 ## 2026-10-07 시연 실행 흐름
 
-프로젝트 루트의 `storage/videos/CAM001`~`CAM004`에 `001.mp4` 등 실제 영상을 넣는다. 카메라 폴더명은 Backend CAMERA의 cameraId와 같아야 한다. 현재 저장소에는 `.gitkeep`만 있고 실제 영상은 포함하지 않는다. Backend의 기본 `streamUrl`은 각 폴더의 `001.mp4`를 가리킨다.
+프로젝트 루트의 `storage/videos/CAM001`~`CAM004`에 `001.mp4` 등 실제 영상을 넣는다. 카메라 폴더명은 Backend CAMERA의 cameraId와 같아야 한다. 시연 입력 영상은 Git LFS로 공유하므로 `git lfs install` 후 체크아웃해야 한다. Backend의 기본 `streamUrl`은 각 폴더의 `001.mp4`를 가리킨다.
 
 로컬 실행은 MySQL → Backend → AI API 서버 → AI 분석 worker → Frontend 순서다. AI API 서버와 분석 worker는 별도 프로세스다. `cd ai && .venv/bin/python -m app.services.multi_camera_service --model yolo --sample-fps 3 --loop`로 worker를 실행하면 4개 폴더를 병렬 분석하고, 카메라별 파일을 이름순으로 처리한 뒤 시연용으로 목록을 반복한다. `--loop` 없이 실행하면 파일당 한 번만 처리한다. 반복 재생은 화면을 갱신하지만 같은 프로세스에서 이미 분석한 파일의 이벤트를 다시 등록하지 않는다. worker 재시작 시 처리 기록은 초기화된다.
 

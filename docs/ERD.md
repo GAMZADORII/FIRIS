@@ -25,6 +25,10 @@
 | name | VARCHAR(50) NOT NULL |
 | role | VARCHAR(20) NOT NULL |
 | must_change_password | BOOLEAN NOT NULL DEFAULT FALSE |
+| contact_phone | VARCHAR(20) NULL; 최초 등록 전에는 비어 있음 |
+| contact_consent_version | VARCHAR(30) NULL; 동의 문안 버전 |
+| contact_consented_at | DATETIME NULL; 서버에서 기록한 동의 시각 |
+| contact_onboarding_required | BOOLEAN NULL; 신규 WORKER는 TRUE, 기존 계정의 NULL은 미적용으로 해석 |
 | status | VARCHAR(20) NOT NULL DEFAULT ACTIVE |
 | created_at | DATETIME NOT NULL |
 | updated_at | DATETIME NOT NULL |
@@ -76,6 +80,23 @@
 | note | VARCHAR(500) |
 | reviewed_at | DATETIME NOT NULL |
 
+## MOCK_119_REPORT
+
+| 컬럼 | 타입 및 제약 |
+| --- | --- |
+| report_id | BIGINT PK AUTO_INCREMENT |
+| event_id | BIGINT NOT NULL UNIQUE FK → FIRE_EVENT |
+| reporter_id | BIGINT NOT NULL FK → ACCOUNT |
+| request_id | VARCHAR(36) NOT NULL UNIQUE; 재시도에도 동일한 값 사용 |
+| reporter_phone | VARCHAR(20) NOT NULL; 신고 당시 계정 연락처 복사 |
+| control_room_phone | VARCHAR(20) NOT NULL; 모달에서 확인한 관제실 번호 |
+| status | VARCHAR(20) NOT NULL; PENDING / ACCEPTED / FAILED |
+| receipt_id | VARCHAR(100) NULL; 모의서버 접수 ID |
+| failure_reason | VARCHAR(255) NULL |
+| created_at / updated_at / accepted_at | DATETIME; accepted_at은 접수 확인 후 기록 |
+
+이 테이블은 실제 119 접수 기록이 아니다. 신고 번호는 사후 확인을 위해 전송 시점 값으로 보존한다.
+
 ## 값 및 관계
 
 - ACCOUNT.role: ADMIN / WORKER. status: ACTIVE / INACTIVE.
@@ -93,6 +114,8 @@
 | FIRE_EVENT 1:0..1 EVENT_MEDIA | EVENT_MEDIA.event_id → FIRE_EVENT.event_id (UNIQUE) |
 | FIRE_EVENT 1:0..1 EVENT_REVIEW | EVENT_REVIEW.event_id → FIRE_EVENT.event_id (UNIQUE) |
 | ACCOUNT 1:N EVENT_REVIEW | EVENT_REVIEW.reviewer_id → ACCOUNT.account_id |
+| FIRE_EVENT 1:0..1 MOCK_119_REPORT | MOCK_119_REPORT.event_id → FIRE_EVENT.event_id (UNIQUE) |
+| ACCOUNT 1:N MOCK_119_REPORT | MOCK_119_REPORT.reporter_id → ACCOUNT.account_id |
 
 AI 이벤트 생성 API는 FIRE_EVENT와 Snapshot 경로를 가진 EVENT_MEDIA를 생성한다.
 관계의 0..1은 저장 구조상 최대 하나를 뜻한다. 최종 검수도 이벤트당 하나이다.

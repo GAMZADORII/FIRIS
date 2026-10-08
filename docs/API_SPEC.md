@@ -38,6 +38,11 @@ JSON 예시는 계약을 설명하며 비밀번호·ID·경로·시각은 실제
 | --- | --- | --- | --- |
 | POST | /api/auth/login | 오금빈 | 로그인 (INACTIVE 불가) |
 | PATCH | /api/auth/password | 오금빈 | WORKER 비밀번호 변경 |
+| PATCH | /api/auth/contact | 계정 담당 | 최초 로그인 WORKER 연락처 및 개인정보 동의 등록 |
+| GET | /api/auth/contact-consent | 계정 담당 | 현재 연락처 동의 문안 버전 조회 |
+| GET | /api/auth/contact | 계정 담당 | 본인 등록 연락처·동의 상태 조회 |
+| POST | /api/events/{eventId}/mock-119-reports | 박상현 | WORKER가 119 모의 신고 요청 |
+| GET | /api/events/{eventId}/mock-119-report | 박상현 | 모의 신고 접수 상태 조회 |
 | GET | /api/admin/workers | 오금빈 | ADMIN 작업자 목록 |
 | POST | /api/admin/workers | 오금빈 | ADMIN 작업자 생성 |
 | PATCH | /api/admin/workers/{workerId}/status | 오금빈 | ADMIN 상태 변경 |
@@ -93,7 +98,8 @@ Response 예:
     "loginId": "W000001",
     "name": "홍길동",
     "role": "WORKER",
-    "mustChangePassword": true
+    "mustChangePassword": true,
+    "contactOnboardingRequired": true
   }
 }
 ```
@@ -116,6 +122,28 @@ Request:
 성공 시:
 
 must_change_password = false
+
+신규 WORKER는 비밀번호 변경 후 `contactOnboardingRequired=true`인 동안 관제 API에 접근할 수 없다. 기존 계정에는 연락처 등록을 소급 강제하지 않는다.
+
+## 24-1. 최초 연락처 및 개인정보 동의 등록
+
+GET /api/auth/contact-consent — WORKER JWT 필요. 현재 동의 문안 버전을 `{ "version": "v1" }`로 반환한다. 프론트는 이 버전에 대응하는 확정 문안을 표시한다.
+
+GET /api/auth/contact — WORKER JWT 필요. 본인 연락처와 최초 등록 상태를 조회한다. 기존 계정의 연락처가 비어 있으면 모의 신고 전 등록 화면을 안내한다.
+
+PATCH /api/auth/contact — WORKER JWT 필요. 최초 비밀번호 변경을 마친 뒤 호출한다.
+
+```json
+{
+  "contactPhone": "01012345678",
+  "consentAccepted": true,
+  "consentVersion": "v1"
+}
+```
+
+서버는 전화번호를 숫자로 정규화하고 동의한 문안 버전·서버 시각을 기록한다. 동의하지 않거나 서버의 현재 문안 버전과 다르면 저장하지 않는다. 성공 응답에는 `contactOnboardingRequired=false`, `contactPhone`, `consentVersion`, `consentedAt`이 포함된다. ADMIN과 이미 등록한 WORKER는 이 API를 다시 호출할 수 없다. 신규 WORKER는 비밀번호 변경과 연락처 등록을 모두 완료하기 전까지 관제 API가 403을 반환한다. 기존 WORKER는 관제 이용을 계속할 수 있으나 모의 신고하려면 본인 연락처를 등록해야 한다. 관리자 비밀번호 초기화는 연락처 동의 상태를 변경하지 않는다.
+
+`v1`은 API 예시 버전이다. 실제 화면에 표시할 개인정보 문안의 목적·항목·보유 기간·거부 시 불이익을 팀에서 확정하고 같은 버전을 프론트·백엔드에 적용한다. 이메일은 요청하거나 저장하지 않는다. 119 모의서버에 보내는 신고 메시지와 관제실 번호는 해당 기능의 별도 계약에서 정의한다.
 
 ## 25. 작업자 생성
 
@@ -357,6 +385,59 @@ Response 예:
 별도의 Statistics Table을 만들지 않는다.
 
 FIRE_EVENT와 EVENT_REVIEW를 집계한다.
+
+## 119 모의 신고 API 및 WebSocket 계약
+
+이 기능은 **모의서버 접수**이며 실제 119 신고가 아니다. WORKER가 이벤트 화면의 신고 버튼을 눌러 시작한다. ADMIN이나 연락처·동의 등록 전 WORKER는 신고할 수 없다. 실제 전송은 Backend가 수행하고 Frontend는 모의서버에 직접 연결하지 않는다.
+
+`POST /api/events/{eventId}/mock-119-reports` — WORKER JWT 필요
+
+```json
+{ "controlRoomPhone": "0212345678" }
+```
+
+Backend는 JWT에서 신고자 계정을 확인하고 저장된 `contactPhone`과 동의 기록을 사용한다. `reporterPhone`을 요청값으로 받지 않는다. 관제실 번호는 모달에서 확인한 값을 받아 숫자로 정규화한다. 최초 요청에서 고유 `requestId`를 생성하고, 동일 이벤트의 재시도에는 같은 `requestId`를 사용한다. 재시도는 최초 신고자가 같은 관제실 번호로 요청해야 한다. 이미 접수 완료된 이벤트에는 재전송하지 않는다.
+
+응답 예 (`200`):
+
+```json
+{ "reportId": 12, "eventId": 27, "status": "ACCEPTED", "receiptId": "MOCK-119-001" }
+```
+
+모의서버 미설정·연결 실패·응답 오류·타임아웃이면 기록을 `FAILED`로 남기고 `502`를 반환한다. 기존 WORKER의 신고자 연락처·동의가 없으면 `400`, 최초 등록이 필요한 신규 WORKER는 `403`, 이벤트가 없으면 `404`를 반환한다. 전송 중 같은 요청은 `PENDING`을 반환한다. `GET /api/events/{eventId}/mock-119-report`로 `PENDING`, `ACCEPTED`, `FAILED`와 접수 ID를 조회한다.
+
+Backend → 모의서버 WebSocket 접속 주소는 `MOCK_119_WS_URL`로 설정한다. 예: `ws://localhost:8090/ws/reports`. 선택적으로 `MOCK_119_API_KEY`를 `X-MOCK-119-KEY` 헤더로 보낸다. 테스트 환경 외부에서는 `wss://`를 사용한다. 한 요청당 연결하고, 아래 메시지 1개를 보낸 뒤 최대 5초간 확인 응답을 기다린다.
+
+Backend 발신 JSON:
+
+```json
+{
+  "type": "FIRE_REPORT",
+  "requestId": "11b47ee2-6b20-40b1-bb3d-f4510e7d9b2a",
+  "eventId": 27,
+  "cameraId": "CAM003",
+  "location": "창고 A구역",
+  "eventType": "FIRE",
+  "detectedAt": "2026-10-08T14:02:00",
+  "reporterLoginId": "W000001",
+  "reporterName": "홍길동",
+  "reporterPhone": "01012345678",
+  "controlRoomPhone": "0212345678"
+}
+```
+
+모의서버 수신 확인 JSON:
+
+```json
+{
+  "type": "REPORT_ACK",
+  "requestId": "11b47ee2-6b20-40b1-bb3d-f4510e7d9b2a",
+  "status": "ACCEPTED",
+  "receiptId": "MOCK-119-001"
+}
+```
+
+모의서버는 `requestId`가 같은 재시도를 중복 접수하지 않고 동일한 `receiptId`를 반환해야 한다. 거절 시 `status: "REJECTED"`, 선택적 `reason`을 보낸다. Backend는 `requestId`가 다르거나 접수 ID가 없는 응답을 접수 완료로 처리하지 않는다. 이 계약은 모의서버 담당자의 구현 기준이며, 변경 시 양쪽 코드보다 문서를 먼저 수정한다.
 
 ## 계약 해석 및 미정 사항
 

@@ -6,6 +6,7 @@ public enum ErrorCode {
     INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "아이디 또는 비밀번호가 올바르지 않습니다."),
     ACCOUNT_INACTIVE(HttpStatus.FORBIDDEN, "비활성화된 계정입니다. 관리자에게 문의해 주세요."),
     PASSWORD_CHANGE_REQUIRED(HttpStatus.FORBIDDEN, "최초 로그인 비밀번호 변경이 필요합니다."),
+    CONTACT_ONBOARDING_REQUIRED(HttpStatus.FORBIDDEN, "연락처 등록 및 개인정보 동의가 필요합니다."),
     FORBIDDEN(HttpStatus.FORBIDDEN, "해당 기능에 접근할 권한이 없습니다."),
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다."),
     INVALID_CURRENT_PASSWORD(HttpStatus.BAD_REQUEST, "현재 비밀번호가 일치하지 않습니다."),
@@ -16,6 +17,7 @@ public enum ErrorCode {
     CAMERA_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 등록된 카메라 ID입니다."),
     EVENT_NOT_FOUND(HttpStatus.NOT_FOUND, "이벤트를 찾을 수 없습니다."),
     EVENT_ALREADY_REVIEWED(HttpStatus.CONFLICT, "이미 검수된 이벤트입니다."),
+    MOCK_119_DELIVERY_FAILED(HttpStatus.BAD_GATEWAY, "119 모의서버 접수 확인에 실패했습니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다.");
 
     private final HttpStatus status;

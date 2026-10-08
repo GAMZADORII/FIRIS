@@ -38,6 +38,19 @@ public class Account {
     @Column(name = "must_change_password", nullable = false)
     private boolean mustChangePassword;
 
+    @Column(name = "contact_phone", length = 20)
+    private String contactPhone;
+
+    @Column(name = "contact_consent_version", length = 30)
+    private String contactConsentVersion;
+
+    @Column(name = "contact_consented_at")
+    private LocalDateTime contactConsentedAt;
+
+    // NULL on pre-existing accounts means that the new onboarding rule was not applied to them.
+    @Column(name = "contact_onboarding_required")
+    private Boolean contactOnboardingRequired;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private AccountStatus status;
@@ -72,7 +85,9 @@ public class Account {
     }
 
     public static Account createWorker(String loginId, String passwordHash, String name) {
-        return new Account(loginId, passwordHash, name, Role.WORKER, true, AccountStatus.ACTIVE);
+        Account worker = new Account(loginId, passwordHash, name, Role.WORKER, true, AccountStatus.ACTIVE);
+        worker.contactOnboardingRequired = true;
+        return worker;
     }
 
     public void changePassword(String passwordHash) {
@@ -83,6 +98,13 @@ public class Account {
     public void resetToTemporaryPassword(String passwordHash) {
         this.passwordHash = passwordHash;
         this.mustChangePassword = true;
+    }
+
+    public void completeContactOnboarding(String phone, String consentVersion, LocalDateTime consentedAt) {
+        this.contactPhone = phone;
+        this.contactConsentVersion = consentVersion;
+        this.contactConsentedAt = consentedAt;
+        this.contactOnboardingRequired = false;
     }
 
     public void changeStatus(AccountStatus status) {
@@ -111,6 +133,10 @@ public class Account {
     public String getName() { return name; }
     public Role getRole() { return role; }
     public boolean isMustChangePassword() { return mustChangePassword; }
+    public boolean isContactOnboardingRequired() { return Boolean.TRUE.equals(contactOnboardingRequired); }
+    public String getContactPhone() { return contactPhone; }
+    public String getContactConsentVersion() { return contactConsentVersion; }
+    public LocalDateTime getContactConsentedAt() { return contactConsentedAt; }
     public AccountStatus getStatus() { return status; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }

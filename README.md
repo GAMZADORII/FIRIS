@@ -61,7 +61,7 @@ http://localhost:5173 에서 `/login`, `/dashboard`, `/history`, `/admin` 확인
 `.env`는 커밋하지 않고 `.env.example`만 관리한다. 통합 시연에는 루트 Compose용 `.env`와 AI/Backend가 사용할 환경변수가 필요하다.
 로컬 실행은 `ai/.env`와 `backend/.env`를 각 예제를 참고해 설정한다. 루트 예제는 안내용이며 세 파트의 자동 공통 로더는 아니다. Backend JWT_SECRET은 사용자 인증에, AI_API_KEY는 AI 수신 API에 사용한다.
 VITE_ 환경변수에 비밀 값을 넣지 않는다.
-모델 weight와 이벤트 영상/이미지는 Git에서 제외하며 필요한 빈 폴더는 `.gitkeep`으로 유지한다.
+AI 모델 가중치와 `storage/videos/CAM001`~`CAM004`의 시연 입력 영상은 Git LFS로 관리한다. 팀원은 `git lfs install` 후 저장소를 받아 실제 파일을 내려받아야 한다. 이벤트 결과 영상/이미지와 최신 관제 프레임은 Git에서 제외한다.
 
 ## 개발 기준 문서
 - [AI_EVENT_IMPLEMENTATION](docs/AI_EVENT_IMPLEMENTATION.md): 이번 AI 수신 API 구현·통합·검증 범위

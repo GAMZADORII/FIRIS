@@ -78,11 +78,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
         if (account.getRole() == Role.WORKER
                 && account.isMustChangePassword()
-                && !isPasswordChangeRequest(request)) {
+                && !isPasswordChangeRequest(request)
+                && !isContactConsentRead(request)) {
             writeError(
                     response,
                     ErrorCode.PASSWORD_CHANGE_REQUIRED,
                     ErrorCode.PASSWORD_CHANGE_REQUIRED.getMessage()
+            );
+            return;
+        }
+        if (account.getRole() == Role.WORKER
+                && account.isContactOnboardingRequired()
+                && !isPasswordChangeRequest(request)
+                && !isContactOnboardingRequest(request)
+                && !isContactRead(request)
+                && !isContactConsentRead(request)) {
+            writeError(
+                    response,
+                    ErrorCode.CONTACT_ONBOARDING_REQUIRED,
+                    ErrorCode.CONTACT_ONBOARDING_REQUIRED.getMessage()
             );
             return;
         }
@@ -99,6 +113,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private boolean isPasswordChangeRequest(HttpServletRequest request) {
         return "PATCH".equalsIgnoreCase(request.getMethod())
                 && "/api/auth/password".equals(request.getRequestURI());
+    }
+
+    private boolean isContactOnboardingRequest(HttpServletRequest request) {
+        return "PATCH".equalsIgnoreCase(request.getMethod())
+                && "/api/auth/contact".equals(request.getRequestURI());
+    }
+
+    private boolean isContactConsentRead(HttpServletRequest request) {
+        return "GET".equalsIgnoreCase(request.getMethod())
+                && "/api/auth/contact-consent".equals(request.getRequestURI());
+    }
+
+    private boolean isContactRead(HttpServletRequest request) {
+        return "GET".equalsIgnoreCase(request.getMethod())
+                && "/api/auth/contact".equals(request.getRequestURI());
     }
 
     private String resolveToken(HttpServletRequest request) {
