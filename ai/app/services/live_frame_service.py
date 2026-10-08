@@ -13,6 +13,8 @@ import cv2
 AI_ROOT = Path(__file__).resolve().parents[2]
 PROJECT_ROOT = AI_ROOT.parent
 CAMERA_ID = re.compile(r"^[A-Za-z0-9_-]{1,30}$")
+REPLACE_RETRIES = 5
+REPLACE_RETRY_DELAY_SECONDS = 0.02
 
 
 def live_frame_dir() -> Path:
@@ -59,7 +61,14 @@ class LiveFramePublisher:
         path.parent.mkdir(parents=True, exist_ok=True)
         temporary = path.with_suffix(".jpg.tmp")
         temporary.write_bytes(jpeg)
-        temporary.replace(path)
+        for attempt in range(REPLACE_RETRIES):
+            try:
+                temporary.replace(path)
+                return
+            except PermissionError:
+                if attempt == REPLACE_RETRIES - 1:
+                    raise
+                time.sleep(REPLACE_RETRY_DELAY_SECONDS)
 
 
 def read_latest_frame(camera_id: str, max_age_seconds: float = 5.0) -> bytes:
