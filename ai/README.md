@@ -40,7 +40,7 @@ storage/events/{UUID}/
 
 시간 기반 판정이 확정되면 스냅샷 저장 → Backend POST → 후속 프레임 수집 → 두 MP4 저장 → 기존 PATCH 순서로 동작합니다. 기본 전 약 5초 + 후 약 5초이며 영상 시작·끝 또는 정상 종료 시 짧아질 수 있습니다. 디코딩된 프레임을 JPEG 버퍼 후 MP4로 재인코딩하므로 원본 파일의 무손실 복사나 오디오 보존은 아닙니다.
 
-두 MP4의 프레임 수·FPS는 같습니다. 추론 사이 프레임은 마지막 추론의 박스를 재사용하고, 다음 추론에서 박스가 없으면 지웁니다. 추가 추론은 없습니다. 두 JPEG 버퍼와 MP4 인코딩으로 CPU·메모리·디스크 사용량은 늘어납니다.
+두 MP4의 프레임 수·FPS는 같습니다. FFmpeg의 H.264/yuv420p로 저장해 브라우저에서 재생할 수 있게 한다. 로컬 실행에도 FFmpeg가 필요하다. 기존 mp4v 클립은 `cd ai && .venv/bin/python scripts/transcode_event_videos.py`로 변환한다. 변환 전 원본은 같은 폴더의 `.mp4v.bak` 파일로 보존한다. 추론 사이 프레임은 마지막 추론의 박스를 재사용하고, 다음 추론에서 박스가 없으면 지웁니다. 추가 추론은 없습니다. 두 JPEG 버퍼와 MP4 인코딩으로 CPU·메모리·디스크 사용량은 늘어납니다.
 
 Backend에는 기존 `event.mp4` 경로만 PATCH합니다. `annotated_video`는 event.json에 기록하며, 박스 영상용 DB/API/Frontend 조회 연결은 후속 작업입니다. 이벤트별 UUID는 Backend 숫자 eventId와 다릅니다.
 

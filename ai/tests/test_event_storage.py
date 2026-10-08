@@ -1,5 +1,6 @@
 import json
 import os
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -39,6 +40,12 @@ class EventStorageTest(unittest.TestCase):
                     video.release()
             self.assertEqual(counts, [10, 10])
             self.assertEqual(rates, [10, 10])
+            for key in ("video", "annotated_video"):
+                codec = subprocess.check_output([
+                    "ffprobe", "-v", "error", "-select_streams", "v:0",
+                    "-show_entries", "stream=codec_name", "-of", "default=nw=1:nk=1", stored[key]
+                ], text=True).strip()
+                self.assertEqual(codec, "h264")
             self.assertLess(int(decoded[0][20, 30, 2]), 30)
             self.assertGreater(int(decoded[1][20, 30, 2]), 100)
             self.assertLess(int(cv2.imread(stored["snapshot"])[20, 30, 2]), 20)
@@ -57,6 +64,21 @@ class EventStorageTest(unittest.TestCase):
             result = storage.write_video(metadata, [packed] * 10, 10)
             self.assertTrue(Path(result["video"]).is_file())
             self.assertIsNone(result["annotated_video"])
+
+    def test_odd_sized_frames_are_padded_for_h264(self):
+        with tempfile.TemporaryDirectory() as directory:
+            storage = EventStorage(Path(directory))
+            frame = np.zeros((33, 35, 3), dtype=np.uint8)
+            metadata = storage.save_snapshot(frame, {})
+            packed = cv2.imencode(".jpg", frame)[1].tobytes()
+            result = storage.write_video(metadata, [packed], 5)
+            video = cv2.VideoCapture(result["video"])
+            try:
+                self.assertTrue(video.isOpened())
+                self.assertEqual(video.get(cv2.CAP_PROP_FRAME_WIDTH), 36)
+                self.assertEqual(video.get(cv2.CAP_PROP_FRAME_HEIGHT), 34)
+            finally:
+                video.release()
 
     def test_mismatched_streams_are_rejected_before_writing(self):
         with tempfile.TemporaryDirectory() as directory:
