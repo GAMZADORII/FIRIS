@@ -15,6 +15,7 @@ RUN apt-get update \
        libx11-6 \
        libxext6 \
        libglib2.0-0 \
+       ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 COPY app ./app
