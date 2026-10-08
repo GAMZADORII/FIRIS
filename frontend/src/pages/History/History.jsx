@@ -5,6 +5,7 @@ import { Badge, Modal, PageHeading, downloadFile } from '../../components/Consol
 import './History.css';
 
 const PAGE_SIZE = 3;
+const MAX_PAGE_BUTTONS = 5;
 const reasons = { STEAM: '수증기', LIGHT: '빛', REFLECTION: '반사', DUST: '먼지', WELDING: '용접', ETC: '기타' };
 const states = { UNREVIEWED: '미처리', TRUE_FIRE: '처리완료', FALSE_POSITIVE: '오탐' };
 const types = { FIRE: '화재', SMOKE: '연기', FIRE_SMOKE: '화재·연기' };
@@ -87,6 +88,8 @@ export default function History() {
   });
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
+  const firstPage = Math.max(1, Math.min(currentPage - Math.floor(MAX_PAGE_BUTTONS / 2), pageCount - MAX_PAGE_BUTTONS + 1));
+  const visiblePages = Array.from({ length: Math.min(MAX_PAGE_BUTTONS, pageCount) }, (_, index) => firstPage + index);
   const pageStart = (currentPage - 1) * PAGE_SIZE;
   const visibleEvents = filtered.slice(pageStart, pageStart + PAGE_SIZE);
   const summary = [
@@ -135,7 +138,7 @@ export default function History() {
       {visibleEvents.map((event) => <tr key={event.eventId}><td><strong className="console-mono">EVT-{event.eventId}</strong><small className="console-mono">{date(event.detectedAt)}</small></td><td><Badge tone={event.eventType === 'FIRE' ? 'red' : 'amber'}>{types[event.eventType]} 감지</Badge></td><td>{event.location}<small>{event.cameraName}</small></td><td className="console-mono">{(event.confidence * 100).toFixed(1)}%<div className="history-confidence"><i style={{ width: `${Math.max(0, Math.min(100, event.confidence * 100))}%` }} /></div></td><td><Badge tone={tone(event.reviewStatus)}>{states[event.reviewStatus]}</Badge></td><td>{event.reviewStatus === 'UNREVIEWED' ? '미배정' : '검수 완료'}</td><td><button onClick={() => setSearchParams({ eventId: String(event.eventId) })}>리포트 열기 ↗</button></td></tr>)}
       {!filtered.length && <tr><td colSpan="7" className="console-empty">검색 조건에 맞는 이벤트가 없습니다.</td></tr>}
     </tbody></table></div>
-    <div className="history-pagination"><span className="console-muted" aria-live="polite">총 {filtered.length}건 중 {filtered.length ? pageStart + 1 : 0}–{Math.min(pageStart + PAGE_SIZE, filtered.length)}건 표시</span><nav aria-label="이벤트 목록 페이지"><button disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)}>‹ 이전</button>{Array.from({ length: pageCount }, (_, index) => index + 1).map((number) => <button key={number} aria-label={`${number}페이지`} aria-current={currentPage === number ? 'page' : undefined} disabled={!filtered.length} onClick={() => setPage(number)}>{number}</button>)}<button disabled={currentPage === pageCount} onClick={() => setPage(currentPage + 1)}>다음 ›</button></nav><span className="console-muted history-pagination__signature">FIRIS / EVENT AUDIT LOG</span></div>
+    <div className="history-pagination"><span className="console-muted" aria-live="polite">총 {filtered.length}건 중 {filtered.length ? pageStart + 1 : 0}–{Math.min(pageStart + PAGE_SIZE, filtered.length)}건 표시</span><nav aria-label="이벤트 목록 페이지"><button disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)}>‹ 이전</button>{visiblePages.map((number) => <button key={number} aria-label={`${number}페이지`} aria-current={currentPage === number ? 'page' : undefined} disabled={!filtered.length} onClick={() => setPage(number)}>{number}</button>)}<button disabled={currentPage === pageCount} onClick={() => setPage(currentPage + 1)}>다음 ›</button></nav><span className="console-muted history-pagination__signature">FIRIS / EVENT AUDIT LOG</span></div>
     {selected && <Modal
       wide
       title={`${selected.eventType === 'FIRE' ? '긴급 화재' : selected.eventType === 'SMOKE' ? '연기' : '화재·연기'} 감지 상세 리포트`}
