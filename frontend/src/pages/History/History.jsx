@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { apiClient, apiError, fetchMedia } from '../../api/client.js';
 import { Badge, Modal, PageHeading, downloadFile } from '../../components/Console/Console.jsx';
@@ -29,8 +29,17 @@ export default function History() {
   const [showFalsePositiveForm, setShowFalsePositiveForm] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
   const [error, setError] = useState('');
+  const openFireAlert = (event) => window.dispatchEvent(new CustomEvent('firis-open-fire-alert', { detail: event }));
+  const [timeoutOnly, setTimeoutOnly] = useState(false);
+  const [reviewing, setReviewing] = useState(false);
+  const reviewLock = useRef(false);
   const [revision, setRevision] = useState(0);
   const selectedId = searchParams.get('eventId');
+  useEffect(() => {
+    const refresh = () => setRevision((value) => value + 1);
+    window.addEventListener('firis-events-changed', refresh);
+    return () => window.removeEventListener('firis-events-changed', refresh);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -71,16 +80,32 @@ export default function History() {
     return () => { active = false; urls.forEach(URL.revokeObjectURL); };
   }, [selectedId, revision]);
 
+  function previewReport() {
+    openFireAlert({
+      eventId: 'PREVIEW', preview: true, reviewStatus: 'UNREVIEWED',
+      address: '경기도 ○○시 ○○로 123', location: '제1공장 2층 생산라인 A',
+      cameraName: 'CCTV 1', detectedAt: '2026-10-08T14:32:18',
+      specialNotes: '리튬배터리 보관구역 (미리보기 예시)',
+    });
+  }
+  useEffect(() => {
+    if (import.meta.env.DEV && searchParams.get('preview') === 'report') previewReport();
+  }, [searchParams]);
   async function review(result) {
+    if (reviewLock.current) return;
+    reviewLock.current = true;
+    setReviewing(true);
     try {
       await apiClient.patch(`/api/events/${selectedId}/review`, { result, falsePositiveReason: result === 'FALSE_POSITIVE' ? reason : null, note: note.trim() || null });
+      if (result === 'TRUE_FIRE') openFireAlert({ ...selected, reviewStatus: 'TRUE_FIRE' });
       setRevision((value) => value + 1);
       setError('');
     } catch (cause) { setError(apiError(cause)); }
+    finally { reviewLock.current = false; setReviewing(false); }
   }
   const filtered = events.filter((event) => {
     const haystack = `${event.eventId} ${event.location} ${event.cameraName} ${event.cameraId}`.toLowerCase();
-    return haystack.includes(query.toLowerCase()) &&
+    return (!timeoutOnly || Boolean(event.reportTimedOutAt && !event.responseCompletedAt && event.reviewStatus !== 'FALSE_POSITIVE')) && haystack.includes(query.toLowerCase()) &&
       (type === '전체' || types[event.eventType] === type) &&
       (status === '전체' || states[event.reviewStatus] === status) &&
       (!start || event.detectedAt?.slice(0, 10) >= start) &&
@@ -123,7 +148,7 @@ export default function History() {
   }
 
   return <main className="console-page history-page">
-    <PageHeading eyebrow="FIRIS EVENT ARCHIVE / INCIDENT INTELLIGENCE" title="이벤트 이력 조회"><span className="console-muted">실제 이벤트 기록 · KST 기준</span><button onClick={exportEvents}>↓ 이력 내보내기</button></PageHeading>
+    <PageHeading eyebrow="FIRIS EVENT ARCHIVE / INCIDENT INTELLIGENCE" title="이벤트 이력 조회">{import.meta.env.DEV && <button onClick={previewReport}>화재 알림 미리보기</button>}<span className="console-muted">실제 이벤트 기록 · KST 기준</span><button onClick={exportEvents}>↓ 이력 내보내기</button></PageHeading>
     {error && <p role="alert" className="console-notice">{error}</p>}
     <section className="history-summary" aria-label="이벤트 요약">{summary.map(([label, value, english], index) => <article key={label} className={`history-summary__card history-summary__card--${index}`}><span>{label}</span><strong>{String(value).padStart(2, '0')}<small>건</small></strong><p>{english}</p></article>)}</section>
     <section className="console-toolbar history-filters" aria-label="이벤트 검색" onChange={() => setPage(1)}>
@@ -131,11 +156,12 @@ export default function History() {
       <label>감지 유형<select value={type} onChange={(event) => setType(event.target.value)}>{['전체', '화재', '연기', '화재·연기'].map((value) => <option key={value}>{value}</option>)}</select></label>
       <label>처리 상태<select value={status} onChange={(event) => setStatus(event.target.value)}>{['전체', '미처리', '처리완료', '오탐'].map((value) => <option key={value}>{value}</option>)}</select></label>
       <label className="history-filters__search">이벤트 검색<input placeholder="이벤트 ID, 위치, CCTV 검색…" value={query} onChange={(event) => setQuery(event.target.value)} /></label>
-      <button onClick={() => { setQuery(''); setType('전체'); setStatus('전체'); setStart(''); setEnd(''); setPage(1); }}>초기화</button>
+      <button onClick={() => { setQuery(''); setType('전체'); setStatus('전체'); setStart(''); setEnd(''); setTimeoutOnly(false); setPage(1); }}>초기화</button>
     </section>
-    <div className="history-list-heading"><h2>감지 이벤트 목록 <span>{filtered.length} RECORDS</span></h2><span className="console-muted">최신 발생 순</span></div>
+
+    <div className="history-list-heading"><h2>감지 이벤트 목록 <span>{filtered.length} RECORDS</span></h2><div className="history-list-heading__actions"><label className="history-timeout-filter"><input type="checkbox" checked={timeoutOnly} onChange={(event) => { setTimeoutOnly(event.target.checked); setPage(1); }} /> 무응답 · 신고 확인 필요 ({events.filter((event) => event.reportTimedOutAt && !event.responseCompletedAt && event.reviewStatus !== 'FALSE_POSITIVE').length}건)</label><span className="console-muted">최신 발생 순</span></div></div>
     <div className="console-table-wrap"><table className="console-table"><thead><tr>{['이벤트 ID / 발생 시각', '감지 유형', '감지 위치 / 채널', 'AI 신뢰도', '처리 상태', '담당 요원', '상세 기록'].map((label) => <th key={label}>{label}</th>)}</tr></thead><tbody>
-      {visibleEvents.map((event) => <tr key={event.eventId}><td><strong className="console-mono">EVT-{event.eventId}</strong><small className="console-mono">{date(event.detectedAt)}</small></td><td><Badge tone={event.eventType === 'FIRE' ? 'red' : 'amber'}>{types[event.eventType]} 감지</Badge></td><td>{event.location}<small>{event.cameraName}</small></td><td className="console-mono">{(event.confidence * 100).toFixed(1)}%<div className="history-confidence"><i style={{ width: `${Math.max(0, Math.min(100, event.confidence * 100))}%` }} /></div></td><td><Badge tone={tone(event.reviewStatus)}>{states[event.reviewStatus]}</Badge></td><td>{event.reviewStatus === 'UNREVIEWED' ? '미배정' : '검수 완료'}</td><td><button onClick={() => setSearchParams({ eventId: String(event.eventId) })}>리포트 열기 ↗</button></td></tr>)}
+      {visibleEvents.map((event) => <tr key={event.eventId}><td><strong className="console-mono">EVT-{event.eventId}</strong><small className="console-mono">{date(event.detectedAt)}</small></td><td><Badge tone={event.eventType === 'FIRE' ? 'red' : 'amber'}>{types[event.eventType]} 감지</Badge></td><td>{event.location}<small>{event.cameraName}</small></td><td className="console-mono">{(event.confidence * 100).toFixed(1)}%<div className="history-confidence"><i style={{ width: `${Math.max(0, Math.min(100, event.confidence * 100))}%` }} /></div></td><td><Badge tone={tone(event.reviewStatus)}>{states[event.reviewStatus]}</Badge>{event.responseCompletedAt && <small>대응 완료 · {date(event.responseCompletedAt)}</small>}{event.reportTimedOutAt && !event.responseCompletedAt && event.reviewStatus !== 'FALSE_POSITIVE' && <small className="history-timeout-badge" title={`자동 닫힘: ${date(event.reportTimedOutAt)}`}>무응답 · 신고 확인 필요</small>}</td><td>{event.reviewStatus === 'UNREVIEWED' ? '미배정' : '검수 완료'}</td><td><button onClick={() => setSearchParams({ eventId: String(event.eventId) })}>리포트 열기 ↗</button>{event.reportTimedOutAt && !event.responseCompletedAt && event.reviewStatus !== 'FALSE_POSITIVE' && <button onClick={() => openFireAlert(event)}>화재 알림 다시 확인</button>}</td></tr>)}
       {!filtered.length && <tr><td colSpan="7" className="console-empty">검색 조건에 맞는 이벤트가 없습니다.</td></tr>}
     </tbody></table></div>
     <div className="history-pagination"><span className="console-muted" aria-live="polite">총 {filtered.length}건 중 {filtered.length ? pageStart + 1 : 0}–{Math.min(pageStart + PAGE_SIZE, filtered.length)}건 표시</span><nav aria-label="이벤트 목록 페이지"><button disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)}>‹ 이전</button>{visiblePages.map((number) => <button key={number} aria-label={`${number}페이지`} aria-current={currentPage === number ? 'page' : undefined} disabled={!filtered.length} onClick={() => setPage(number)}>{number}</button>)}<button disabled={currentPage === pageCount} onClick={() => setPage(currentPage + 1)}>다음 ›</button></nav><span className="console-muted history-pagination__signature">FIRIS / EVENT AUDIT LOG</span></div>
@@ -188,11 +214,12 @@ export default function History() {
         {error && <p role="alert" className="console-notice">{error}</p>}
       </div>
       <footer className="console-modal__footer">
-        <button onClick={() => showFalsePositiveForm ? review('FALSE_POSITIVE') : setShowFalsePositiveForm(true)} disabled={Boolean(selected.review)}>오탐 처리로 변경</button>
+        <button onClick={() => showFalsePositiveForm ? review('FALSE_POSITIVE') : setShowFalsePositiveForm(true)} disabled={reviewing || Boolean(selected.review)}>오탐 처리로 변경</button>
         <button disabled title="최종 검수 취소 API 미구현">미처리로 변경</button>
+        {selected.reviewStatus === 'TRUE_FIRE' && !selected.responseCompletedAt && <button onClick={() => openFireAlert(selected)}>화재 알림 확인</button>}
         <button onClick={downloadReport}>↓ 리포트 다운로드</button>
         <button onClick={() => setSearchParams({})}>창 닫기</button>
-        <button className="console-primary" onClick={() => review('TRUE_FIRE')} disabled={Boolean(selected.review)}>✓ 처리완료로 변경</button>
+        <button className="console-primary" onClick={() => review('TRUE_FIRE')} disabled={reviewing || Boolean(selected.review)}>✓ 화재 확정</button>
       </footer>
     </Modal>}
   </main>;

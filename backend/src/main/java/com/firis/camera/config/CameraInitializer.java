@@ -60,6 +60,11 @@ public class CameraInitializer implements ApplicationRunner {
                 "창고 B구역",
                 "/videos/CAM004/001.mp4"
         );
+        createIfMissing("CAM005", "CCTV 05", "공장 C구역", "/videos/CAM005/001.mp4");
+        createIfMissing("CAM006", "CCTV 06", "공장 D구역", "/videos/CAM006/001.mp4");
+        createIfMissing("CAM007", "CCTV 07", "공장 E구역", "/videos/CAM007/001.mp4");
+        createIfMissing("CAM008", "CCTV 08", "창고 C구역", "/videos/CAM008/001.mp4");
+        createIfMissing("CAM009", "CCTV 09", "창고 D구역", "/videos/CAM009/001.mp4");
     }
 
     private void createIfMissing(

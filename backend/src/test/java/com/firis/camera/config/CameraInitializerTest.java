@@ -20,13 +20,13 @@ class CameraInitializerTest {
     private final CameraService service = mock(CameraService.class);
 
     @Test
-    void createsFourCamerasWithConfiguredBaseUrl() {
+    void createsNineCamerasWithConfiguredBaseUrl() {
         new CameraInitializer(repository, service, "https://firis.example:8443///").run(null);
 
         var requests = ArgumentCaptor.forClass(CreateCameraRequest.class);
-        verify(service, times(4)).createCamera(requests.capture());
+        verify(service, times(9)).createCamera(requests.capture());
         assertThat(requests.getAllValues()).extracting(CreateCameraRequest::cameraId)
-                .containsExactly("CAM001", "CAM002", "CAM003", "CAM004");
+                .containsExactly("CAM001", "CAM002", "CAM003", "CAM004", "CAM005", "CAM006", "CAM007", "CAM008", "CAM009");
         for (var request : requests.getAllValues()) {
             assertThat(request.streamUrl()).isEqualTo(
                     "https://firis.example:8443/videos/" + request.cameraId() + "/001.mp4");
@@ -50,7 +50,7 @@ class CameraInitializerTest {
 
         verify(service, times(1)).createCamera(argThat(request -> request.cameraId().equals("CAM004")
                 && request.streamUrl().equals("http://localhost:8080/videos/CAM004/001.mp4")));
-        assertThat(existing).containsExactlyInAnyOrder("CAM001", "CAM002", "CAM003", "CAM004");
+        assertThat(existing).containsExactlyInAnyOrder("CAM001", "CAM002", "CAM003", "CAM004", "CAM005", "CAM006", "CAM007", "CAM008", "CAM009");
         verify(repository, never()).save(any());
     }
 

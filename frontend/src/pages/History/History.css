@@ -1,4 +1,4 @@
-﻿.history-summary {
+.history-summary {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 14px;
@@ -74,6 +74,8 @@
   min-width: 180px;
 }
 .history-list-heading {
+  flex-wrap: wrap;
+  gap: 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -388,3 +390,13 @@
   display: grid;
   gap: 6px;
 }
+
+.history-report-confirm { display: grid; gap: 14px; margin: 24px 0; }
+.history-report-confirm > div { display: grid; grid-template-columns: 80px minmax(0, 1fr); gap: 12px; }
+.history-report-confirm dt { color: #a6adb8; }
+.history-report-confirm dd { margin: 0; overflow-wrap: anywhere; }
+
+.history-timeout-badge { color: #ffd180 !important; font-weight: 700; }
+.history-timeout-filter { display: flex; width: fit-content; max-width: 100%; align-items: center; gap: 8px; color: #ffd180; margin: 0; }
+
+.history-list-heading__actions { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; }

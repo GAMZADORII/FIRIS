@@ -25,6 +25,20 @@ public class FireEvent {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "report_timed_out_at")
+    private LocalDateTime reportTimedOutAt;
+
+    public LocalDateTime getReportTimedOutAt() { return reportTimedOutAt; }
+    public void markReportTimedOut(LocalDateTime at) {
+        if (reportTimedOutAt == null) reportTimedOutAt = at;
+    }
+
+    @Column(name = "response_completed_at")
+    private LocalDateTime responseCompletedAt;
+    public LocalDateTime getResponseCompletedAt() { return responseCompletedAt; }
+    public void completeResponse(LocalDateTime at) {
+        if (responseCompletedAt == null) responseCompletedAt = at;
+    }
     protected FireEvent() {}
     public FireEvent(Camera camera, EventType eventType, double confidence,
             LocalDateTime detectedAt, String modelVersion, LocalDateTime createdAt) {

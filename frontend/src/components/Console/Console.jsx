@@ -28,7 +28,7 @@ export function Modal({ title, subtitle, onClose, children, wide = false }) {
     <dialog
       ref={ref}
       className={`console-modal ${wide ? "console-modal--wide" : ""}`}
-      onCancel={onClose}
+      onCancel={(event) => { event.preventDefault(); onClose(); }}
       aria-labelledby="console-modal-title"
     >
       <header className="console-modal__header">
