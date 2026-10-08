@@ -124,7 +124,7 @@ Request:
 
 must_change_password = false
 
-신규 WORKER는 비밀번호 변경 후 `contactOnboardingRequired=true`인 동안 관제 API에 접근할 수 없다. 기존 계정에는 연락처 등록을 소급 강제하지 않는다.
+신규 WORKER는 비밀번호 변경 후 `contactOnboardingRequired=true`가 된다. `CONTACT_ONBOARDING_ENFORCED=true`이면 완료 전 관제 API에 접근할 수 없다. 프론트 첫 로그인 화면 연결 전 기본값은 `false`이며, 이 기간에도 모의 신고에는 연락처·동의가 필요하다. 기존 계정에는 연락처 등록을 소급 강제하지 않는다.
 
 ## 24-1. 최초 연락처 및 개인정보 동의 등록
 
@@ -142,7 +142,7 @@ PATCH /api/auth/contact — WORKER JWT 필요. 최초 비밀번호 변경을 마
 }
 ```
 
-서버는 전화번호를 숫자로 정규화하고 동의한 문안 버전·서버 시각을 기록한다. 동의하지 않거나 서버의 현재 문안 버전과 다르면 저장하지 않는다. 성공 응답에는 `contactOnboardingRequired=false`, `contactPhone`, `consentVersion`, `consentedAt`이 포함된다. ADMIN과 이미 등록한 WORKER는 이 API를 다시 호출할 수 없다. 신규 WORKER는 비밀번호 변경과 연락처 등록을 모두 완료하기 전까지 관제 API가 403을 반환한다. 기존 WORKER는 관제 이용을 계속할 수 있으나 모의 신고하려면 본인 연락처를 등록해야 한다. 관리자 비밀번호 초기화는 연락처 동의 상태를 변경하지 않는다.
+서버는 전화번호를 숫자로 정규화하고 동의한 문안 버전·서버 시각을 기록한다. 동의하지 않거나 서버의 현재 문안 버전과 다르면 저장하지 않는다. 성공 응답에는 `contactOnboardingRequired=false`, `contactPhone`, `consentVersion`, `consentedAt`이 포함된다. ADMIN과 이미 등록한 WORKER는 이 API를 다시 호출할 수 없다. `CONTACT_ONBOARDING_ENFORCED=true`로 전환하면 신규 WORKER는 비밀번호 변경과 연락처 등록을 모두 완료하기 전까지 관제 API가 403을 반환한다. 기존 WORKER는 관제 이용을 계속할 수 있으나 모의 신고하려면 본인 연락처를 등록해야 한다. 관리자 비밀번호 초기화는 연락처 동의 상태를 변경하지 않는다.
 
 `v1`은 API 예시 버전이다. 실제 화면에 표시할 개인정보 문안의 목적·항목·보유 기간·거부 시 불이익을 팀에서 확정하고 같은 버전을 프론트·백엔드에 적용한다. 이메일은 요청하거나 저장하지 않는다. 119 모의서버에 보내는 신고 메시지와 관제실 번호는 해당 기능의 별도 계약에서 정의한다.
 

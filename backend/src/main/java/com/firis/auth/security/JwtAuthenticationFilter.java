@@ -11,6 +11,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.MediaType;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -26,15 +27,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
     private final AccountRepository accountRepository;
     private final ObjectMapper objectMapper;
+    private final boolean contactOnboardingEnforced;
 
     public JwtAuthenticationFilter(
             JwtTokenProvider jwtTokenProvider,
             AccountRepository accountRepository,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            @Value("${app.contact-consent.enforce-onboarding:false}") boolean contactOnboardingEnforced
     ) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.accountRepository = accountRepository;
         this.objectMapper = objectMapper;
+        this.contactOnboardingEnforced = contactOnboardingEnforced;
     }
 
     @Override
@@ -87,7 +91,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             );
             return;
         }
-        if (account.getRole() == Role.WORKER
+        if (contactOnboardingEnforced && account.getRole() == Role.WORKER
                 && account.isContactOnboardingRequired()
                 && !isPasswordChangeRequest(request)
                 && !isContactOnboardingRequest(request)

@@ -38,6 +38,7 @@ app:
     default-password: ${WORKER_DEFAULT_PASSWORD:}
   contact-consent:
     version: ${CONTACT_CONSENT_VERSION:v1}
+    enforce-onboarding: ${CONTACT_ONBOARDING_ENFORCED:false}
   mock-119:
     ws-url: ${MOCK_119_WS_URL:}
     api-key: ${MOCK_119_API_KEY:}
