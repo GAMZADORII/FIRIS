@@ -21,13 +21,13 @@ class Mock119ReportServiceTest {
     @Test
     void confirmsReportOnlyAfterMatchingMockServerReceipt() {
         var message = mock(Mock119Message.class);
-        when(state.prepare(27L, "W000001", "0212345678"))
+        when(state.prepare(27L, "W000001"))
                 .thenReturn(new Mock119ReportState.Prepared(12L, true, message));
         when(transport.sendAndAwaitReceipt(message)).thenReturn("MOCK-119-001");
         when(state.byId(12L)).thenReturn(new Mock119ReportResponse(
                 12L, 27L, Mock119ReportStatus.ACCEPTED, "MOCK-119-001"));
 
-        var result = service.report(27L, "W000001", "0212345678");
+        var result = service.report(27L, "W000001");
 
         verify(state).accepted(12L, "MOCK-119-001");
         assertThat(result.status()).isEqualTo(Mock119ReportStatus.ACCEPTED);
@@ -37,12 +37,12 @@ class Mock119ReportServiceTest {
     @Test
     void failedWebSocketDeliveryIsRecordedAndCannotLookAccepted() {
         var message = mock(Mock119Message.class);
-        when(state.prepare(27L, "W000001", "0212345678"))
+        when(state.prepare(27L, "W000001"))
                 .thenReturn(new Mock119ReportState.Prepared(12L, true, message));
         when(transport.sendAndAwaitReceipt(message))
                 .thenThrow(new Mock119DeliveryException("모의서버 응답 없음"));
 
-        assertThatThrownBy(() -> service.report(27L, "W000001", "0212345678"))
+        assertThatThrownBy(() -> service.report(27L, "W000001"))
                 .isInstanceOf(ApiException.class)
                 .extracting(error -> ((ApiException) error).getErrorCode())
                 .isEqualTo(ErrorCode.MOCK_119_DELIVERY_FAILED);
@@ -52,12 +52,12 @@ class Mock119ReportServiceTest {
 
     @Test
     void pendingOrAcceptedReportDoesNotSendAgain() {
-        when(state.prepare(27L, "W000001", "0212345678"))
+        when(state.prepare(27L, "W000001"))
                 .thenReturn(new Mock119ReportState.Prepared(12L, false, null));
         when(state.byId(12L)).thenReturn(new Mock119ReportResponse(
                 12L, 27L, Mock119ReportStatus.PENDING, null));
 
-        assertThat(service.report(27L, "W000001", "0212345678").status())
+        assertThat(service.report(27L, "W000001").status())
                 .isEqualTo(Mock119ReportStatus.PENDING);
         verifyNoInteractions(transport);
     }

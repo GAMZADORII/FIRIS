@@ -25,11 +25,13 @@ class Mock119WebSocketTransportTest {
             var transport = new Mock119WebSocketTransport(mapper,
                     "ws://127.0.0.1:" + server.getLocalPort() + "/ws/reports", "test-key");
             var message = new Mock119Message("FIRE_REPORT", "test-request-id", 27L, "CAM003",
-                    "창고 A구역", "FIRE", LocalDateTime.of(2026, 10, 8, 14, 2),
+                    "경기도 ○○시 ○○로 123", "창고 A구역", "리튬배터리 보관구역", "FIRE",
+                    LocalDateTime.of(2026, 10, 8, 14, 2),
                     "W000001", "홍길동", "01012345678", "0212345678");
 
             assertThat(transport.sendAndAwaitReceipt(message)).isEqualTo("MOCK-119-001");
             assertThat(received.get(5, TimeUnit.SECONDS)).contains("\"reporterPhone\":\"01012345678\"");
+            assertThat(received.get(5, TimeUnit.SECONDS)).contains("\"specialNotes\":\"리튬배터리 보관구역\"");
         }
     }
 

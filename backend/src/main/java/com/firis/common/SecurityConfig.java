@@ -71,6 +71,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/cameras", "/api/cameras/").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/events/*/mock-119-reports").hasRole("WORKER")
+                        .requestMatchers(HttpMethod.GET, "/api/events/*/mock-119-preview").hasRole("WORKER")
                         .requestMatchers(
                                 "/api/cameras/**",
                                 "/api/events/**",

@@ -92,7 +92,8 @@ ACCOUNT/CAMERA/FIRE_EVENT/EVENT_MEDIA/EVENT_REVIEW와 119 모의 신고용 MOCK_
 Statistics Table 없이 집계하며, 검수 행이 없으면 UNREVIEWED이다.
 신규 WORKER는 비밀번호 변경 후 연락처·동의 등록을 마쳐야 관제 API를 이용할 수 있다. 기존 계정에는 소급 강제하지 않는다. 프론트의 최초 동의 화면은 별도 연결이 필요하다.
 
-119 모의 신고는 WORKER가 화면에서 시작하고 Backend가 신고자 연락처를 DB에서 읽는다. 관제실 번호는 신고 요청에서 받고, Backend가 모의서버에 WebSocket 메시지를 보낸다. 같은 `requestId`의 ACK를 받은 경우에만 `ACCEPTED`로 저장한다. 실패 시 `FAILED`를 남기며 동일 이벤트는 동일 ID로만 재시도한다. 이는 실제 119 신고가 아니고, 모의서버 자체는 별도 구현 대상이다. [API 명세](API_SPEC.md)의 WebSocket 계약을 따른다.
+119 모의 신고는 WORKER가 화면에서 시작하고 Backend가 신고자 연락처를 DB에서 읽는다. 관제실 번호는 서버 설정에서 가져와 모의서버에 WebSocket 메시지를 보낸다. 같은 `requestId`의 ACK를 받은 경우에만 `ACCEPTED`로 저장한다. 실패 시 `FAILED`를 남기며 동일 이벤트는 동일 ID로만 재시도한다. 이는 실제 119 신고가 아니고, 모의서버 자체는 별도 구현 대상이다. [API 명세](API_SPEC.md)의 WebSocket 계약을 따른다.
+신고 확인 창은 이벤트·카메라·계정과 서버 설정을 조합한 preview API로 표시한다. 주소·관제실 번호는 서버 설정, 상세위치·특이사항은 카메라, 탐지시각·유형은 이벤트, 담당자 연락처는 계정에서 가져온다. 확인 후 POST는 화면 입력을 신뢰하지 않고 같은 서버 데이터를 다시 읽어 WebSocket으로 보낸다.
 
 ## 현재 실행 구성
 - AI: FastAPI/Uvicorn, 8000 포트. 모델 추론과 영상 시간 창 판정·Backend 호출, 박스 JPEG 발행 코드가 있다. 로컬 AVI에서 YOLO 추론과 Backend/MySQL 이벤트 저장을 확인했다. 실제 CCTV RTSP 검증은 아직 없다.

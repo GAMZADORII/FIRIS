@@ -3,6 +3,7 @@ package com.firis.report.service;
 import com.firis.common.exception.ApiException;
 import com.firis.common.exception.ErrorCode;
 import com.firis.report.dto.Mock119ReportResponse;
+import com.firis.report.dto.Mock119PreviewResponse;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -15,8 +16,12 @@ public class Mock119ReportService {
         this.transport = transport;
     }
 
-    public Mock119ReportResponse report(Long eventId, String loginId, String controlRoomPhone) {
-        var prepared = state.prepare(eventId, loginId, controlRoomPhone);
+    public Mock119PreviewResponse preview(Long eventId, String loginId) {
+        return state.preview(eventId, loginId);
+    }
+
+    public Mock119ReportResponse report(Long eventId, String loginId) {
+        var prepared = state.prepare(eventId, loginId);
         if (!prepared.send()) return state.byId(prepared.reportId());
         try {
             String receiptId = transport.sendAndAwaitReceipt(prepared.message());

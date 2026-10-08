@@ -40,6 +40,7 @@
 | camera_id | VARCHAR(30) PK |
 | camera_name | VARCHAR(50) NOT NULL |
 | location | VARCHAR(100) |
+| report_note | VARCHAR(500) NULL; 신고 확인 창의 카메라별 특이사항 |
 | stream_url | VARCHAR(500) |
 | status | VARCHAR(20) NOT NULL DEFAULT ONLINE |
 
@@ -90,6 +91,9 @@
 | request_id | VARCHAR(36) NOT NULL UNIQUE; 재시도에도 동일한 값 사용 |
 | reporter_phone | VARCHAR(20) NOT NULL; 신고 당시 계정 연락처 복사 |
 | control_room_phone | VARCHAR(20) NOT NULL; 모달에서 확인한 관제실 번호 |
+| site_address | VARCHAR(255) NULL; 신규 신고에서 필수, 기존 테이블 안전 확장용 nullable |
+| detail_location | VARCHAR(100) NULL; 신규 신고에서 필수, 기존 테이블 안전 확장용 nullable |
+| special_notes | VARCHAR(500) NULL; 신고 당시 카메라 특이사항 복사 |
 | status | VARCHAR(20) NOT NULL; PENDING / ACCEPTED / FAILED |
 | receipt_id | VARCHAR(100) NULL; 모의서버 접수 ID |
 | failure_reason | VARCHAR(255) NULL |

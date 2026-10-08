@@ -20,6 +20,7 @@ JWT_SECRET은 사용자 인증에, AI_API_KEY는 /api/ai/** 인증에 사용한�
 `AI_SERVER_URL`은 최신 박스 표시 JPEG을 받아올 AI 서버 주소이다(기본 `http://127.0.0.1:8000`). `GET /api/cameras/{cameraId}/frame`은 ADMIN/WORKER JWT를 검사하고 등록된 카메라의 최신 JPEG을 AI에서 받아 전달한다. 프론트는 JWT 헤더를 포함해 주기적으로 요청한다.
 신규 WORKER는 비밀번호 변경 후 연락처·개인정보 동의 등록을 마쳐야 관제 API에 접근할 수 있다. 프론트는 `GET /api/auth/contact-consent`로 `CONTACT_CONSENT_VERSION`을 확인하고 해당 버전의 확정 문안을 표시한 뒤 `PATCH /api/auth/contact`를 호출한다. 기존 WORKER에는 소급 적용하지 않는다.
 `MOCK_119_WS_URL`을 설정하면 WORKER의 `POST /api/events/{eventId}/mock-119-reports` 요청을 119 모의서버로 WebSocket 전송한다. 주소가 없거나 접수 확인이 실패하면 502와 FAILED 기록을 남기며 실제 119 접수로 표시하지 않는다. 메시지 형식은 [API 명세](../docs/API_SPEC.md)를 따른다.
+신고 확인 창의 사업장 주소와 관제실 번호는 `MOCK_119_SITE_ADDRESS`, `MOCK_119_CONTROL_ROOM_PHONE`에 실제 시연 값을 설정한다. `GET /api/events/{eventId}/mock-119-preview`는 카메라 `location`을 상세위치로, `report_note`를 선택적 특이사항으로 표시한다. 기존 CAM001~CAM004는 등록된 값을 덮어쓰지 않으므로 카메라별 상세위치·특이사항은 시연 전 DB에서 확인하고 필요한 경우 수정한다. 값이 빠진 상태에서는 신고 API가 성공하지 않는다.
 `EVENT_STORAGE_DIR`은 AI 이벤트 파일이 있는 공유 저장소를 가리킨다(로컬 기본 `../storage/events`). 이벤트 목록·상세·검수와 `/api/events/{eventId}/snapshot`, `/video`는 사용자 JWT가 필요하다. Compose에서는 AI 이벤트 저장소를 Backend에 읽기 전용으로 마운트한다.
 
 `com.firis` 하위 common/auth/account/camera/event/review/statistics 패키지를 사용한다.

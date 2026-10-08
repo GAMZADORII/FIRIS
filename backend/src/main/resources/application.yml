@@ -41,3 +41,5 @@ app:
   mock-119:
     ws-url: ${MOCK_119_WS_URL:}
     api-key: ${MOCK_119_API_KEY:}
+    site-address: ${MOCK_119_SITE_ADDRESS:}
+    control-room-phone: ${MOCK_119_CONTROL_ROOM_PHONE:}

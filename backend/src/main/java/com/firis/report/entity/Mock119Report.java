@@ -32,6 +32,15 @@ public class Mock119Report {
     @Column(name = "control_room_phone", nullable = false, length = 20)
     private String controlRoomPhone;
 
+    @Column(name = "site_address", length = 255)
+    private String siteAddress;
+
+    @Column(name = "detail_location", length = 100)
+    private String detailLocation;
+
+    @Column(name = "special_notes", length = 500)
+    private String specialNotes;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private Mock119ReportStatus status;
@@ -54,12 +63,16 @@ public class Mock119Report {
     protected Mock119Report() {}
 
     public Mock119Report(FireEvent event, Account reporter, String requestId,
-            String reporterPhone, String controlRoomPhone) {
+            String reporterPhone, String controlRoomPhone, String siteAddress,
+            String detailLocation, String specialNotes) {
         this.event = event;
         this.reporter = reporter;
         this.requestId = requestId;
         this.reporterPhone = reporterPhone;
         this.controlRoomPhone = controlRoomPhone;
+        this.siteAddress = siteAddress;
+        this.detailLocation = detailLocation;
+        this.specialNotes = specialNotes;
         this.status = Mock119ReportStatus.PENDING;
     }
 
@@ -99,6 +112,9 @@ public class Mock119Report {
     public String getRequestId() { return requestId; }
     public String getReporterPhone() { return reporterPhone; }
     public String getControlRoomPhone() { return controlRoomPhone; }
+    public String getSiteAddress() { return siteAddress; }
+    public String getDetailLocation() { return detailLocation; }
+    public String getSpecialNotes() { return specialNotes; }
     public Mock119ReportStatus getStatus() { return status; }
     public String getReceiptId() { return receiptId; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
