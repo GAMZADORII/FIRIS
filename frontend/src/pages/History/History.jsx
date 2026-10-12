@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { apiClient, apiError, fetchMedia } from '../../api/client.js';
 import { Badge, Modal, PageHeading, downloadFile } from '../../components/Console/Console.jsx';
 import './History.css';
+import { cameraDisplayName } from '../../utils/cameraChannels.js';
 
 const PAGE_SIZE = 3;
 const MAX_PAGE_BUTTONS = 5;
@@ -104,7 +105,7 @@ export default function History() {
     finally { reviewLock.current = false; setReviewing(false); }
   }
   const filtered = events.filter((event) => {
-    const haystack = `${event.eventId} ${event.location} ${event.cameraName} ${event.cameraId}`.toLowerCase();
+    const haystack = `${event.eventId} ${event.location} ${event.cameraName} ${cameraDisplayName(event.cameraId, event.cameraName)} ${event.cameraId}`.toLowerCase();
     return (!timeoutOnly || Boolean(event.reportTimedOutAt && !event.responseCompletedAt && event.reviewStatus !== 'FALSE_POSITIVE')) && haystack.includes(query.toLowerCase()) &&
       (type === '전체' || types[event.eventType] === type) &&
       (status === '전체' || states[event.reviewStatus] === status) &&
@@ -125,7 +126,7 @@ export default function History() {
   ];
   function exportEvents() {
     const header = '이벤트 ID,발생 시각,채널,위치,유형,신뢰도,상태';
-    const rows = filtered.map((event) => [event.eventId, date(event.detectedAt), event.cameraName, event.location, types[event.eventType], (event.confidence * 100).toFixed(1), states[event.reviewStatus]].map((value) => `"${String(value ?? '').replaceAll('"', '""')}"`).join(','));
+    const rows = filtered.map((event) => [event.eventId, date(event.detectedAt), cameraDisplayName(event.cameraId, event.cameraName), event.location, types[event.eventType], (event.confidence * 100).toFixed(1), states[event.reviewStatus]].map((value) => `"${String(value ?? '').replaceAll('"', '""')}"`).join(','));
     downloadFile('FIRIS-이벤트-이력.csv', [header, ...rows].join('\r\n'), 'text/csv;charset=utf-8');
   }
   function downloadReport() {
@@ -134,7 +135,7 @@ export default function History() {
       'FIRIS 사고 상세 리포트',
       `이벤트 ID: ${selected.eventId}`,
       `발생 시각: ${date(selected.detectedAt)}`,
-      `CCTV: ${selected.cameraName} (${selected.cameraId})`,
+      `CCTV: ${cameraDisplayName(selected.cameraId, selected.cameraName)} (${selected.cameraId})`,
       `위치: ${selected.location || '미등록'}`,
       `감지 유형: ${types[selected.eventType] || selected.eventType}`,
       `AI 신뢰도: ${(selected.confidence * 100).toFixed(1)}%`,
@@ -161,7 +162,7 @@ export default function History() {
 
     <div className="history-list-heading"><h2>감지 이벤트 목록 <span>{filtered.length} RECORDS</span></h2><div className="history-list-heading__actions"><label className="history-timeout-filter"><input type="checkbox" checked={timeoutOnly} onChange={(event) => { setTimeoutOnly(event.target.checked); setPage(1); }} /> 무응답 · 신고 확인 필요 ({events.filter((event) => event.reportTimedOutAt && !event.responseCompletedAt && event.reviewStatus !== 'FALSE_POSITIVE').length}건)</label><span className="console-muted">최신 발생 순</span></div></div>
     <div className="console-table-wrap"><table className="console-table"><thead><tr>{['이벤트 ID / 발생 시각', '감지 유형', '감지 위치 / 채널', 'AI 신뢰도', '처리 상태', '담당 요원', '상세 기록'].map((label) => <th key={label}>{label}</th>)}</tr></thead><tbody>
-      {visibleEvents.map((event) => <tr key={event.eventId}><td><strong className="console-mono">EVT-{event.eventId}</strong><small className="console-mono">{date(event.detectedAt)}</small></td><td><Badge tone={event.eventType === 'FIRE' ? 'red' : 'amber'}>{types[event.eventType]} 감지</Badge></td><td>{event.location}<small>{event.cameraName}</small></td><td className="console-mono">{(event.confidence * 100).toFixed(1)}%<div className="history-confidence"><i style={{ width: `${Math.max(0, Math.min(100, event.confidence * 100))}%` }} /></div></td><td><Badge tone={tone(event.reviewStatus)}>{states[event.reviewStatus]}</Badge>{event.responseCompletedAt && <small>대응 완료 · {date(event.responseCompletedAt)}</small>}{event.reportTimedOutAt && !event.responseCompletedAt && event.reviewStatus !== 'FALSE_POSITIVE' && <small className="history-timeout-badge" title={`자동 닫힘: ${date(event.reportTimedOutAt)}`}>무응답 · 신고 확인 필요</small>}</td><td>{event.reviewStatus === 'UNREVIEWED' ? '미배정' : '검수 완료'}</td><td><button onClick={() => setSearchParams({ eventId: String(event.eventId) })}>리포트 열기 ↗</button>{event.reportTimedOutAt && !event.responseCompletedAt && event.reviewStatus !== 'FALSE_POSITIVE' && <button onClick={() => openFireAlert(event)}>화재 알림 다시 확인</button>}</td></tr>)}
+      {visibleEvents.map((event) => <tr key={event.eventId}><td><strong className="console-mono">EVT-{event.eventId}</strong><small className="console-mono">{date(event.detectedAt)}</small></td><td><Badge tone={event.eventType === 'FIRE' ? 'red' : 'amber'}>{types[event.eventType]} 감지</Badge></td><td>{event.location}<small>{cameraDisplayName(event.cameraId, event.cameraName)}</small></td><td className="console-mono">{(event.confidence * 100).toFixed(1)}%<div className="history-confidence"><i style={{ width: `${Math.max(0, Math.min(100, event.confidence * 100))}%` }} /></div></td><td><Badge tone={tone(event.reviewStatus)}>{states[event.reviewStatus]}</Badge>{event.responseCompletedAt && <small>대응 완료 · {date(event.responseCompletedAt)}</small>}{event.reportTimedOutAt && !event.responseCompletedAt && event.reviewStatus !== 'FALSE_POSITIVE' && <small className="history-timeout-badge" title={`자동 닫힘: ${date(event.reportTimedOutAt)}`}>무응답 · 신고 확인 필요</small>}</td><td>{event.reviewStatus === 'UNREVIEWED' ? '미배정' : '검수 완료'}</td><td><button onClick={() => setSearchParams({ eventId: String(event.eventId) })}>리포트 열기 ↗</button>{event.reportTimedOutAt && !event.responseCompletedAt && event.reviewStatus !== 'FALSE_POSITIVE' && <button onClick={() => openFireAlert(event)}>화재 알림 다시 확인</button>}</td></tr>)}
       {!filtered.length && <tr><td colSpan="7" className="console-empty">검색 조건에 맞는 이벤트가 없습니다.</td></tr>}
     </tbody></table></div>
     <div className="history-pagination"><span className="console-muted" aria-live="polite">총 {filtered.length}건 중 {filtered.length ? pageStart + 1 : 0}–{Math.min(pageStart + PAGE_SIZE, filtered.length)}건 표시</span><nav aria-label="이벤트 목록 페이지"><button disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)}>‹ 이전</button>{visiblePages.map((number) => <button key={number} aria-label={`${number}페이지`} aria-current={currentPage === number ? 'page' : undefined} disabled={!filtered.length} onClick={() => setPage(number)}>{number}</button>)}<button disabled={currentPage === pageCount} onClick={() => setPage(currentPage + 1)}>다음 ›</button></nav><span className="console-muted history-pagination__signature">FIRIS / EVENT AUDIT LOG</span></div>
@@ -174,7 +175,7 @@ export default function History() {
       <div className="console-modal__body">
         <div className="history-report-meta">
           <span>분석 화면 캡처</span>
-          <span>{selected.cameraName} / {date(selected.detectedAt)}</span>
+          <span>{cameraDisplayName(selected.cameraId, selected.cameraName)} / {date(selected.detectedAt)}</span>
         </div>
         <div className="history-report-grid">
           <div className="history-capture">

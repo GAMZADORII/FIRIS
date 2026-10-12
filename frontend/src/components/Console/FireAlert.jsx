@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { apiClient, apiError, fetchMedia, getSession } from '../../api/client.js';
 import { Modal } from './Console.jsx';
+import { cameraDisplayName } from '../../utils/cameraChannels.js';
 
 const reasons = { STEAM: '수증기', LIGHT: '빛', REFLECTION: '반사', DUST: '먼지', WELDING: '용접', ETC: '기타' };
 export default function FireAlert() {
@@ -144,7 +145,7 @@ export default function FireAlert() {
     finally { lock.current = false; setBusy(false); }
   }
   if (!event) return null;
-  return <Modal key={stage === 'report' ? 'report' : 'alert'} wide={stage !== 'report'} title={stage === 'report' ? '119 신고 정보를 확인해주세요.' : '화재 의심 이벤트 감지'} subtitle={`EVT-${event.eventId} · ${event.cameraName || event.cameraId || ''}`} onClose={close}>
+  return <Modal key={stage === 'report' ? 'report' : 'alert'} wide={stage !== 'report'} title={stage === 'report' ? '119 신고 정보를 확인해주세요.' : '화재 의심 이벤트 감지'} subtitle={`EVT-${event.eventId} · ${cameraDisplayName(event.cameraId, event.cameraName)}`} onClose={close}>
     <div className="console-modal__body">
       {event.preview && <p>미리보기 · 실제 이벤트 변경 및 신고 전송 없음</p>}
       {stage === 'report' ? <>

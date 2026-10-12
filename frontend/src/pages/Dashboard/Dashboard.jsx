@@ -3,13 +3,9 @@ import { Link } from 'react-router-dom';
 import { apiClient, apiError, fetchMedia } from '../../api/client.js';
 import './Dashboard.css';
 import { Modal } from '../../components/Console/Console.jsx';
-const cameraSlots = [
-  ['CAM001', '공장 A구역'], ['CAM002', '공장 B구역'],
-  ['CAM003', '창고 A구역'], ['CAM004', '창고 B구역'],
-  ['CAM005', '공장 C구역'], ['CAM006', '공장 D구역'], ['CAM007', '공장 E구역'],
-  ['CAM008', '창고 C구역'], ['CAM009', '창고 D구역'],
-];
-const cameraSelectionKey = 'firis-dashboard-cameras';
+import { cameraChannelOrder, cameraChannelSlots, cameraDisplayName } from '../../utils/cameraChannels.js';
+const cameraSlots = cameraChannelSlots;
+const cameraSelectionKey = 'firis-dashboard-cameras-v2';
 
 const statisticIconPaths = {
   '이벤트 검수 현황': 'M12 3 20 6v5c0 5-4 8-8 10-4-2-8-5-8-10V6l8-3Z M12 8v5 M12 16h.01',
@@ -58,10 +54,10 @@ function LiveFrame({ camera, onExpand }) {
     <div className="camera-feed__heading"><div className="camera-feed__name"><span className="camera-feed__status-dot" aria-hidden="true" /><h3>{camera.cameraName}</h3><span className="camera-feed__location">[{camera.location || '위치 미등록'}]</span></div><span className="camera-feed__format">{camera.status}</span></div>
     <div className="camera-feed__viewport" aria-label={`${camera.cameraName} AI 분석 화면`}>
       {frame && <img className="camera-feed__image" src={frame} alt={`${camera.cameraName} 불꽃·연기 탐지 화면`} />}
-      <div className="camera-feed__viewport-status"><span>{state}</span><span>{camera.cameraId}</span></div>
+      <div className="camera-feed__viewport-status"><span>{state}</span><span>{camera.cameraName}</span></div>
       <span className="camera-feed__timestamp">LIVE</span>
     </div>
-    <div className="camera-feed__footer"><span>{camera.cameraId} / {camera.status}</span><span>FIRE · SMOKE 탐지</span></div>
+    <div className="camera-feed__footer"><span>{camera.cameraName} / {camera.status}</span><span>FIRE · SMOKE 탐지</span></div>
   </article>;
 }
 
@@ -74,13 +70,14 @@ export default function Dashboard() {
       const saved = JSON.parse(localStorage.getItem(cameraSelectionKey));
       if (Array.isArray(saved)) return saved.filter((id) => cameraSlots.some(([cameraId]) => cameraId === id));
     } catch { /* Use the default four views if storage is unavailable. */ }
-    return ['CAM001', 'CAM002', 'CAM003', 'CAM004'];
+    return cameraChannelOrder.slice(0, 4);
   });
   useEffect(() => {
     try { localStorage.setItem(cameraSelectionKey, JSON.stringify(selectedCameraIds)); } catch { /* Selection remains usable for this session. */ }
   }, [selectedCameraIds]);
   const availableCameras = cameraSlots.map(([cameraId, location]) => ({
-    ...(cameras.find((camera) => camera.cameraId === cameraId) || { cameraId, cameraName: `CCTV ${cameraId.slice(-2)}`, status: '연결 준비', unregistered: true }),
+    ...(cameras.find((camera) => camera.cameraId === cameraId) || { cameraId, status: '연결 준비', unregistered: true }),
+    cameraName: cameraDisplayName(cameraId),
     location,
   }));
   const visibleCameras = availableCameras.filter((camera) => selectedCameraIds.includes(camera.cameraId));
@@ -149,7 +146,7 @@ export default function Dashboard() {
     <div className="latest-event__summary"><strong>{eventTypes[latestEvent.eventType] || latestEvent.eventType}</strong><span className={`latest-event__status latest-event__status--${latestEvent.reviewStatus}`}>{latestEvent.responseCompletedAt ? '대응 완료' : reviewStates[latestEvent.reviewStatus] || '상태 미확인'}</span></div>
     <dl className="latest-event__details">
       <div><dt>감지 위치</dt><dd>{latestEvent.location || '위치 미등록'}</dd></div>
-      <div><dt>CCTV</dt><dd>{latestEvent.cameraName || latestEvent.cameraId}</dd></div>
+      <div><dt>CCTV</dt><dd>{cameraDisplayName(latestEvent.cameraId, latestEvent.cameraName)}</dd></div>
       <div><dt>감지 시각</dt><dd><time dateTime={latestEvent.detectedAt}>{latestEvent.detectedAt?.replace('T', ' ') || '시각 미기록'}</time></dd></div>
     </dl>
     <Link className="stat-card__today" to={`/history?eventId=${latestEvent.eventId}`}>EVT-{latestEvent.eventId}<span>상세 리포트 보기 ↗</span></Link>
@@ -160,11 +157,11 @@ export default function Dashboard() {
         <div className="console-modal__body">
           <p>대시보드에 표시할 화면을 선택하세요. 화면을 꺼도 영상 분석은 계속됩니다.</p>
           <div className="camera-selector-actions"><button onClick={() => setSelectedCameraIds(cameraSlots.map(([id]) => id))}>전체 켜기</button><button onClick={() => setSelectedCameraIds([])}>전체 끄기</button></div>
-          <div className="camera-selector-grid">{availableCameras.map((camera) => <label key={camera.cameraId} className="camera-selector-item"><div><strong>{camera.location}</strong><small>{camera.cameraId}</small></div><input type="checkbox" role="switch" aria-label={`${camera.location} 화면 표시`} checked={selectedCameraIds.includes(camera.cameraId)} onChange={(event) => setSelectedCameraIds((ids) => event.target.checked ? [...ids, camera.cameraId] : ids.filter((id) => id !== camera.cameraId))} /></label>)}</div>
+          <div className="camera-selector-grid">{availableCameras.map((camera) => <label key={camera.cameraId} className="camera-selector-item"><div><strong>{camera.location}</strong><small>{camera.cameraName}</small></div><input type="checkbox" role="switch" aria-label={`${camera.location} 화면 표시`} checked={selectedCameraIds.includes(camera.cameraId)} onChange={(event) => setSelectedCameraIds((ids) => event.target.checked ? [...ids, camera.cameraId] : ids.filter((id) => id !== camera.cameraId))} /></label>)}</div>
         </div><footer className="console-modal__footer"><button onClick={() => setSelectorOpen(false)}>완료</button></footer>
       </Modal>}
 
-      {expandedCamera && <Modal wide title={`${expandedCamera.location} · CCTV 확대 보기`} subtitle={`${expandedCamera.cameraName} / ${expandedCamera.cameraId}`} onClose={() => setExpandedCameraId(null)}>
+      {expandedCamera && <Modal wide title={`${expandedCamera.location} · CCTV 확대 보기`} subtitle={expandedCamera.cameraName} onClose={() => setExpandedCameraId(null)}>
         <div className="camera-expanded-view"><LiveFrame key={expandedCamera.cameraId} camera={expandedCamera} /></div>
         <footer className="console-modal__footer"><button onClick={() => setExpandedCameraId(null)}>닫기</button></footer>
       </Modal>}
