@@ -27,6 +27,9 @@ class CameraInitializerTest {
         verify(service, times(9)).createCamera(requests.capture());
         assertThat(requests.getAllValues()).extracting(CreateCameraRequest::cameraId)
                 .containsExactly("CAM001", "CAM002", "CAM003", "CAM004", "CAM005", "CAM006", "CAM007", "CAM008", "CAM009");
+        assertThat(requests.getAllValues()).extracting(CreateCameraRequest::location)
+                .containsExactly("공장 A구역", "공장 B구역", "공장 C구역", "공장 D구역", "공장 E구역",
+                        "창고 A구역", "창고 B구역", "창고 C구역", "창고 D구역");
         for (var request : requests.getAllValues()) {
             assertThat(request.streamUrl()).isEqualTo(
                     "https://firis.example:8443/videos/" + request.cameraId() + "/001.mp4");
