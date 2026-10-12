@@ -7,6 +7,9 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.repository.query.Param;
 
 public interface FireEventRepository extends JpaRepository<FireEvent, Long>, JpaSpecificationExecutor<FireEvent> {
+    @Query("select coalesce(max(e.eventId), 0) from FireEvent e")
+    Long findLatestEventId();
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select e from FireEvent e where e.eventId = :id")
     Optional<FireEvent> findForMediaUpdate(@Param("id") Long id);

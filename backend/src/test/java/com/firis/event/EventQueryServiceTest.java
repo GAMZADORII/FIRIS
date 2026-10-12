@@ -28,6 +28,23 @@ class EventQueryServiceTest {
 
     @BeforeEach void setup() { service = new EventQueryService(events, media, reviews, accounts); }
 
+    @Test void latestEventIdUsesDatabaseMaximum() {
+        when(events.findLatestEventId()).thenReturn(42L);
+        assertThat(service.latestEventId()).isEqualTo(42L);
+    }
+
+    @Test void newEventCursorReadsAscendingIdsAndRejectsNegativeCursor() {
+        when(events.findAll(any(org.springframework.data.jpa.domain.Specification.class),
+                any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(java.util.List.of()));
+        service.list(0, 100, null, null, null, null, null, 42L);
+        var page = ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
+        verify(events).findAll(any(org.springframework.data.jpa.domain.Specification.class), page.capture());
+        assertThat(page.getValue().getSort().getOrderFor("eventId").isAscending()).isTrue();
+        assertThatThrownBy(() -> service.list(0, 100, null, null, null, null, null, -1L))
+                .isInstanceOf(ApiException.class);
+    }
+
     @Test void rejectsFalsePositiveWithoutReason() {
         assertThatThrownBy(() -> service.review(7L, "worker", new ReviewEventRequest(
                 ReviewResult.FALSE_POSITIVE, null, null)))

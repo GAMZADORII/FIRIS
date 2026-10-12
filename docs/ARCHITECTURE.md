@@ -121,7 +121,7 @@ React + Vite + Yarn 4를 유지한다. yarn.lock과 .yarnrc.yml을 커밋한다.
 Dashboard는 전체 세로 스크롤 없이 CCTV를 항상 노출하는 통합 관제 화면이다.
 현재 Dashboard는 9개 기본 채널 중 표시할 화면을 선택하며 기본 선택은 CAM001~CAM004이다. AI worker는 시작 당시 존재하는 최대 9개 `storage/videos/{cameraId}` 폴더를 각각 처리한다. 각 폴더의 영상은 이름순으로 재생하고 실행 중 같은 폴더에 추가된 파일도 다음 순회에 발견한다. 카메라 ID와 영상의 대응을 보장하기 위해 단일 공용 영상 폴더로 합치지 않는다. 새 폴더를 worker 실행 중 만드는 것은 현재 자동 인식 대상이 아니며, 9채널을 넘는 확장은 별도 작업이다.
 이벤트 대응 완료는 FIRE_EVENT.response_completed_at과 필요한 경우 EVENT_REVIEW의 TRUE_FIRE를 기록한다. 10초 무응답 알림은 FIRE_EVENT.report_timed_out_at만 기록하며 실제 119 모의 신고를 보내지 않는다. 실제 모의 신고는 별도 preview/POST API를 통해 사용자가 확인 후 요청한다.
-Frontend의 신규 이벤트 알림은 최초 조회를 기준선으로 삼고 이후 5초마다 최신 이벤트부터 이미 확인한 이벤트가 나올 때까지만 목록 페이지를 읽는다. 알림의 119 확인 창은 Backend preview API에서 서버 설정·카메라·계정 정보를 조회한다. 실제 신고 POST 버튼은 아직 연결되지 않았다.
+Frontend의 신규 이벤트 알림은 최초 접속 시 최대 eventId를 기준선으로 삼고 이후 5초마다 그보다 큰 ID의 이벤트만 오름차순으로 조회한다. 알림의 119 확인 창은 Backend preview API에서 서버 설정·카메라·계정 정보를 조회한다. 실제 신고 POST 버튼은 아직 연결되지 않았다.
 
 ## Git 협업 및 CI/CD
 

@@ -24,30 +24,34 @@ export default function FireAlert() {
   };
   useEffect(() => {
     let active = true, polling = false;
-    let seen = null;
+    let latestEventId = null;
     const poll = async () => {
       if (polling) return;
       polling = true;
       try {
-        const first = (await apiClient.get('/api/events', { params: { page: 0, size: 100 } })).data;
-        if (!active) return;
-        if (!seen) {
+        if (latestEventId === null) {
           // Existing events are the initial baseline, not new alerts.
-          seen = new Set(first.content.map((item) => item.eventId));
+          const { data } = await apiClient.get('/api/events/latest-id');
+          if (active) latestEventId = data.latestEventId;
           return;
         }
         const added = [];
-        let current = first;
-        for (let page = 0; page < first.totalPages; page++) {
-          const previouslySeen = current.content.some((item) => seen.has(item.eventId));
-          added.push(...current.content.filter((item) => !seen.has(item.eventId)));
-          if (previouslySeen || page + 1 >= first.totalPages) break;
-          current = (await apiClient.get('/api/events', { params: { page: page + 1, size: 100 } })).data;
+        let nextId = latestEventId;
+        for (let batch = 0; batch < 10; batch++) {
+          const { data } = await apiClient.get('/api/events', {
+            params: { page: 0, size: 100, afterEventId: nextId },
+          });
           if (!active) return;
+          if (!data.content.length) break;
+          added.push(...data.content);
+          nextId = data.content[data.content.length - 1].eventId;
+          if (data.content.length < 100) break;
         }
-        added.forEach((item) => seen.add(item.eventId));
+        latestEventId = nextId;
         const alerts = added.filter((item) => item.reviewStatus === 'UNREVIEWED');
-        if (alerts.length) setQueue((items) => [...items, ...alerts.reverse()]);
+        if (alerts.length) setQueue((items) => [...items, ...alerts.filter(
+          (alert) => !items.some((item) => item.eventId === alert.eventId)
+        )]);
       } catch { /* Retry on next poll; do not create an alert from failed requests. */ }
       finally { polling = false; }
     };
