@@ -117,7 +117,7 @@ python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
 ```powershell
-python -m app.services.multi_camera_service --model yolo --sample-fps 3
+python -m app.services.multi_camera_service --model yolo --sample-fps 1
 ```
 
 현재 AI 파일 분석은 영상 끝에서 종료하며 자동 반복하지 않습니다. 최신 JPEG는 5초 이상 오래되면 제공되지 않습니다. 프론트 video의 loop와 AI 파일 분석 반복은 별개입니다.

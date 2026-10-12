@@ -52,7 +52,7 @@ CCTV는 CAM001~CAM004를 시연용 기본 ID로 사용하며 Backend 시작 시 
 - MobileNet Family 사용은 확정이며 정확한 Detection Head/Bounding Box 방식은 AI 담당자가 결정한다.
 - PyTorch 또는 TensorFlow를 사용할 수 있다. 일반 Classification에 종속하지 않고 모델 인터페이스를 추상화한다.
 - AI 클래스는 FIRE/SMOKE이고 Backend Event Type은 FIRE/SMOKE/FIRE_SMOKE이다.
-- 한 프레임만으로 이벤트를 만들지 않고 Temporal Validation을 적용한다. 최근 3초/70%는 실험용 예시이다.
+- 한 프레임만으로 이벤트를 만들지 않고 Temporal Validation을 적용한다. 클래스별 첫 탐지 후 실제 영상 시간 최소 2초와 최근 샘플의 70% 이상 탐지를 현재 실험 시작값으로 사용한다.
 - Frame Buffer는 AI에 둔다. 이벤트 전후 약 5초는 조정 가능한 예시이다.
 - 위험 확정 → Snapshot 확보 → POST /api/ai/events → FIRE_EVENT 및 EVENT_MEDIA 생성 → eventId 반환 → 이후 프레임 수집/영상 저장 → PATCH /api/ai/events/{eventId}/media 순서를 따른다.
 - 영상이 완성되기 전에 이벤트를 조회할 수 있어야 한다. 생성 직후 video_path는 NULL일 수 있다.

@@ -12,7 +12,7 @@ python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 
 ```powershell
 cd ai
-python -m app.services.multi_camera_service --model yolo --sample-fps 3
+python -m app.services.multi_camera_service --model yolo --sample-fps 1
 ```
 
 FastAPI 실행만으로 영상 분석은 시작되지 않습니다. Backend·AI API·분석 worker를 함께 실행해야 합니다.
@@ -38,7 +38,7 @@ storage/events/{UUID}/
 └─ event.json            snapshot/video/annotated_video 및 탐지 정보
 ```
 
-시간 기반 판정이 확정되면 스냅샷 저장 → Backend POST → 후속 프레임 수집 → 두 MP4 저장 → 기존 PATCH 순서로 동작합니다. 기본 전 약 5초 + 후 약 5초이며 영상 시작·끝 또는 정상 종료 시 짧아질 수 있습니다. 디코딩된 프레임을 JPEG 버퍼 후 MP4로 재인코딩하므로 원본 파일의 무손실 복사나 오디오 보존은 아닙니다.
+시간 기반 판정은 클래스별 첫 탐지 후 실제 영상 시간 2초 이상, 최근 샘플의 70% 이상 탐지, 현재 샘플 탐지를 요구합니다. 초당 1회 추론할 때는 최소 0·1·2초 세 샘플이 필요합니다. 판정이 확정되면 스냅샷 저장 → Backend POST → 후속 프레임 수집 → 두 MP4 저장 → 기존 PATCH 순서로 동작합니다. 기본 전 약 5초 + 후 약 5초이며 영상 시작·끝 또는 정상 종료 시 짧아질 수 있습니다. 디코딩된 프레임을 JPEG 버퍼 후 MP4로 재인코딩하므로 원본 파일의 무손실 복사나 오디오 보존은 아닙니다.
 
 두 MP4의 프레임 수·FPS는 같습니다. FFmpeg의 H.264/yuv420p로 저장해 브라우저에서 재생할 수 있게 한다. 로컬 실행에도 FFmpeg가 필요하다. 기존 mp4v 클립은 `cd ai && .venv/bin/python scripts/transcode_event_videos.py`로 변환한다. 변환 전 원본은 같은 폴더의 `.mp4v.bak` 파일로 보존한다. 추론 사이 프레임은 마지막 추론의 박스를 재사용하고, 다음 추론에서 박스가 없으면 지웁니다. 추가 추론은 없습니다. 두 JPEG 버퍼와 MP4 인코딩으로 CPU·메모리·디스크 사용량은 늘어납니다.
 
