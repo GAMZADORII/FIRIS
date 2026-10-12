@@ -3,17 +3,31 @@ package com.firis.event.controller;
 import com.firis.event.dto.*;
 import com.firis.event.entity.EventType;
 import com.firis.event.service.EventQueryService;
+import com.firis.event.service.EventStreamService;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.Authentication;
+import org.springframework.http.MediaType;
+import org.springframework.http.CacheControl;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @RestController
 @RequestMapping("/api/events")
 public class EventController {
     private final EventQueryService service;
-    public EventController(EventQueryService service) { this.service = service; }
+    private final EventStreamService stream;
+    public EventController(EventQueryService service, EventStreamService stream) {
+        this.service = service; this.stream = stream;
+    }
+
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public ResponseEntity<SseEmitter> stream() {
+        return ResponseEntity.ok().cacheControl(CacheControl.noCache())
+                .header("X-Accel-Buffering", "no").body(stream.subscribe());
+    }
 
     @GetMapping
     public EventPageResponse list(@RequestParam(defaultValue = "0") int page,

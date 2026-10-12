@@ -17,6 +17,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -30,10 +31,11 @@ class AiEventServiceTest {
     @Mock CameraRepository cameras;
     @Mock FireEventRepository events;
     @Mock EventMediaRepository media;
+    @Mock ApplicationEventPublisher publisher;
     AiEventService service;
 
     @BeforeEach void setUp() {
-        service = new AiEventService(cameras, events, media);
+        service = new AiEventService(cameras, events, media, publisher);
     }
 
     @Test void createsEventAndSnapshotMediaBeforeVideoExists() {
@@ -56,6 +58,7 @@ class AiEventServiceTest {
         assertThat(ReflectionTestUtils.getField(saved, "snapshotPath")).isEqualTo("/storage/events/snapshot.jpg");
         assertThat(ReflectionTestUtils.getField(saved, "videoPath")).isNull();
         assertThat(ReflectionTestUtils.getField(saved, "event")).isInstanceOf(FireEvent.class);
+        verify(publisher).publishEvent(new com.firis.event.service.AiEventCreated(31L));
     }
 
     @Test void updatesVideoWithoutReplacingSnapshot() {
@@ -82,7 +85,7 @@ class AiEventServiceTest {
             LocalDateTime.now(), "/storage/events/snapshot.jpg", null)))
             .isInstanceOf(AiEventException.class)
             .hasMessageContaining("CCTV");
-        verifyNoInteractions(events, media);
+        verifyNoInteractions(events, media, publisher);
     }
 
     private Camera newCamera() {

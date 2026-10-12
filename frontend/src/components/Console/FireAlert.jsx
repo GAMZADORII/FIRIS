@@ -19,6 +19,12 @@ export default function FireAlert() {
   const [busy, setBusy] = useState(false);
   const lock = useRef(false);
   const deadline = useRef(0);
+  const notifiedIds = useRef(new Set());
+  const enqueueAlert = (item) => {
+    if (notifiedIds.current.has(item.eventId)) return;
+    notifiedIds.current.add(item.eventId);
+    setQueue((items) => [...items, item]);
+  };
   const close = () => {
     if (lock.current) return;
     setQueue((items) => items.slice(1));
@@ -56,11 +62,7 @@ export default function FireAlert() {
           latestEventId = Math.max(...added.map((item) => item.eventId));
           window.dispatchEvent(new Event('firis-events-changed'));
         }
-        const alerts = added.sort((a, b) => a.eventId - b.eventId)
-          .filter((item) => item.reviewStatus === 'UNREVIEWED');
-        if (alerts.length) setQueue((items) => [...items, ...alerts.filter(
-          (alert) => !items.some((item) => item.eventId === alert.eventId)
-        )]);
+        added.sort((a, b) => a.eventId - b.eventId).forEach(enqueueAlert);
         pollFailureLogged = false;
       } catch (cause) {
         if (!pollFailureLogged) console.warn('화재 알림 이벤트 조회 실패. 다음 조회에서 재시도합니다.', apiError(cause));
@@ -70,12 +72,67 @@ export default function FireAlert() {
     };
     const open = ({ detail }) => {
       if (detail?.preview && !import.meta.env.DEV) return;
-      if (detail) setQueue((items) => items.some((item) => item.eventId === detail.eventId) ? items : [...items, detail]);
+      if (detail) {
+        if (!detail.preview) notifiedIds.current.add(detail.eventId);
+        setQueue((items) => items.some((item) => item.eventId === detail.eventId) ? items : [...items, detail]);
+      }
     };
     window.addEventListener('firis-open-fire-alert', open);
     poll();
     const timer = setInterval(poll, 5000);
     return () => { active = false; clearInterval(timer); window.removeEventListener('firis-open-fire-alert', open); };
+  }, []);
+  useEffect(() => {
+    let active = true;
+    let retryTimer;
+    let streamErrorLogged = false;
+    const abort = new AbortController();
+    const connect = async () => {
+      const token = getSession()?.accessToken;
+      if (!token) return;
+      try {
+        const response = await fetch(apiClient.getUri({ url: '/api/events/stream' }), {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: 'no-store',
+          signal: abort.signal,
+        });
+        if (!response.ok || !response.body) throw new Error(`이벤트 스트림 HTTP ${response.status}`);
+        streamErrorLogged = false;
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        while (active) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true }).replaceAll('\r', '');
+          let boundary;
+          while ((boundary = buffer.indexOf('\n\n')) !== -1) {
+            const message = buffer.slice(0, boundary);
+            buffer = buffer.slice(boundary + 2);
+            const eventName = message.split('\n').find((line) => line.startsWith('event:'))?.slice(6).trim();
+            if (eventName !== 'fire-event') continue;
+            const eventId = Number(message.split('\n').find((line) => line.startsWith('data:'))?.slice(5).trim());
+            if (!Number.isSafeInteger(eventId) || eventId <= 0 || notifiedIds.current.has(eventId)) continue;
+            try {
+              const { data } = await apiClient.get(`/api/events/${eventId}`);
+              if (!active) return;
+              enqueueAlert(data);
+              window.dispatchEvent(new Event('firis-events-changed'));
+            } catch (cause) {
+              if (active) console.warn('실시간 화재 이벤트 조회 실패. 목록 조회에서 재시도합니다.', apiError(cause));
+            }
+          }
+        }
+      } catch (cause) {
+        if (active && !abort.signal.aborted && !streamErrorLogged) {
+          console.warn('실시간 화재 알림 연결 실패. 목록 조회를 계속 사용합니다.', cause);
+          streamErrorLogged = true;
+        }
+      }
+      if (active) retryTimer = setTimeout(connect, 5000);
+    };
+    connect();
+    return () => { active = false; abort.abort(); clearTimeout(retryTimer); };
   }, []);
   useEffect(() => {
     setClip(null); setReason('ETC');

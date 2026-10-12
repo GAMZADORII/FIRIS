@@ -304,7 +304,11 @@ afterEventId
 
 응답은 페이지 형식(`content`, `totalElements`, `totalPages`, `number`, `size`)이다. `content` 항목은 `eventId`, `cameraId`, `cameraName`, `location`, `eventType`, `confidence`(0~1), `detectedAt`(KST 로컬 시각), `modelVersion`, `reviewStatus`, `reportTimedOutAt`, `responseCompletedAt`을 포함한다. 마지막 두 시각은 해당 동작 전에는 `null`이다. 기본 정렬은 최신 발생 시각과 eventId 역순이다. `afterEventId`를 지정하면 해당 ID보다 큰 이벤트만 eventId 오름차순으로 반환해 새 알림을 누락 없이 이어서 조회할 수 있다. `from`/`to`는 `YYYY-MM-DD`이며 양 끝 날짜를 포함한다. `size` 최대값은 100이다.
 
-`GET /api/events/latest-id`는 현재 저장된 최대 eventId를 `{ "latestEventId": 42 }` 형식으로 반환한다. 현재 Frontend 알림은 이력 화면과 동일한 `GET /api/events` 목록을 5초마다 조회한다. 최초 조회의 기존 이벤트는 기준선으로 삼고, 이후 새로 나타난 미검수 이벤트를 자동 알림으로 표시한다. 알림이 새 이벤트를 발견하면 열려 있는 이력 화면도 갱신한다. 한 번의 조회 사이에 페이지 크기보다 많은 이벤트가 생기면 이전 이벤트가 나올 때까지 다음 페이지를 조회한다.
+`GET /api/events/latest-id`는 현재 저장된 최대 eventId를 `{ "latestEventId": 42 }` 형식으로 반환한다.
+
+`GET /api/events/stream` — ADMIN/WORKER JWT 필요, `Accept: text/event-stream`. Backend가 AI의 `POST /api/ai/events` 저장 트랜잭션을 완료하면 SSE `event: fire-event`의 `data`로 새 eventId를 즉시 전송한다. 접속 직후 `event: connected`를 보낸다. Frontend는 받은 ID로 `GET /api/events/{eventId}`를 조회해 검수 상태와 관계없이 새 위험 이벤트 알림을 표시한다. 스트림이 끊기면 재접속한다.
+
+알림 누락 복구를 위해 Frontend는 이력 화면과 동일한 `GET /api/events` 목록도 5초마다 조회한다. 최초 목록의 기존 이벤트는 기준선으로 삼고, 이후 새로 나타난 이벤트를 알림으로 표시한다. 알림이 새 이벤트를 발견하면 열려 있는 이력 화면도 갱신한다. 한 번의 조회 사이에 페이지 크기보다 많은 이벤트가 생기면 이전 이벤트가 나올 때까지 다음 페이지를 조회한다. SSE와 목록 조회에서 같은 ID를 발견해도 모달은 한 번만 표시한다.
 
 reviewStatus:
 

@@ -8,6 +8,7 @@ import com.firis.event.repository.*;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import org.springframework.http.HttpStatus;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,9 +17,11 @@ public class AiEventService {
     private final CameraRepository cameras;
     private final FireEventRepository events;
     private final EventMediaRepository media;
+    private final ApplicationEventPublisher publisher;
 
-    public AiEventService(CameraRepository cameras, FireEventRepository events, EventMediaRepository media) {
-        this.cameras = cameras; this.events = events; this.media = media;
+    public AiEventService(CameraRepository cameras, FireEventRepository events, EventMediaRepository media,
+            ApplicationEventPublisher publisher) {
+        this.cameras = cameras; this.events = events; this.media = media; this.publisher = publisher;
     }
     private LocalDateTime now() { return LocalDateTime.now(ZoneId.of("Asia/Seoul")); }
 
@@ -33,6 +36,7 @@ public class AiEventService {
         var event = events.save(new FireEvent(camera, request.eventType(), request.confidence(),
             request.detectedAt(), request.modelVersion(), timestamp));
         media.save(new EventMedia(event, request.snapshotPath(), timestamp));
+        publisher.publishEvent(new AiEventCreated(event.getEventId()));
         return new CreateAiEventResponse(event.getEventId(), "UNREVIEWED");
     }
 
