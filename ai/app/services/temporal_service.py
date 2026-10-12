@@ -31,10 +31,12 @@ class TemporalValidator:
         self.window_seconds = window_seconds
         self.sample_fps = sample_fps
         self.required_samples = ceil(window_seconds * sample_fps)
-        self.minimum_samples = ceil(self.required_samples * 0.6)
+        self.minimum_samples = max(3, ceil((self.required_samples + 1) * 0.6))
         self.required_ratio = required_ratio
         self.clear_seconds = clear_seconds
-        self.samples: deque[tuple[float, dict]] = deque(maxlen=self.required_samples)
+        self.samples: deque[tuple[float, dict]] = deque(maxlen=self.required_samples + 1)
+        self.first_detected_at: dict[str, float] = {}
+        self.last_detected_at: dict[str, float] = {}
         self.armed = True
         self.clear_since: float | None = None
 
@@ -43,7 +45,18 @@ class TemporalValidator:
         while self.samples and timestamp - self.samples[0][0] > self.window_seconds:
             self.samples.popleft()
 
-        if not detection.get("detected"):
+        detected = set(detection.get("detected", []))
+        for label in ("fire", "smoke"):
+            last_seen = self.last_detected_at.get(label)
+            if label in detected:
+                if last_seen is None or timestamp - last_seen >= self.clear_seconds:
+                    self.first_detected_at[label] = timestamp
+                self.last_detected_at[label] = timestamp
+            elif last_seen is not None and timestamp - last_seen >= self.clear_seconds:
+                self.first_detected_at.pop(label, None)
+                self.last_detected_at.pop(label, None)
+
+        if not detected:
             if self.clear_since is None:
                 self.clear_since = timestamp
             elif timestamp - self.clear_since >= self.clear_seconds:
@@ -53,12 +66,14 @@ class TemporalValidator:
 
         if not self.armed or len(self.samples) < self.minimum_samples:
             return None
-        if self.samples[-1][0] - self.samples[0][0] < self.window_seconds - 1 / self.sample_fps - 1e-6:
-            return None
 
         required_hits = ceil(len(self.samples) * self.required_ratio)
         confirmed = []
         for label in ("fire", "smoke"):
+            first_seen = self.first_detected_at.get(label)
+            if (label not in detected or first_seen is None
+                    or timestamp - first_seen < self.window_seconds - 1e-6):
+                continue
             positive = [sample for _, sample in self.samples if label in sample.get("detected", [])]
             if len(positive) < required_hits:
                 continue

@@ -115,9 +115,9 @@ class VideoServiceTest(unittest.TestCase):
             )
 
         video_call = next(call for call in calls if call[0] == "video")
-        self.assertEqual(video_call[1], 3)
-        self.assertAlmostEqual(video_call[2], 1.0)
-        self.assertEqual(calls[-1][3:], (1, 1))
+        self.assertEqual(video_call[1], 13)
+        self.assertAlmostEqual(video_call[2], 4.0)
+        self.assertEqual(calls[-1][3:], (2, 1))
 
     def test_live_frames_update_between_inference_samples(self):
         capture = Capture(30)
