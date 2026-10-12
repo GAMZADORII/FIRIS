@@ -11,7 +11,8 @@ public record WorkerResponse(
         String name,
         AccountStatus status,
         boolean mustChangePassword,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        String contactPhone
 ) {
     public static WorkerResponse from(Account account) {
         return new WorkerResponse(
@@ -20,7 +21,8 @@ public record WorkerResponse(
                 account.getName(),
                 account.getStatus(),
                 account.isMustChangePassword(),
-                account.getCreatedAt().withNano(0)
+                account.getCreatedAt().withNano(0),
+                account.getContactPhone()
         );
     }
 }

@@ -3,6 +3,7 @@ import { apiClient, apiError, fetchMedia, getSession } from '../../api/client.js
 import { Modal } from './Console.jsx';
 import { connectCenter } from '../../api/mock119Socket.js';
 import { cameraDisplayName } from '../../utils/cameraChannels.js';
+import { formatPhone } from '../../utils/phone.js';
 
 const reasons = { STEAM: '수증기', LIGHT: '빛', REFLECTION: '반사', DUST: '먼지', WELDING: '용접', ETC: '기타' };
 export default function FireAlert() {
@@ -25,6 +26,11 @@ export default function FireAlert() {
     if (lock.current) return;
     setQueue((items) => items.slice(1));
     setStage('alert'); setError('');
+    window.dispatchEvent(new Event('firis-events-changed'));
+  };
+  const dismissReport = (eventId) => {
+    setQueue(items => items.filter(item => item.eventId !== eventId));
+    if (currentEventId.current === eventId) { setStage('alert'); setError(''); }
     window.dispatchEvent(new Event('firis-events-changed'));
   };
   useEffect(() => {
@@ -150,11 +156,7 @@ export default function FireAlert() {
         const { data } = await apiClient.get(`/api/events/${event.eventId}/mock-119-report`);
         if (!active) return;
         setDelivery(data);
-        if (data.responseStatus === 'CLOSED') {
-          setQueue(items => items.filter(item => item.eventId !== event.eventId));
-          setStage('alert');
-          window.dispatchEvent(new Event('firis-events-changed'));
-        }
+        if (data.status === 'ACCEPTED' || data.responseStatus === 'CLOSED') dismissReport(event.eventId);
       } catch { /* A report may not have been submitted yet. */ }
     }
     status(); const timer = setInterval(status, 3000);
@@ -162,10 +164,12 @@ export default function FireAlert() {
   }, [event, stage]);
   async function submitReport() {
     if (lock.current || event.preview || !reportData?.readyToReport) return;
+    const eventId = event.eventId;
     lock.current = true; setBusy(true); setReportError('');
     try {
-      const { data } = await apiClient.post(`/api/events/${event.eventId}/mock-119-reports`);
-      setDelivery(data);
+      const { data } = await apiClient.post(`/api/events/${eventId}/mock-119-reports`);
+      if (currentEventId.current === eventId) setDelivery(data);
+      if (data.status === 'ACCEPTED') dismissReport(eventId);
       window.dispatchEvent(new Event('firis-events-changed'));
     } catch (cause) { setReportError(apiError(cause)); }
     finally { lock.current = false; setBusy(false); }
@@ -196,10 +200,10 @@ export default function FireAlert() {
         {reportData ? <dl className="history-report-confirm">
           <div><dt>사고유형</dt><dd>{{ FIRE: '화재', SMOKE: '연기', FIRE_SMOKE: '화재·연기' }[reportData?.eventType] || '확인 중'}</dd></div>
           <div><dt>주소</dt><dd>{reportData?.siteAddress || '미등록'}</dd></div>
-          <div><dt>관제실 번호</dt><dd>{reportData?.controlRoomPhone || '미등록'}</dd></div>
+          <div><dt>관제실 번호</dt><dd>{formatPhone(reportData?.controlRoomPhone)}</dd></div>
           <div><dt>상세위치</dt><dd>{reportData?.detailLocation || '미등록'}</dd></div>
           <div><dt>탐지시간</dt><dd>{reportData?.detectedAt?.replace('T', ' ') || '확인 중'}</dd></div>
-          <div><dt>담당자</dt><dd>{reportData?.reporterName || '미등록'} / {reportData?.reporterPhone || '연락처 미등록'}</dd></div>
+          <div><dt>담당자</dt><dd>{reportData?.reporterName || '미등록'} / {formatPhone(reportData?.reporterPhone, '연락처 미등록')}</dd></div>
           <div><dt>특이사항</dt><dd>{reportData?.specialNotes || '특이사항 없음'}</dd></div>
         </dl> : <p role={reportError ? 'alert' : undefined}>{reportError ? `신고 정보 조회 실패: ${reportError}` : '신고 정보를 불러오는 중입니다.'}</p>}
         {delivery ? <p role="status">모의 신고: {({ PENDING: '등록 처리 중', ACCEPTED: '센터에 등록됨', FAILED: '등록 실패' })[delivery.status]} {delivery.receiptId} · {({ PENDING: '신규 신고', DISPATCHED: '출동 중', ARRIVED: '현장 도착', CLOSED: '대응 완료' })[delivery.responseStatus]}</p> : <p>119 모의 접수센터로 전달합니다. 실제 119 신고가 아닙니다.</p>}
@@ -216,7 +220,7 @@ export default function FireAlert() {
       {error && <p role="alert">{error}</p>}
     </div>
     <footer className="console-modal__footer">
-      {stage === 'report' ? <><button onClick={() => setStage('alert')}>취소</button><button className="console-primary" disabled={busy || event.preview || !reportData?.readyToReport || delivery?.status === 'ACCEPTED'} onClick={submitReport}>{busy ? '등록 중…' : delivery?.status === 'ACCEPTED' ? '센터 등록 완료' : '모의 신고 전송'}</button></> : <>
+      {stage === 'report' ? <><button onClick={() => setStage('alert')}>취소</button><button className="console-primary" disabled={busy || event.preview || (delivery?.status !== 'ACCEPTED' && !reportData?.readyToReport)} onClick={delivery?.status === 'ACCEPTED' ? close : submitReport}>{busy ? '등록 중…' : delivery?.status === 'ACCEPTED' ? '센터 등록 완료' : '모의 신고 전송'}</button></> : <>
         <button disabled={busy} onClick={close}>닫기</button>
         {stage === 'timeout-error' && <button onClick={() => { setError(''); setStage('alert'); }}>자동 닫힘 재시도</button>}
         {(stage === 'false-positive' || stage === 'complete') && <button disabled={busy} onClick={() => setStage('alert')}>취소</button>}

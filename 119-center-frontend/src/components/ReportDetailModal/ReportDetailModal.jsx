@@ -2,12 +2,13 @@ import Modal from '../Modal/Modal.jsx';
 import EventVideo from '../EventVideo.jsx';
 import StatusBadge from '../StatusBadge/StatusBadge.jsx';
 import './ReportDetailModal.css';
+import { formatPhone } from '../../utils/phone.js';
 
 const eventLabels = { FIRE: '화재', SMOKE: '연기', FIRE_SMOKE: '화재·연기' };
 const dateTime = (value) => value?.replace('T', ' ') || '—';
 const shortId = (report) => `119-${String(report.reportId).padStart(3, '0')}`;
 
-export default function ReportDetailModal({ report, onClose }) {
+export default function ReportDetailModal({ report, onClose, onAdvance, busy, error }) {
   return (
     <Modal
       open={Boolean(report)}
@@ -39,7 +40,7 @@ export default function ReportDetailModal({ report, onClose }) {
               <div><dt>탐지 시각</dt><dd>{dateTime(report.detectedAt)}</dd></div>
               <div><dt>신고 시각</dt><dd>{dateTime(report.reportedAt)}</dd></div>
               <div><dt>신고자</dt><dd>{report.reporterName}</dd></div>
-              <div><dt>신고자 연락처</dt><dd>{report.reporterPhone}</dd></div>
+              <div><dt>신고자 연락처</dt><dd>{formatPhone(report.reporterPhone, '연락처 미등록')}</dd></div>
             </dl>
           </section>
         </div>
@@ -55,6 +56,14 @@ export default function ReportDetailModal({ report, onClose }) {
             </li>)}
           </ul>
         </section>
+        {error && <p className="history-modal-error" role="alert">{error}</p>}
+        <footer className="history-modal-actions">
+          <button className="small-button" onClick={onClose}>닫기</button>
+          {report.responseStatus === 'PENDING' && <button className="primary-button" disabled={busy} onClick={() => onAdvance('DISPATCHED', report.reportId)}>{busy ? '처리 중…' : '접수 완료 →'}</button>}
+          {report.responseStatus === 'DISPATCHED' && <span className="subtle">출동 중입니다. 도착 시 자동으로 상태가 변경됩니다.</span>}
+          {report.responseStatus === 'ARRIVED' && <button className="primary-button" disabled={busy} onClick={() => onAdvance('CLOSED', report.reportId)}>{busy ? '처리 중…' : '대응 완료 ✓'}</button>}
+          {report.responseStatus === 'CLOSED' && <span className="closed-note">✓ 대응 완료</span>}
+        </footer>
       </>}
     </Modal>
   );
