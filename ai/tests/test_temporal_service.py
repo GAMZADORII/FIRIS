@@ -47,10 +47,15 @@ class TemporalValidatorTest(unittest.TestCase):
         confirmations = [validator.observe(i * 0.2, result("fire")) for i in range(40)]
         self.assertEqual(sum(value is not None for value in confirmations), 1)
 
-    def test_sparse_samples_do_not_confirm(self):
+    def test_two_samples_two_seconds_apart_confirm(self):
+        validator = TemporalValidator(sample_fps=1)
+        self.assertIsNone(validator.observe(0.0, result("fire")))
+        self.assertEqual(validator.observe(2.0, result("fire")).event_type, "FIRE")
+
+    def test_samples_more_than_two_seconds_apart_do_not_confirm(self):
         validator = TemporalValidator()
         for i in range(10):
-            self.assertIsNone(validator.observe(i * 0.5, result("fire")))
+            self.assertIsNone(validator.observe(i * 2.1, result("fire")))
 
     def test_four_samples_per_second_still_confirms_with_seven_of_nine(self):
         validator = TemporalValidator()
@@ -59,7 +64,7 @@ class TemporalValidatorTest(unittest.TestCase):
                          for i in range(9)]
         self.assertEqual([item.event_type for item in confirmations if item], ["FIRE"])
 
-    def test_one_sample_per_second_requires_two_full_seconds_and_middle_sample(self):
+    def test_one_sample_per_second_requires_two_full_seconds(self):
         validator = TemporalValidator(sample_fps=1)
         self.assertIsNone(validator.observe(0.0, result("fire")))
         self.assertIsNone(validator.observe(1.0, result("fire")))
@@ -67,7 +72,7 @@ class TemporalValidatorTest(unittest.TestCase):
 
         missing_middle = TemporalValidator(sample_fps=1)
         self.assertIsNone(missing_middle.observe(0.0, result("fire")))
-        self.assertIsNone(missing_middle.observe(2.0, result("fire")))
+        self.assertEqual(missing_middle.observe(2.0, result("fire")).event_type, "FIRE")
 
     def test_three_samples_per_second_never_confirms_before_two_seconds(self):
         validator = TemporalValidator(sample_fps=3)
