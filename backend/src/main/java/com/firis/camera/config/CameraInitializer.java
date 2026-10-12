@@ -50,26 +50,21 @@ public class CameraInitializer implements ApplicationRunner {
         createIfMissing(
                 "CAM003",
                 "CCTV 03",
-                "공장 C구역",
+                "창고 A구역",
                 "/videos/CAM003/001.mp4"
         );
 
         createIfMissing(
                 "CAM004",
                 "CCTV 04",
-                "공장 D구역",
+                "창고 B구역",
                 "/videos/CAM004/001.mp4"
         );
-        createIfMissing("CAM005", "CCTV 05", "공장 E구역", "/videos/CAM005/001.mp4");
-        createIfMissing("CAM006", "CCTV 06", "창고 A구역", "/videos/CAM006/001.mp4");
-        createIfMissing("CAM007", "CCTV 07", "창고 B구역", "/videos/CAM007/001.mp4");
+        createIfMissing("CAM005", "CCTV 05", "공장 C구역", "/videos/CAM005/001.mp4");
+        createIfMissing("CAM006", "CCTV 06", "공장 D구역", "/videos/CAM006/001.mp4");
+        createIfMissing("CAM007", "CCTV 07", "공장 E구역", "/videos/CAM007/001.mp4");
         createIfMissing("CAM008", "CCTV 08", "창고 C구역", "/videos/CAM008/001.mp4");
         createIfMissing("CAM009", "CCTV 09", "창고 D구역", "/videos/CAM009/001.mp4");
-        cameraService.updateDefaultLocationIfUnchanged("CAM003", "창고 A구역", "공장 C구역");
-        cameraService.updateDefaultLocationIfUnchanged("CAM004", "창고 B구역", "공장 D구역");
-        cameraService.updateDefaultLocationIfUnchanged("CAM005", "공장 C구역", "공장 E구역");
-        cameraService.updateDefaultLocationIfUnchanged("CAM006", "공장 D구역", "창고 A구역");
-        cameraService.updateDefaultLocationIfUnchanged("CAM007", "공장 E구역", "창고 B구역");
     }
 
     private void createIfMissing(

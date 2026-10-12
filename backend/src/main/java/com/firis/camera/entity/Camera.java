@@ -36,7 +36,6 @@ public class Camera {
     public String getCameraId() { return cameraId; }
     public String getCameraName() { return cameraName; }
     public String getLocation() { return location; }
-    public void updateLocation(String location) { this.location = location; }
     public String getReportNote() { return reportNote; }
     public String getStreamUrl() { return streamUrl; }
     public String getStatus() { return status; }

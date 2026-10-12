@@ -4,9 +4,9 @@ import { apiClient, apiError, fetchMedia } from '../../api/client.js';
 import './Dashboard.css';
 import { Modal } from '../../components/Console/Console.jsx';
 const cameraSlots = [
-  ['CAM001', '공장 A구역'], ['CAM002', '공장 B구역'], ['CAM003', '공장 C구역'],
-  ['CAM004', '공장 D구역'], ['CAM005', '공장 E구역'], ['CAM006', '창고 A구역'],
-  ['CAM007', '창고 B구역'],
+  ['CAM001', '공장 A구역'], ['CAM002', '공장 B구역'],
+  ['CAM003', '창고 A구역'], ['CAM004', '창고 B구역'],
+  ['CAM005', '공장 C구역'], ['CAM006', '공장 D구역'], ['CAM007', '공장 E구역'],
   ['CAM008', '창고 C구역'], ['CAM009', '창고 D구역'],
 ];
 const cameraSelectionKey = 'firis-dashboard-cameras';
@@ -79,13 +79,10 @@ export default function Dashboard() {
   useEffect(() => {
     try { localStorage.setItem(cameraSelectionKey, JSON.stringify(selectedCameraIds)); } catch { /* Selection remains usable for this session. */ }
   }, [selectedCameraIds]);
-  const availableCameras = cameraSlots.map(([cameraId, location]) => {
-    const registered = cameras.find((camera) => camera.cameraId === cameraId);
-    return {
-      ...(registered || { cameraId, cameraName: `CCTV ${cameraId.slice(-2)}`, status: '연결 준비', unregistered: true }),
-      location: registered?.location || location,
-    };
-  });
+  const availableCameras = cameraSlots.map(([cameraId, location]) => ({
+    ...(cameras.find((camera) => camera.cameraId === cameraId) || { cameraId, cameraName: `CCTV ${cameraId.slice(-2)}`, status: '연결 준비', unregistered: true }),
+    location,
+  }));
   const visibleCameras = availableCameras.filter((camera) => selectedCameraIds.includes(camera.cameraId));
   const expandedCamera = availableCameras.find((camera) => camera.cameraId === expandedCameraId);
   const columns = visibleCameras.length <= 1 ? 1 : visibleCameras.length <= 4 ? 2 : 3;

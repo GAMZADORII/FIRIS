@@ -35,14 +35,6 @@ public class CameraService {
     }
 
     @Transactional
-    public boolean updateDefaultLocationIfUnchanged(String cameraId, String oldLocation, String newLocation) {
-        var camera = cameraRepository.findById(cameraId).orElse(null);
-        if (camera == null || !oldLocation.equals(camera.getLocation())) return false;
-        camera.updateLocation(newLocation);
-        return true;
-    }
-
-    @Transactional
     public CameraResponse createCamera(CreateCameraRequest request) {
         validateStreamUrl(request.streamUrl());
         if (cameraRepository.existsById(request.cameraId())) {
