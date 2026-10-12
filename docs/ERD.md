@@ -55,6 +55,8 @@
 | detected_at | DATETIME NOT NULL |
 | model_version | VARCHAR(50) |
 | created_at | DATETIME NOT NULL |
+| report_timed_out_at | DATETIME NULL; 신규 알림 10초 무응답 시각, 119 접수 여부와 무관 |
+| response_completed_at | DATETIME NULL; 현장 대응 완료 시각, 119 접수 여부와 무관 |
 
 ## EVENT_MEDIA
 

@@ -26,7 +26,7 @@ FastAPI 실행만으로 영상 분석은 시작되지 않습니다. Backend·AI 
 - `AI_MODELS_DIR=./model`은 기존 모델 코드대로 작업 디렉터리 기준이므로 로컬 명령은 `ai`에서 실행합니다.
 - Backend의 EVENT_STORAGE_DIR도 AI와 같은 실제 저장소를 가리켜야 합니다. Docker에서는 양쪽 컨테이너 경로도 동일하게 맞춥니다.
 
-원본 영상은 직접 `storage/videos/CAM001/001.mp4` 등에 넣습니다. 폴더명이 Backend에 등록된 cameraId입니다. 카메라 최대 4대, 카메라별 파일명 순서, 처리 완료 중복 방지·새 파일 탐색·SharedDetector를 유지합니다. 추론 호출은 공유 Lock으로 직렬화됩니다.
+원본 영상은 직접 `storage/videos/CAM001/001.mp4` 등에 넣습니다. 폴더명이 Backend에 등록된 cameraId입니다. 현재 worker는 시작할 때 존재하는 폴더 최대 9개를 맡고, 각 폴더에서 파일명 순서로 영상을 분석합니다. 실행 중 기존 폴더에 새 파일을 넣으면 다음 탐색에서 읽지만, 새 카메라 폴더는 worker 재시작 후 인식합니다. CAM005~CAM009는 영상 파일이 없는 입력 대기 폴더입니다. 처리 완료 중복 방지와 SharedDetector를 유지하며 추론 호출은 공유 Lock으로 직렬화됩니다.
 
 ## 이벤트 저장
 

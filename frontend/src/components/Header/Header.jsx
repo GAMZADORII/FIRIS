@@ -94,7 +94,12 @@ export default function Header({ user = null }) {
           <span className="app-header__avatar" aria-hidden="true">{(user?.name || '?').slice(0, 1)}</span>
           <div><strong>{user?.name || '사용자'}</strong><small>{user?.role === 'ADMIN' ? '관리자' : '작업자'}</small></div>
         </div>
-        <button type="button" onClick={() => { clearSession(); navigate('/login', { replace: true }); }}>로그아웃</button>
+        <button className="app-header__logout" type="button" aria-label="로그아웃" title="로그아웃" onClick={() => { clearSession(); navigate('/login', { replace: true }); }}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M9 5H5v14h4M10 12h11m-4-4 4 4-4 4" />
+          </svg>
+          <span>로그아웃</span>
+        </button>
       </div>
     </header>
   );

@@ -22,12 +22,28 @@ public class EventController {
             @RequestParam(required = false) String reviewStatus,
             @RequestParam(required = false) String cameraId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
-        return service.list(page, size, eventType, reviewStatus, cameraId, from, to);
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(required = false) Long afterEventId) {
+        return service.list(page, size, eventType, reviewStatus, cameraId, from, to, afterEventId);
+    }
+
+    @GetMapping("/latest-id")
+    public java.util.Map<String, Long> latestEventId() {
+        return java.util.Map.of("latestEventId", service.latestEventId());
     }
 
     @GetMapping("/{eventId}")
     public EventDetailResponse detail(@PathVariable Long eventId) { return service.detail(eventId); }
+
+    @PostMapping("/{eventId}/response-complete")
+    public EventDetailResponse completeResponse(@PathVariable Long eventId, Authentication authentication) {
+        return service.completeResponse(eventId, authentication.getName());
+    }
+
+    @PostMapping("/{eventId}/report-timeout")
+    public EventDetailResponse reportTimeout(@PathVariable Long eventId) {
+        return service.reportTimeout(eventId);
+    }
 
     @PatchMapping("/{eventId}/review")
     public EventDetailResponse review(@PathVariable Long eventId, Authentication authentication,

@@ -33,8 +33,9 @@ public class EventQueryService {
 
     @Transactional(readOnly = true)
     public EventPageResponse list(int page, int size, EventType eventType,
-            String reviewStatus, String cameraId, LocalDate from, LocalDate to) {
-        if (page < 0 || size < 1 || size > 100 || (from != null && to != null && from.isAfter(to))) {
+            String reviewStatus, String cameraId, LocalDate from, LocalDate to, Long afterEventId) {
+        if (page < 0 || size < 1 || size > 100 || (from != null && to != null && from.isAfter(to))
+                || (afterEventId != null && afterEventId < 0)) {
             throw new ApiException(ErrorCode.BAD_REQUEST);
         }
         ReviewResult reviewResult = null;
@@ -46,6 +47,7 @@ public class EventQueryService {
         Specification<FireEvent> filter = (root, query, cb) -> {
             var predicates = new java.util.ArrayList<jakarta.persistence.criteria.Predicate>();
             if (eventType != null) predicates.add(cb.equal(root.get("eventType"), eventType));
+            if (afterEventId != null) predicates.add(cb.greaterThan(root.get("eventId"), afterEventId));
             if (cameraId != null && !cameraId.isBlank()) predicates.add(cb.equal(root.get("camera").get("cameraId"), cameraId));
             if (from != null) predicates.add(cb.greaterThanOrEqualTo(root.get("detectedAt"), from.atStartOfDay()));
             if (to != null) predicates.add(cb.lessThan(root.get("detectedAt"), to.plusDays(1).atStartOfDay()));
@@ -59,8 +61,10 @@ public class EventQueryService {
             }
             return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
         };
-        var result = events.findAll(filter, PageRequest.of(page, size,
-                Sort.by(Sort.Order.desc("detectedAt"), Sort.Order.desc("eventId"))));
+        var sort = afterEventId == null
+                ? Sort.by(Sort.Order.desc("detectedAt"), Sort.Order.desc("eventId"))
+                : Sort.by(Sort.Order.asc("eventId"));
+        var result = events.findAll(filter, PageRequest.of(page, size, sort));
         var ids = result.getContent().stream().map(FireEvent::getEventId).toList();
         Map<Long, EventReview> byEvent = new HashMap<>();
         if (!ids.isEmpty()) reviews.findByEvent_EventIdIn(ids).forEach(r -> byEvent.put(r.getEvent().getEventId(), r));
@@ -68,10 +72,37 @@ public class EventQueryService {
     }
 
     @Transactional(readOnly = true)
+    public Long latestEventId() {
+        return events.findLatestEventId();
+    }
+
+    @Transactional(readOnly = true)
     public EventDetailResponse detail(Long eventId) {
         var event = events.findById(eventId).orElseThrow(() -> new ApiException(ErrorCode.EVENT_NOT_FOUND));
         return EventDetailResponse.from(event, media.findByEvent_EventId(eventId).orElse(null),
                 reviews.findByEvent_EventId(eventId).orElse(null));
+    }
+
+    @Transactional
+    public EventDetailResponse completeResponse(Long eventId, String loginId) {
+        var event = events.findForMediaUpdate(eventId).orElseThrow(() -> new ApiException(ErrorCode.EVENT_NOT_FOUND));
+        var reviewer = accounts.findByLoginId(loginId).orElseThrow(() -> new ApiException(ErrorCode.UNAUTHORIZED));
+        var review = reviews.findByEvent_EventId(eventId).orElse(null);
+        if (review != null && review.getResult() == ReviewResult.FALSE_POSITIVE) throw new ApiException(ErrorCode.BAD_REQUEST);
+        var now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
+        if (review == null) review = reviews.save(new EventReview(event, reviewer, ReviewResult.TRUE_FIRE, null, "On-site response completed", now));
+        event.completeResponse(now);
+        return EventDetailResponse.from(event, media.findByEvent_EventId(eventId).orElse(null), review);
+    }
+
+    @Transactional
+    public EventDetailResponse reportTimeout(Long eventId) {
+        var event = events.findForMediaUpdate(eventId).orElseThrow(() -> new ApiException(ErrorCode.EVENT_NOT_FOUND));
+        var review = reviews.findByEvent_EventId(eventId).orElse(null);
+        if (review != null && review.getResult() == ReviewResult.FALSE_POSITIVE) throw new ApiException(ErrorCode.BAD_REQUEST);
+        if (event.getResponseCompletedAt() != null) throw new ApiException(ErrorCode.BAD_REQUEST);
+        event.markReportTimedOut(LocalDateTime.now(ZoneId.of("Asia/Seoul")));
+        return EventDetailResponse.from(event, media.findByEvent_EventId(eventId).orElse(null), review);
     }
 
     @Transactional

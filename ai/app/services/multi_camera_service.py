@@ -30,7 +30,7 @@ def video_storage_dir(root: str | None = None) -> Path:
 
 
 VIDEO_EXTENSIONS = {".mp4", ".avi", ".mov", ".mkv"}
-MAX_CAMERAS = 4
+MAX_CAMERAS = 9
 EMPTY_FOLDER_DELAY = 5.0
 ERROR_DELAY = 2.0
 

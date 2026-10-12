@@ -2,9 +2,9 @@
 
 ## 2026-10-07 시연 실행 흐름
 
-프로젝트 루트의 `storage/videos/CAM001`~`CAM004`에 `001.mp4` 등 실제 영상을 넣는다. 카메라 폴더명은 Backend CAMERA의 cameraId와 같아야 한다. 시연 입력 영상은 Git LFS로 공유하므로 `git lfs install` 후 체크아웃해야 한다. Backend의 기본 `streamUrl`은 각 폴더의 `001.mp4`를 가리킨다.
+프로젝트 루트의 `storage/videos/CAM001`~`CAM004`에 현재 시연 영상이 있다. CAM005~CAM009는 추가 영상 입력 대기 폴더이다. 카메라 폴더명은 Backend CAMERA의 cameraId와 같아야 한다. 시연 입력 영상은 Git LFS로 공유하므로 `git lfs install` 후 체크아웃해야 한다. Backend의 기본 `streamUrl`은 각 폴더의 `001.mp4`를 가리키지만, 파일이 없으면 재생되지 않는다.
 
-로컬 실행은 MySQL → Backend → AI API 서버 → AI 분석 worker → Frontend 순서다. AI API 서버와 분석 worker는 별도 프로세스다. `cd ai && .venv/bin/python -m app.services.multi_camera_service --model yolo --sample-fps 1 --loop`로 worker를 실행하면 4개 폴더를 병렬 분석하고, 카메라별 파일을 이름순으로 처리한 뒤 시연용으로 목록을 반복한다. `--loop` 없이 실행하면 파일당 한 번만 처리한다. 반복 재생은 화면을 갱신하지만 같은 프로세스에서 이미 분석한 파일의 이벤트를 다시 등록하지 않는다. worker 재시작 시 처리 기록은 초기화된다.
+로컬 실행은 MySQL → Backend → AI API 서버 → AI 분석 worker → Frontend 순서다. AI API 서버와 분석 worker는 별도 프로세스다. `cd ai && .venv/bin/python -m app.services.multi_camera_service --model yolo --sample-fps 1 --loop`로 worker를 실행하면 시작 시 존재하는 최대 9개 카메라 폴더를 각각 분석하고, 카메라별 파일을 이름순으로 처리한 뒤 시연용으로 목록을 반복한다. `--loop` 없이 실행하면 파일당 한 번만 처리한다. 기존 폴더에 새 영상을 넣으면 다음 순회에 감지된다. 반복 재생은 화면을 갱신하지만 같은 프로세스에서 이미 분석한 파일의 이벤트를 다시 등록하지 않는다. worker 재시작 시 처리 기록은 초기화된다.
 
 Docker에서는 `docker compose up --build`가 `ai` FastAPI와 `ai-worker` 분석기를 별도로 실행한다. 두 서비스는 같은 `storage/live`, `storage/events`를 사용하고 worker는 `storage/videos`를 읽는다. Backend는 JWT로 프레임과 이벤트 미디어를 제공한다. Frontend는 로그인 후 4개 카메라의 최신 JPEG를 주기적으로 조회하고, 이력에서 이벤트·스냅샷·박스 영상(없으면 원본)을 조회한다.
 
@@ -12,7 +12,7 @@ Docker에서는 `docker compose up --build`가 `ai` FastAPI와 `ai-worker` 분�
 
 ## 현재 구현
 
-Dashboard 박스 표시 계약: AI 영상 처리기는 FIRE/SMOKE 박스와 신뢰도를 그린 최신 JPEG을 카메라별로 발행한다. 멀티 카메라 worker 기본값은 추론 1fps, 화면용 JPEG 발행 최대 4fps이다. 추론 사이의 프레임에는 마지막 탐지 결과를 재사용한다. 실제 갱신 속도는 영상 FPS와 4채널 추론 처리량에 따라 낮아질 수 있으며, 움직이는 물체에서는 박스가 다음 추론까지 잠시 지연될 수 있다. AI `GET /cameras/{cameraId}/frame`은 `X-AI-API-KEY`가 필요하며 최신 프레임이 없거나 오래되면 404/503을 반환한다. Backend `GET /api/cameras/{cameraId}/frame`은 사용자 JWT(ADMIN/WORKER)를 확인하고 등록 카메라에 한해 AI JPEG을 프록시한다. 프론트는 이 URL을 JWT 헤더로 주기적으로 요청해 이미지 Blob을 표시한다. 분류 모델은 박스가 없다. 저장 이벤트 Snapshot/MP4는 원본 영상이다. 파일 입력을 시연할 때는 `--realtime`으로 실제 FPS에 맞춰 재생한다. 영상 처리 프로세스와 AI API 서버는 같은 `LIVE_FRAME_DIR`을 공유해야 한다.
+Dashboard 박스 표시 계약: AI 영상 처리기는 FIRE/SMOKE 박스와 신뢰도를 그린 최신 JPEG을 카메라별로 발행한다. 멀티 카메라 worker 기본값은 추론 1fps, 화면용 JPEG 발행 최대 4fps이다. 추론 사이의 프레임에는 마지막 탐지 결과를 재사용한다. 실제 갱신 속도는 영상 FPS와 동시 분석 카메라 수·추론 처리량에 따라 낮아질 수 있으며, 움직이는 물체에서는 박스가 다음 추론까지 잠시 지연될 수 있다. AI `GET /cameras/{cameraId}/frame`은 `X-AI-API-KEY`가 필요하며 최신 프레임이 없거나 오래되면 404/503을 반환한다. Backend `GET /api/cameras/{cameraId}/frame`은 사용자 JWT(ADMIN/WORKER)를 확인하고 등록 카메라에 한해 AI JPEG을 프록시한다. 프론트는 이 URL을 JWT 헤더로 주기적으로 요청해 이미지 Blob을 표시한다. 분류 모델은 박스가 없다. 저장 이벤트 Snapshot/MP4는 원본 영상이다. 파일 입력을 시연할 때는 `--realtime`으로 실제 FPS에 맞춰 재생한다. 영상 처리 프로세스와 AI API 서버는 같은 `LIVE_FRAME_DIR`을 공유해야 한다.
 
 `ai/app/services/video_service.py`를 카메라별 worker에서 실행한다. 영상 프레임은 JPEG 압축 버퍼에 보관하고 설정된 주기로 추론한다. FIRE/SMOKE별 첫 탐지부터 실제 영상 시간 2초가 지나고 현재 프레임에서도 탐지될 때만 확정할 수 있다. 그때 최근 2초 동안 수집한 결과의 70% 이상이 같은 클래스를 탐지해야 하며 최소 3개 샘플이 필요하다. 예를 들어 1fps라면 0·1·2초의 세 샘플이 모두 탐지되어야 한다. Bounding Box가 있는 모델은 같은 영역(IoU 0.2 이상)의 탐지를 세고, 분류 모델은 클래스 탐지 수만 센다. 한 위험 장면에 이벤트를 반복 생성하지 않도록 확정 후 잠그고, 2초간 탐지가 사라진 후 다시 허용한다.
 

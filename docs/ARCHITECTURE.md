@@ -30,7 +30,7 @@ VS Code는 WSL: Ubuntu 연결을 권장한다. Frontend 담당자는 Windows도 
 | ai/app/models | 향후 모델 로딩/추론 어댑터. Classification에 종속하지 않음 |
 | ai/app/utils | 향후 공통 유틸리티 |
 | ai/model | Git LFS로 공유하는 모델 weight |
-| storage/videos | Git LFS로 공유하는 CAM001~CAM004 시연 입력 영상 |
+| storage/videos | 카메라 ID별 시연 입력 영상; CAM001~CAM004에는 영상이 있고 CAM005~CAM009는 입력 대기 폴더 |
 | storage/events | Git에서 제외되는 이벤트 Snapshot/영상 |
 | backend/.../common | health check 및 공통 설정 |
 | backend/.../auth | JWT 인증, 비밀번호 변경, 신규 WORKER 최초 연락처·동의 등록 및 완료 전 관제 API 차단 |
@@ -99,7 +99,7 @@ Statistics Table 없이 집계하며, 검수 행이 없으면 UNREVIEWED이다.
 - AI: FastAPI/Uvicorn, 8000 포트. 모델 추론과 영상 시간 창 판정·Backend 호출, 박스 JPEG 발행 코드가 있다. 로컬 AVI에서 YOLO 추론과 Backend/MySQL 이벤트 저장을 확인했다. 실제 CCTV RTSP 검증은 아직 없다.
 - Backend: Java 17, Spring Boot, Gradle Wrapper, 8080 포트.
 - Spring Web/JPA/Security/Validation과 MySQL 런타임 드라이버를 포함한다. 이벤트 API DB 통합 테스트는 별도 MySQL 테스트 DB에서 선택적으로 실행한다.
-- `ddl-auto`는 dev 기본값 update이며 SQL 초기화는 비활성화되어 있다. ACCOUNT, CAMERA 및 FIRE_EVENT/EVENT_MEDIA/EVENT_REVIEW Entity가 있고 관리자 계정은 최초 시작 시 생성된다. CAMERA의 CAM001~CAM004는 없을 때 자동 등록된다. MySQL 통합 테스트만 전용 firis_test DB에서 create-drop을 사용한다.
+- `ddl-auto`는 dev 기본값 update이며 SQL 초기화는 비활성화되어 있다. ACCOUNT, CAMERA 및 FIRE_EVENT/EVENT_MEDIA/EVENT_REVIEW Entity가 있고 관리자 계정은 최초 시작 시 생성된다. CAMERA의 CAM001~CAM009는 없을 때 자동 등록된다. 기본 ONLINE 값은 실제 영상 수신 확인과 구분한다. MySQL 통합 테스트만 전용 firis_test DB에서 create-drop을 사용한다.
 - 공통 Spring Security 설정에는 사용자 JWT·역할 권한이 있다. 별도 우선순위 체인이 /api/ai/**의 API Key를 검증한다. GET /api/health는 공개된다.
 - Frontend: React/Vite/JavaScript, React Router, Axios, Yarn, 5173 포트. 로그인·카메라 프레임·이벤트 이력/검수·작업자 API를 호출한다. Backend CORS는 localhost:5173을 허용한다.
 - `docker-compose.yml`은 MySQL 8.4.11, Backend, AI API, AI worker, Frontend 서비스의 로컬 통합 실행 구성을 제공한다. Worker는 시연용 `--loop`로 영상 목록을 반복한다.
@@ -119,6 +119,10 @@ React + Vite + Yarn 4를 유지한다. yarn.lock과 .yarnrc.yml을 커밋한다.
 페이지와 화면 컴포넌트는 .jsx, 일반 로직/설정은 .js, 스타일은 .css이다.
 페이지는 /login, /dashboard, /history, /admin 네 개이고 이벤트 상세는 Drawer/Modal이다.
 Dashboard는 전체 세로 스크롤 없이 CCTV를 항상 노출하는 통합 관제 화면이다.
+현재 Dashboard는 9개 기본 채널 중 표시할 화면을 선택하며 기본 선택은 CAM001~CAM004이다. AI worker는 시작 당시 존재하는 최대 9개 `storage/videos/{cameraId}` 폴더를 각각 처리한다. 각 폴더의 영상은 이름순으로 재생하고 실행 중 같은 폴더에 추가된 파일도 다음 순회에 발견한다. 카메라 ID와 영상의 대응을 보장하기 위해 단일 공용 영상 폴더로 합치지 않는다. 새 폴더를 worker 실행 중 만드는 것은 현재 자동 인식 대상이 아니며, 9채널을 넘는 확장은 별도 작업이다.
+프론트는 구역 배치 순서에 따라 별도의 화면 채널 번호를 표시한다. 화면 번호 01~09에 대응하는 내부 cameraId는 CAM001, CAM002, CAM005, CAM006, CAM007, CAM003, CAM004, CAM008, CAM009 순서다. AI 분석, Backend 이벤트, 영상 폴더는 변경되지 않은 내부 ID를 사용한다.
+이벤트 대응 완료는 FIRE_EVENT.response_completed_at과 필요한 경우 EVENT_REVIEW의 TRUE_FIRE를 기록한다. 10초 무응답 알림은 FIRE_EVENT.report_timed_out_at만 기록하며 실제 119 모의 신고를 보내지 않는다. 실제 모의 신고는 별도 preview/POST API를 통해 사용자가 확인 후 요청한다.
+Frontend의 신규 이벤트 알림은 최초 접속 시 최대 eventId를 기준선으로 삼고 이후 5초마다 그보다 큰 ID의 이벤트만 오름차순으로 조회한다. 알림의 119 확인 창은 Backend preview API에서 서버 설정·카메라·계정 정보를 조회한다. 실제 신고 POST 버튼은 아직 연결되지 않았다.
 
 ## Git 협업 및 CI/CD
 

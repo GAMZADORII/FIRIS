@@ -17,10 +17,13 @@ Windows에서는 `gradlew.bat bootRun`을 사용한다.
 MySQL 드라이버가 포함되어 있다. 운영 MySQL 버전은 8.4.11이며 스키마 변경 관리 방식은 팀 확인이 필요하다.
 JWT_SECRET은 사용자 인증에, AI_API_KEY는 /api/ai/** 인증에 사용한다. JWT_SECRET은 실제 통합/운영 환경에서 최소 32바이트로 반드시 설정한다. 미설정 상태에서는 하드코딩된 기본 Secret 대신 실행 중에만 유효한 임시 랜덤 키를 사용하므로 서버 재시작 시 기존 JWT가 무효화된다. AI_API_KEY 미설정 시 해당 요청을 차단한다.
 초기 ADMIN을 자동 생성하려면 ADMIN_PASSWORD를 설정해야 한다. 미설정 시 약한 기본 비밀번호를 사용하지 않고 자동 생성을 건너뛴다. 작업자 생성/비밀번호 초기화를 사용하려면 WORKER_DEFAULT_PASSWORD도 설정해야 한다. 비밀번호와 Secret은 코드나 .env.example에 실제 값으로 작성하지 않는다.
+초기 관리자 이름은 `ADMIN_NAME`(예제: 김진우)으로 지정한다. 로컬 `bootRun`은 `backend/.env`, Compose는 루트 `.env`를 사용한다. Compose는 해당 값을 Backend 컨테이너에 전달한다. 이미 DB에 ADMIN이 있으면 초기화 코드가 이름을 덮어쓰지 않는다. 프론트 헤더는 로그인 응답의 DB 이름을 그대로 표시한다.
+
+다른 PC에서 관리자 이름이 깨진다면 먼저 그 PC의 MySQL에서 `SELECT login_id, name, HEX(name) FROM account WHERE role = 'ADMIN';`을 확인한다. DB 값이 이미 깨졌다면 실제 관리자 login_id를 확인한 뒤 UTF-8 클라이언트에서 `SET NAMES utf8mb4; UPDATE account SET name = '김진우' WHERE role = 'ADMIN' AND login_id = 'admin';`으로 해당 계정만 수정한다. 관리자 ID가 `admin`이 아니면 조건을 실제 ID로 바꾼다. DB 값은 정상인데 화면만 깨졌다면 로그인 API 응답과 브라우저 세션을 확인한다. DB 수정 후에는 로그아웃하고 다시 로그인해야 세션에 저장된 이름이 갱신된다. 작업자 이름은 각 작업자 계정에 저장되므로 관리자 이름 수정과 별개로 확인한다.
 `AI_SERVER_URL`은 최신 박스 표시 JPEG을 받아올 AI 서버 주소이다(기본 `http://127.0.0.1:8000`). `GET /api/cameras/{cameraId}/frame`은 ADMIN/WORKER JWT를 검사하고 등록된 카메라의 최신 JPEG을 AI에서 받아 전달한다. 프론트는 JWT 헤더를 포함해 주기적으로 요청한다.
 신규 WORKER는 비밀번호 변경 후 연락처·개인정보 동의 등록 대상이다. 현재 프론트에는 그 화면이 없으므로 `CONTACT_ONBOARDING_ENFORCED=false`가 기본값이다. 프론트가 `GET /api/auth/contact-consent`로 `CONTACT_CONSENT_VERSION`을 확인하고 확정 문안을 표시한 뒤 `PATCH /api/auth/contact`를 호출하도록 연결한 후 `true`로 전환한다. 그 전에도 모의 신고는 등록된 연락처와 동의가 있어야 한다. 기존 WORKER에는 소급 적용하지 않는다.
 `MOCK_119_WS_URL`을 설정하면 WORKER의 `POST /api/events/{eventId}/mock-119-reports` 요청을 119 모의서버로 WebSocket 전송한다. 주소가 없거나 접수 확인이 실패하면 502와 FAILED 기록을 남기며 실제 119 접수로 표시하지 않는다. 메시지 형식은 [API 명세](../docs/API_SPEC.md)를 따른다.
-신고 확인 창의 사업장 주소와 관제실 번호는 `MOCK_119_SITE_ADDRESS`, `MOCK_119_CONTROL_ROOM_PHONE`에 실제 시연 값을 설정한다. `GET /api/events/{eventId}/mock-119-preview`는 카메라 `location`을 상세위치로, `report_note`를 선택적 특이사항으로 표시한다. 기존 CAM001~CAM004는 등록된 값을 덮어쓰지 않으므로 카메라별 상세위치·특이사항은 시연 전 DB에서 확인하고 필요한 경우 수정한다. 값이 빠진 상태에서는 신고 API가 성공하지 않는다.
+신고 확인 창의 사업장 주소와 관제실 번호는 `MOCK_119_SITE_ADDRESS`, `MOCK_119_CONTROL_ROOM_PHONE`에 실제 시연 값을 설정한다. `GET /api/events/{eventId}/mock-119-preview`는 카메라 `location`을 상세위치로, `report_note`를 선택적 특이사항으로 표시한다. 기본 등록 카메라 CAM001~CAM009는 이미 등록된 값을 덮어쓰지 않으므로 카메라별 상세위치·특이사항은 시연 전 DB에서 확인하고 필요한 경우 수정한다. 값이 빠진 상태에서는 신고 API가 성공하지 않는다.
 `EVENT_STORAGE_DIR`은 AI 이벤트 파일이 있는 공유 저장소를 가리킨다(로컬 기본 `../storage/events`). 이벤트 목록·상세·검수와 `/api/events/{eventId}/snapshot`, `/video`는 사용자 JWT가 필요하다. Compose에서는 AI 이벤트 저장소를 Backend에 읽기 전용으로 마운트한다.
 
 `com.firis` 하위 common/auth/account/camera/event/review/statistics 패키지를 사용한다.

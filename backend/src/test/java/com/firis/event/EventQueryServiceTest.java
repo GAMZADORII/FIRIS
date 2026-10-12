@@ -28,6 +28,23 @@ class EventQueryServiceTest {
 
     @BeforeEach void setup() { service = new EventQueryService(events, media, reviews, accounts); }
 
+    @Test void latestEventIdUsesDatabaseMaximum() {
+        when(events.findLatestEventId()).thenReturn(42L);
+        assertThat(service.latestEventId()).isEqualTo(42L);
+    }
+
+    @Test void newEventCursorReadsAscendingIdsAndRejectsNegativeCursor() {
+        when(events.findAll(any(org.springframework.data.jpa.domain.Specification.class),
+                any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(java.util.List.of()));
+        service.list(0, 100, null, null, null, null, null, 42L);
+        var page = ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
+        verify(events).findAll(any(org.springframework.data.jpa.domain.Specification.class), page.capture());
+        assertThat(page.getValue().getSort().getOrderFor("eventId").isAscending()).isTrue();
+        assertThatThrownBy(() -> service.list(0, 100, null, null, null, null, null, -1L))
+                .isInstanceOf(ApiException.class);
+    }
+
     @Test void rejectsFalsePositiveWithoutReason() {
         assertThatThrownBy(() -> service.review(7L, "worker", new ReviewEventRequest(
                 ReviewResult.FALSE_POSITIVE, null, null)))
@@ -62,5 +79,75 @@ class EventQueryServiceTest {
         assertThat(saved.getValue().getReviewer()).isSameAs(account);
         assertThat(response.reviewStatus()).isEqualTo("FALSE_POSITIVE");
         assertThat(response.review().falsePositiveReason()).isEqualTo(FalsePositiveReason.STEAM);
+    }
+
+    @Test void timeoutAcceptsUnreviewedDetection() {
+        var now = java.time.LocalDateTime.now();
+        var camera = Camera.create("CAM001", "Camera", "Factory", null, "ONLINE");
+        var event = new FireEvent(camera, EventType.FIRE, 0.95, now, "test", now);
+        when(events.findForMediaUpdate(7L)).thenReturn(Optional.of(event));
+        when(reviews.findByEvent_EventId(7L)).thenReturn(Optional.empty());
+        var response = service.reportTimeout(7L);
+        assertThat(response.reportTimedOutAt()).isNotNull();
+        assertThat(response.reviewStatus()).isEqualTo("UNREVIEWED");
+        verify(reviews, never()).save(any());
+    }
+
+    @Test void timeoutRejectsFalsePositive() {
+        var event = mock(FireEvent.class);
+        var review = mock(EventReview.class);
+        when(events.findForMediaUpdate(7L)).thenReturn(Optional.of(event));
+        when(reviews.findByEvent_EventId(7L)).thenReturn(Optional.of(review));
+        when(review.getResult()).thenReturn(ReviewResult.FALSE_POSITIVE);
+        assertThatThrownBy(() -> service.reportTimeout(7L)).isInstanceOf(ApiException.class);
+        verify(event, never()).markReportTimedOut(any());
+    }
+
+    @Test void timeoutIsPersistedAndRepeatedCallsPreserveFirstTimestamp() {
+        var now = java.time.LocalDateTime.of(2026, 10, 8, 12, 0);
+        var camera = Camera.create("CAM001", "Camera", "Factory", null, "ONLINE");
+        var event = new FireEvent(camera, EventType.FIRE, 0.95, now, "test", now);
+        var reviewer = Account.createWorker("W000001", "hash", "Operator");
+        var review = new EventReview(event, reviewer, ReviewResult.TRUE_FIRE, null, null, now);
+        when(events.findForMediaUpdate(7L)).thenReturn(Optional.of(event));
+        when(reviews.findByEvent_EventId(7L)).thenReturn(Optional.of(review));
+        var first = service.reportTimeout(7L);
+        var second = service.reportTimeout(7L);
+        assertThat(first.reportTimedOutAt()).isNotNull();
+        assertThat(second.reportTimedOutAt()).isEqualTo(first.reportTimedOutAt());
+        assertThat(second.reviewStatus()).isEqualTo("TRUE_FIRE");
+        assertThat(com.firis.event.dto.EventSummaryResponse.from(event, review).reportTimedOutAt())
+                .isEqualTo(first.reportTimedOutAt());
+        verify(reviews, never()).save(any());
+    }
+
+    @Test void completesResponseAndReviewsPendingEvent() {
+        var now = java.time.LocalDateTime.now();
+        var camera = Camera.create("CAM001", "Camera", "Factory", null, "ONLINE");
+        var event = new FireEvent(camera, EventType.FIRE, 0.95, now, "test", now);
+        event.markReportTimedOut(now.minusMinutes(1));
+        var account = Account.createWorker("W000001", "hash", "Operator");
+        when(events.findForMediaUpdate(7L)).thenReturn(Optional.of(event));
+        when(accounts.findByLoginId("W000001")).thenReturn(Optional.of(account));
+        when(reviews.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        var result = service.completeResponse(7L, "W000001");
+        assertThat(result.responseCompletedAt()).isNotNull();
+        assertThat(result.reviewStatus()).isEqualTo("TRUE_FIRE");
+        assertThat(result.reportTimedOutAt()).isEqualTo(now.minusMinutes(1));
+        assertThatThrownBy(() -> service.reportTimeout(7L)).isInstanceOf(ApiException.class);
+    }
+
+    @Test void completionDoesNotOverwriteExistingReviewAndIsIdempotent() {
+        var now = java.time.LocalDateTime.now();
+        var camera = Camera.create("CAM001", "Camera", "Factory", null, "ONLINE");
+        var event = new FireEvent(camera, EventType.FIRE, 0.95, now, "test", now);
+        var account = Account.createWorker("W000001", "hash", "Operator");
+        var review = new EventReview(event, account, ReviewResult.TRUE_FIRE, null, null, now);
+        when(events.findForMediaUpdate(7L)).thenReturn(Optional.of(event));
+        when(accounts.findByLoginId("W000001")).thenReturn(Optional.of(account));
+        when(reviews.findByEvent_EventId(7L)).thenReturn(Optional.of(review));
+        var first = service.completeResponse(7L, "W000001");
+        assertThat(service.completeResponse(7L, "W000001").responseCompletedAt()).isEqualTo(first.responseCompletedAt());
+        verify(reviews, never()).save(any());
     }
 }
