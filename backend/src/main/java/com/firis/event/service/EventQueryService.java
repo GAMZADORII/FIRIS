@@ -75,6 +75,28 @@ public class EventQueryService {
     }
 
     @Transactional
+    public EventDetailResponse completeResponse(Long eventId, String loginId) {
+        var event = events.findForMediaUpdate(eventId).orElseThrow(() -> new ApiException(ErrorCode.EVENT_NOT_FOUND));
+        var reviewer = accounts.findByLoginId(loginId).orElseThrow(() -> new ApiException(ErrorCode.UNAUTHORIZED));
+        var review = reviews.findByEvent_EventId(eventId).orElse(null);
+        if (review != null && review.getResult() == ReviewResult.FALSE_POSITIVE) throw new ApiException(ErrorCode.BAD_REQUEST);
+        var now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
+        if (review == null) review = reviews.save(new EventReview(event, reviewer, ReviewResult.TRUE_FIRE, null, "On-site response completed", now));
+        event.completeResponse(now);
+        return EventDetailResponse.from(event, media.findByEvent_EventId(eventId).orElse(null), review);
+    }
+
+    @Transactional
+    public EventDetailResponse reportTimeout(Long eventId) {
+        var event = events.findForMediaUpdate(eventId).orElseThrow(() -> new ApiException(ErrorCode.EVENT_NOT_FOUND));
+        var review = reviews.findByEvent_EventId(eventId).orElse(null);
+        if (review != null && review.getResult() == ReviewResult.FALSE_POSITIVE) throw new ApiException(ErrorCode.BAD_REQUEST);
+        if (event.getResponseCompletedAt() != null) throw new ApiException(ErrorCode.BAD_REQUEST);
+        event.markReportTimedOut(LocalDateTime.now(ZoneId.of("Asia/Seoul")));
+        return EventDetailResponse.from(event, media.findByEvent_EventId(eventId).orElse(null), review);
+    }
+
+    @Transactional
     public EventDetailResponse review(Long eventId, String loginId, ReviewEventRequest request) {
         if (request.result() == null || (request.result() == ReviewResult.FALSE_POSITIVE && request.falsePositiveReason() == null)
                 || (request.result() == ReviewResult.TRUE_FIRE && request.falsePositiveReason() != null)) {

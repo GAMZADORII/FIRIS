@@ -29,6 +29,16 @@ public class EventController {
     @GetMapping("/{eventId}")
     public EventDetailResponse detail(@PathVariable Long eventId) { return service.detail(eventId); }
 
+    @PostMapping("/{eventId}/response-complete")
+    public EventDetailResponse completeResponse(@PathVariable Long eventId, Authentication authentication) {
+        return service.completeResponse(eventId, authentication.getName());
+    }
+
+    @PostMapping("/{eventId}/report-timeout")
+    public EventDetailResponse reportTimeout(@PathVariable Long eventId) {
+        return service.reportTimeout(eventId);
+    }
+
     @PatchMapping("/{eventId}/review")
     public EventDetailResponse review(@PathVariable Long eventId, Authentication authentication,
             @Valid @RequestBody ReviewEventRequest request) {

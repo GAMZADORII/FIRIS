@@ -197,7 +197,7 @@ body {
 	flex: 1 1 auto;
 	gap: 8px;
 	grid-template-columns: minmax(0, 1fr);
-	grid-template-rows: minmax(142px, 1.5fr) repeat(4, minmax(0, 1fr));
+	grid-template-rows: minmax(230px, 1.3fr) minmax(100px, 0.6fr) minmax(200px, 1fr);
 	min-height: 0;
 }
 
@@ -290,15 +290,15 @@ body {
 	padding-top: 4px;
 }
 
-.stat-card--risk {
+.stat-card--review {
 	border-left-color: #d32f2f;
 }
 
-.stat-card--risk .stat-card__value {
+.stat-card--review .stat-card__value {
 	display: none;
 }
 
-.stat-card__risk-content {
+.stat-card__review-content {
 	align-items: center;
 	display: flex;
 	flex: 1 1 auto;
@@ -309,7 +309,7 @@ body {
 
 .stat-card__gauge {
 	align-items: center;
-	background: conic-gradient(#ffb300 0deg var(--risk-progress), #383a3f var(--risk-progress) 360deg);
+	background: conic-gradient(#ffb300 0deg var(--review-progress), #383a3f var(--review-progress) 360deg);
 	border-radius: 50%;
 	display: flex;
 	flex: 0 0 94px;
@@ -678,7 +678,7 @@ body {
 	}
 
 	.dashboard-statistics__cards {
-		grid-template-columns: repeat(3, minmax(0, 1fr));
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 		grid-template-rows: none;
 	}
 
@@ -746,12 +746,12 @@ body {
 		padding: 8px;
 	}
 
-	.stat-card--risk {
+	.stat-card--review {
 		grid-column: 1 / -1;
 		min-height: 152px;
 	}
 
-	.stat-card__risk-content {
+	.stat-card__review-content {
 		justify-content: center;
 	}
 
@@ -824,3 +824,67 @@ body {
 		padding: 3px 6px;
 	}
 }
+
+.stat-card__today {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 0 0;
+  border-top: 1px solid #383a3f;
+  color: #f4f5f7;
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.stat-card__today span {
+  margin-left: auto;
+  color: #c4c7ca;
+  font-size: 10px;
+}
+
+.latest-event__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #f4f5f7;
+  font-size: 18px;
+}
+.latest-event__status {
+  padding: 4px 7px;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  color: #c4c7ca;
+  font-size: 11px;
+}
+.latest-event__status--UNREVIEWED { color: #ffca66; }
+.latest-event__status--TRUE_FIRE { color: #ff8585; }
+.latest-event__details { margin: 10px 0; font-size: 12px; }
+.latest-event__details > div { display: flex; gap: 10px; margin: 6px 0; }
+.latest-event__details dt { flex: 0 0 52px; color: #a6adb8; }
+.latest-event__details dd { margin: 0; color: #e3e6eb; overflow-wrap: anywhere; min-width: 0; }
+@media (max-width: 1000px) {
+  .stat-card--latest { grid-column: 1 / -1; }
+}
+.dashboard__feeds { grid-template-columns: repeat(var(--feed-columns, 2), minmax(0, 1fr)); grid-template-rows: repeat(var(--feed-rows, 2), minmax(0, 1fr)); overflow: auto; }
+.camera-select-button, .dashboard-feeds-empty button { background: #25272e; color: #eee; border: 1px solid #555963; border-radius: 4px; padding: 7px 12px; cursor: pointer; }
+.camera-select-button:hover { border-color: #ffaaa8; }
+.camera-selector-actions { display: flex; gap: 10px; margin: 16px 0; }
+.camera-selector-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.camera-selector-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 16px; border: 1px solid #454850; border-radius: 6px; cursor: pointer; background: #202228; }
+.camera-selector-item:has(input:checked) { border-color: #df706c; background: #352629; }
+.camera-selector-item small { display: block; color: #b3b6c0; margin-top: 7px; }
+.camera-selector-item input { accent-color: #d34c48; width: 20px; height: 20px; }
+.dashboard-feeds-empty { grid-column: 1 / -1; display: grid; place-content: center; gap: 16px; color: #bbc0ca; }
+@media (max-width: 720px) {
+ .camera-selector-grid { grid-template-columns: 1fr; }
+ .dashboard__feeds { grid-template-columns: repeat(min(var(--feed-columns), 2), minmax(0, 1fr)); grid-template-rows: none; grid-auto-rows: minmax(180px, 1fr); }
+}
+.camera-feed--clickable { cursor: zoom-in; }
+.camera-feed--clickable:hover { border-color: #df706c; }
+.camera-feed--clickable:focus-visible { outline: 2px solid #ffb300; outline-offset: -2px; }
+.camera-expanded-view { padding: 16px; }
+.camera-expanded-view .camera-feed { height: min(65dvh, 720px); min-height: 220px; }
+.camera-expanded-view .camera-feed__image { object-fit: contain; }
+.camera-expanded-view .camera-feed__viewport { background: #050608; }
