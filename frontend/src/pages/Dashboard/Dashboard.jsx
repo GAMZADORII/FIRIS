@@ -5,8 +5,8 @@ import './Dashboard.css';
 import { Modal } from '../../components/Console/Console.jsx';
 const cameraSlots = [
   ['CAM001', '공장 A구역'], ['CAM002', '공장 B구역'],
-  ['CAM005', '공장 C구역'], ['CAM006', '공장 D구역'], ['CAM007', '공장 E구역'],
   ['CAM003', '창고 A구역'], ['CAM004', '창고 B구역'],
+  ['CAM005', '공장 C구역'], ['CAM006', '공장 D구역'], ['CAM007', '공장 E구역'],
   ['CAM008', '창고 C구역'], ['CAM009', '창고 D구역'],
 ];
 const cameraSelectionKey = 'firis-dashboard-cameras';
