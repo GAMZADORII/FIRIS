@@ -73,7 +73,7 @@ services:
     build:
       context: ./ai
     image: firis-ai:local
-    command: ["python", "-m", "app.services.multi_camera_service", "--model", "yolo", "--sample-fps", "3", "--loop"]
+    command: ["python", "-m", "app.services.multi_camera_service", "--model", "yolo", "--sample-fps", "1", "--loop"]
     environment:
       BACKEND_URL: http://backend:8080
       AI_API_KEY: ${AI_API_KEY}
