@@ -40,7 +40,7 @@ export default function ReportSummary({ waiting, active, closed, onReset }) {
           </div>
         ))}
       </div>
-      <button type="button" className="report-summary__reset" onClick={onReset} title="시연용 신고 기록을 초기 상태로 되돌립니다">초기화</button>
+      <button type="button" className="report-summary__reset" onClick={onReset} title="서버에서 신고 목록을 다시 불러옵니다">새로고침</button>
     </div>
   );
 }

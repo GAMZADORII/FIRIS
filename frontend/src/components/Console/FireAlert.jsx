@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { apiClient, apiError, fetchMedia, getSession } from '../../api/client.js';
 import { Modal } from './Console.jsx';
+import { connectCenter } from '../../api/mock119Socket.js';
 import { cameraDisplayName } from '../../utils/cameraChannels.js';
 
 const reasons = { STEAM: '수증기', LIGHT: '빛', REFLECTION: '반사', DUST: '먼지', WELDING: '용접', ETC: '기타' };
 export default function FireAlert() {
   const [queue, setQueue] = useState([]);
   const event = queue[0];
+  const currentEventId = useRef(null);
+  currentEventId.current = event?.eventId;
   const [stage, setStage] = useState('alert');
   const [clip, setClip] = useState(null);
   const [seconds, setSeconds] = useState(10);
@@ -14,6 +17,7 @@ export default function FireAlert() {
   const [error, setError] = useState('');
   const [reportData, setReportData] = useState(null);
   const [reportError, setReportError] = useState('');
+  const [delivery, setDelivery] = useState(null);
   const [busy, setBusy] = useState(false);
   const lock = useRef(false);
   const deadline = useRef(0);
@@ -49,7 +53,7 @@ export default function FireAlert() {
           if (data.content.length < 100) break;
         }
         latestEventId = nextId;
-        const alerts = added.filter((item) => item.reviewStatus === 'UNREVIEWED');
+        const alerts = added.filter((item) => item.reviewStatus === 'UNREVIEWED' && !item.responseCompletedAt);
         if (alerts.length) setQueue((items) => [...items, ...alerts.filter(
           (alert) => !items.some((item) => item.eventId === alert.eventId)
         )]);
@@ -88,7 +92,7 @@ export default function FireAlert() {
     return () => { active = false; clearInterval(timer); if (url) URL.revokeObjectURL(url); };
   }, [event]);
   useEffect(() => {
-    setReportData(null); setReportError('');
+    setReportData(null); setReportError(''); setDelivery(null);
     if (!event || stage !== 'report') return;
     if (event.preview) {
       const account = getSession()?.account;
@@ -126,6 +130,46 @@ export default function FireAlert() {
     }, 250);
     return () => { active = false; clearInterval(timer); actions.forEach((name) => document.removeEventListener(name, reset, true)); };
   }, [event, stage]);
+  useEffect(() => connectCenter(async (notification) => {
+    window.dispatchEvent(new Event('firis-events-changed'));
+    const id = notification?.eventId ?? currentEventId.current;
+    if (!id || id === 'PREVIEW') return;
+    try {
+      const { data } = await apiClient.get(`/api/events/${id}`);
+      if (data.responseCompletedAt) {
+        setQueue(items => items.filter(item => item.eventId !== id));
+        if (currentEventId.current === id) setStage('alert');
+      }
+    } catch { /* Recovered on the next connection or status query. */ }
+  }), []);
+  useEffect(() => {
+    if (!event || event.preview || stage !== 'report') return;
+    let active = true;
+    async function status() {
+      try {
+        const { data } = await apiClient.get(`/api/events/${event.eventId}/mock-119-report`);
+        if (!active) return;
+        setDelivery(data);
+        if (data.responseStatus === 'CLOSED') {
+          setQueue(items => items.filter(item => item.eventId !== event.eventId));
+          setStage('alert');
+          window.dispatchEvent(new Event('firis-events-changed'));
+        }
+      } catch { /* A report may not have been submitted yet. */ }
+    }
+    status(); const timer = setInterval(status, 3000);
+    return () => { active = false; clearInterval(timer); };
+  }, [event, stage]);
+  async function submitReport() {
+    if (lock.current || event.preview || !reportData?.readyToReport) return;
+    lock.current = true; setBusy(true); setReportError('');
+    try {
+      const { data } = await apiClient.post(`/api/events/${event.eventId}/mock-119-reports`);
+      setDelivery(data);
+      window.dispatchEvent(new Event('firis-events-changed'));
+    } catch (cause) { setReportError(apiError(cause)); }
+    finally { lock.current = false; setBusy(false); }
+  }
   async function falsePositive() {
     if (lock.current) return;
     lock.current = true; setBusy(true); setError('');
@@ -158,7 +202,9 @@ export default function FireAlert() {
           <div><dt>담당자</dt><dd>{reportData?.reporterName || '미등록'} / {reportData?.reporterPhone || '연락처 미등록'}</dd></div>
           <div><dt>특이사항</dt><dd>{reportData?.specialNotes || '특이사항 없음'}</dd></div>
         </dl> : <p role={reportError ? 'alert' : undefined}>{reportError ? `신고 정보 조회 실패: ${reportError}` : '신고 정보를 불러오는 중입니다.'}</p>}
-        <p>119 모의 서버 연결 준비 중입니다. 신고는 아직 전송되지 않았습니다.</p>
+        {delivery ? <p role="status">모의 신고: {({ PENDING: '등록 처리 중', ACCEPTED: '센터에 등록됨', FAILED: '등록 실패' })[delivery.status]} {delivery.receiptId} · {({ PENDING: '신규 신고', DISPATCHED: '출동 중', ARRIVED: '현장 도착', CLOSED: '대응 완료' })[delivery.responseStatus]}</p> : <p>119 모의 접수센터로 전달합니다. 실제 119 신고가 아닙니다.</p>}
+        {reportData && !reportData.readyToReport && <p>입력한 신고 정보의 형식을 확인해주세요: {reportData.missingFields?.join(', ')}</p>}
+        {reportError && reportData && <p role="alert">{reportError}</p>}
       </> : <>
         <p>{event.location || '위치 미등록'} · {event.detectedAt?.replace('T', ' ')}</p>
         {clip ? <video src={clip} controls autoPlay muted playsInline aria-label="화재 이벤트 영상 클립" style={{ width: '100%', maxHeight: '45vh', background: '#000' }} /> : <p className="console-empty">{event.preview ? '미리보기에는 저장된 영상 클립이 없습니다.' : '이벤트 영상 클립 준비 중…'}</p>}
@@ -170,7 +216,7 @@ export default function FireAlert() {
       {error && <p role="alert">{error}</p>}
     </div>
     <footer className="console-modal__footer">
-      {stage === 'report' ? <><button onClick={() => setStage('alert')}>취소</button><button className="console-primary" disabled title="119 모의 서버 연동 예정">119 신고 연결</button></> : <>
+      {stage === 'report' ? <><button onClick={() => setStage('alert')}>취소</button><button className="console-primary" disabled={busy || event.preview || !reportData?.readyToReport || delivery?.status === 'ACCEPTED'} onClick={submitReport}>{busy ? '등록 중…' : delivery?.status === 'ACCEPTED' ? '센터 등록 완료' : '모의 신고 전송'}</button></> : <>
         <button disabled={busy} onClick={close}>닫기</button>
         {stage === 'timeout-error' && <button onClick={() => { setError(''); setStage('alert'); }}>자동 닫힘 재시도</button>}
         {(stage === 'false-positive' || stage === 'complete') && <button disabled={busy} onClick={() => setStage('alert')}>취소</button>}

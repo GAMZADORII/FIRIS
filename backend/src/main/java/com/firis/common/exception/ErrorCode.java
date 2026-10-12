@@ -3,6 +3,7 @@ package com.firis.common.exception;
 import org.springframework.http.HttpStatus;
 
 public enum ErrorCode {
+    MOCK_119_STATE_CONFLICT(HttpStatus.CONFLICT, "다른 접수자가 상태를 변경했습니다. 최신 상태를 확인해주세요."),
     INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "아이디 또는 비밀번호가 올바르지 않습니다."),
     ACCOUNT_INACTIVE(HttpStatus.FORBIDDEN, "비활성화된 계정입니다. 관리자에게 문의해 주세요."),
     PASSWORD_CHANGE_REQUIRED(HttpStatus.FORBIDDEN, "최초 로그인 비밀번호 변경이 필요합니다."),

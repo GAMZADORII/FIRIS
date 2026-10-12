@@ -37,18 +37,14 @@ public class Mock119ReportState {
                 .orElseThrow(() -> new ApiException(ErrorCode.EVENT_NOT_FOUND));
         var reporter = accounts.findByLoginId(loginId)
                 .orElseThrow(() -> new ApiException(ErrorCode.UNAUTHORIZED));
-        if (reporter.getRole() != Role.WORKER || !reporter.isActive()) {
+        if ((reporter.getRole() != Role.WORKER && reporter.getRole() != Role.ADMIN) || !reporter.isActive()) {
             throw new ApiException(ErrorCode.FORBIDDEN);
         }
         var missing = new ArrayList<String>();
-        if (settings.siteAddress().isBlank() || settings.siteAddress().length() > 255) missing.add("siteAddress");
-        if (!validPhone(settings.controlRoomPhone())) missing.add("controlRoomPhone");
-        if (event.getCamera().getLocation() == null || event.getCamera().getLocation().isBlank()) {
-            missing.add("detailLocation");
-        }
-        if (!validPhone(reporter.getContactPhone()) || reporter.getContactConsentedAt() == null) {
-            missing.add("reporterPhone");
-        }
+        // These display fields are optional. Only supplied, invalid values block sending.
+        if (settings.siteAddress().length() > 255) missing.add("siteAddress");
+        if (!optionalPhoneValid(settings.controlRoomPhone())) missing.add("controlRoomPhone");
+        if (!optionalPhoneValid(reporter.getContactPhone())) missing.add("reporterPhone");
         return new Mock119PreviewResponse(eventId, event.getEventType(),
                 settings.siteAddress().isBlank() ? null : settings.siteAddress(),
                 validPhone(settings.controlRoomPhone()) ? settings.controlRoomPhone() : null,
@@ -63,11 +59,8 @@ public class Mock119ReportState {
                 .orElseThrow(() -> new ApiException(ErrorCode.EVENT_NOT_FOUND));
         var reporter = accounts.findByLoginId(loginId)
                 .orElseThrow(() -> new ApiException(ErrorCode.UNAUTHORIZED));
-        if (reporter.getRole() != Role.WORKER || !reporter.isActive()) {
+        if ((reporter.getRole() != Role.WORKER && reporter.getRole() != Role.ADMIN) || !reporter.isActive()) {
             throw new ApiException(ErrorCode.FORBIDDEN);
-        }
-        if (!validPhone(reporter.getContactPhone()) || reporter.getContactConsentedAt() == null) {
-            throw new ApiException(ErrorCode.BAD_REQUEST, "신고자 연락처와 개인정보 동의를 먼저 등록해주세요.");
         }
         var existing = reports.findByEvent_EventId(eventId);
         Mock119Report report;
@@ -80,19 +73,22 @@ public class Mock119ReportState {
                 return new Prepared(report.getReportId(), false, null);
             }
             if (report.getStatus() == Mock119ReportStatus.PENDING && report.getUpdatedAt() != null
-                    && report.getUpdatedAt().isAfter(LocalDateTime.now().minusSeconds(15))) {
+                    && report.getUpdatedAt().isAfter(LocalDateTime.now(java.time.ZoneId.of("Asia/Seoul")).minusSeconds(15))) {
                 return new Prepared(report.getReportId(), false, null);
             }
             report.retry();
         } else {
-            if (settings.siteAddress().isBlank() || settings.siteAddress().length() > 255
-                    || !validPhone(settings.controlRoomPhone())
-                    || event.getCamera().getLocation() == null || event.getCamera().getLocation().isBlank()) {
-                throw new ApiException(ErrorCode.BAD_REQUEST, "사업장 주소·관제실 번호·상세위치를 설정해주세요.");
+            if (event.getResponseCompletedAt() != null) {
+                throw new ApiException(ErrorCode.BAD_REQUEST, "대응 완료된 이벤트는 신규 신고할 수 없습니다.");
+            }
+            if (settings.siteAddress().length() > 255
+                    || !optionalPhoneValid(settings.controlRoomPhone())
+                    || !optionalPhoneValid(reporter.getContactPhone())) {
+                throw new ApiException(ErrorCode.BAD_REQUEST, "입력한 주소 또는 전화번호 형식을 확인해주세요.");
             }
             report = new Mock119Report(event, reporter, UUID.randomUUID().toString(),
-                    reporter.getContactPhone(), settings.controlRoomPhone().replace("-", ""), settings.siteAddress(),
-                    event.getCamera().getLocation(), event.getCamera().getReportNote());
+                    normalizedPhone(reporter.getContactPhone()), normalizedPhone(settings.controlRoomPhone()),
+                    settings.siteAddress(), event.getCamera().getLocation(), event.getCamera().getReportNote());
         }
         reports.saveAndFlush(report);
         Mock119Message message = new Mock119Message(
@@ -108,6 +104,7 @@ public class Mock119ReportState {
     public void accepted(Long reportId, String receiptId) {
         var report = reports.findById(reportId)
                 .orElseThrow(() -> new ApiException(ErrorCode.INTERNAL_SERVER_ERROR));
+        if (report.getStatus() == Mock119ReportStatus.ACCEPTED) return;
         report.accept(receiptId);
     }
 
@@ -129,6 +126,15 @@ public class Mock119ReportState {
     }
 
     public record Prepared(Long reportId, boolean send, Mock119Message message) {}
+
+    private boolean optionalPhoneValid(String phone) {
+        return phone == null || phone.isBlank() || validPhone(phone.trim());
+    }
+
+    private String normalizedPhone(String phone) {
+        // Existing NOT NULL phone columns accept empty strings; no migration is required.
+        return phone == null ? "" : phone.trim().replace("-", "");
+    }
 
     private boolean validPhone(String phone) {
         return phone != null && phone.matches("^0\\d{1,2}-?\\d{3,4}-?\\d{4}$");

@@ -10,8 +10,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 @Component
+@ConditionalOnProperty(name = "app.mock-119.delivery-mode", havingValue = "external", matchIfMissing = true)
 public class Mock119WebSocketTransport implements Mock119Transport {
     private final HttpClient client = HttpClient.newHttpClient();
     private final ObjectMapper mapper;

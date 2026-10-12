@@ -1,5 +1,5 @@
 import Modal from '../Modal/Modal.jsx';
-import MockVideo from '../MockVideo/MockVideo.jsx';
+import EventVideo from '../EventVideo.jsx';
 import StatusBadge from '../StatusBadge/StatusBadge.jsx';
 import './ReportDetailModal.css';
 
@@ -26,7 +26,7 @@ export default function ReportDetailModal({ report, onClose }) {
         <div className="history-modal-content">
           <section className="history-modal-video" aria-label="신고 당시 영상">
             <h4>탐지 당시 영상</h4>
-            <MockVideo report={report} />
+            <EventVideo report={report} />
             <p>{report.cameraId} · {report.detailLocation}</p>
           </section>
           <section className="history-modal-information" aria-label="신고 정보">

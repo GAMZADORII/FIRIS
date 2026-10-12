@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import ReportDetailModal from '../../components/ReportDetailModal/ReportDetailModal.jsx';
 import StatusBadge from '../../components/StatusBadge/StatusBadge.jsx';
-import { responseStatusLabels } from '../../utils/responseSimulation.js';
+import { responseStatusLabels } from '../../utils/responseStatus.js';
 
 const shortId = (report) => `119-${String(report.reportId).padStart(3, '0')}`;
 const clock = (value) => value?.slice(11, 19) || '—';
