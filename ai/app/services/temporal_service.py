@@ -31,7 +31,7 @@ class TemporalValidator:
         self.window_seconds = window_seconds
         self.sample_fps = sample_fps
         self.required_samples = ceil(window_seconds * sample_fps)
-        self.minimum_samples = max(3, ceil((self.required_samples + 1) * 0.6))
+        self.minimum_samples = 2
         self.required_ratio = required_ratio
         self.clear_seconds = clear_seconds
         self.samples: deque[tuple[float, dict]] = deque(maxlen=self.required_samples + 1)
@@ -49,7 +49,7 @@ class TemporalValidator:
         for label in ("fire", "smoke"):
             last_seen = self.last_detected_at.get(label)
             if label in detected:
-                if last_seen is None or timestamp - last_seen >= self.clear_seconds:
+                if last_seen is None or timestamp - last_seen > self.clear_seconds:
                     self.first_detected_at[label] = timestamp
                 self.last_detected_at[label] = timestamp
             elif last_seen is not None and timestamp - last_seen >= self.clear_seconds:
