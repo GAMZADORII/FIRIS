@@ -370,7 +370,7 @@ JWT의 로그인 사용자에서 accountId를 확인하여 저장한다.
 
 `POST /api/events/{eventId}/report-timeout` — ADMIN/WORKER JWT 필요, 요청 본문 없음. 신규 이벤트 알림을 10초간 조작하지 않았을 때 `FIRE_EVENT.report_timed_out_at`을 서버 시각으로 기록한다. 이미 대응 완료했거나 오탐 검수된 이벤트이면 400이다. 다시 호출해도 최초 무응답 시각을 유지한다. 응답은 갱신된 Event 상세이다. 무응답 기록은 실제 119 신고도, `MOCK_119_REPORT` 접수도, 최종 검수도 아니다. 존재하지 않는 eventId는 두 API 모두 404이다.
 
-현재 Frontend 알림의 `119 신고 연결` 버튼은 모의 신고 preview/POST API에 아직 연결되지 않아 비활성화되어 있다. 버튼을 실제로 사용할 때는 아래 119 모의 신고 API 계약을 따라 연결해야 한다.
+현재 Frontend 알림의 확인 창은 `GET /api/events/{eventId}/mock-119-preview`로 실제 신고 정보를 조회한다. `119 신고 연결` 버튼은 모의 신고 POST와 아직 연결되지 않아 비활성화되어 있다. 버튼을 실제로 사용할 때는 아래 119 모의 신고 API 계약을 따라 연결해야 한다.
 
 ## 32. Dashboard 통계 API
 

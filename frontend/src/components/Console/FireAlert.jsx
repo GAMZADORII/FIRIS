@@ -11,10 +11,11 @@ export default function FireAlert() {
   const [seconds, setSeconds] = useState(10);
   const [reason, setReason] = useState('ETC');
   const [error, setError] = useState('');
+  const [reportData, setReportData] = useState(null);
+  const [reportError, setReportError] = useState('');
   const [busy, setBusy] = useState(false);
   const lock = useRef(false);
   const deadline = useRef(0);
-  const reporter = getSession()?.account;
   const close = () => {
     if (lock.current) return;
     setQueue((items) => items.slice(1));
@@ -29,16 +30,24 @@ export default function FireAlert() {
       polling = true;
       try {
         const first = (await apiClient.get('/api/events', { params: { page: 0, size: 100 } })).data;
-        const all = [...first.content];
-        for (let page = 1; page < Math.ceil(first.totalElements / 100); page++) {
-          all.push(...(await apiClient.get('/api/events', { params: { page, size: 100 } })).data.content);
-        }
         if (!active) return;
-        if (seen) {
-          const added = all.filter((item) => !seen.has(item.eventId) && item.reviewStatus === 'UNREVIEWED');
-          if (added.length) setQueue((items) => [...items, ...added.reverse()]);
+        if (!seen) {
+          // Existing events are the initial baseline, not new alerts.
+          seen = new Set(first.content.map((item) => item.eventId));
+          return;
         }
-        seen = new Set([...(seen || []), ...all.map((item) => item.eventId)]);
+        const added = [];
+        let current = first;
+        for (let page = 0; page < first.totalPages; page++) {
+          const previouslySeen = current.content.some((item) => seen.has(item.eventId));
+          added.push(...current.content.filter((item) => !seen.has(item.eventId)));
+          if (previouslySeen || page + 1 >= first.totalPages) break;
+          current = (await apiClient.get('/api/events', { params: { page: page + 1, size: 100 } })).data;
+          if (!active) return;
+        }
+        added.forEach((item) => seen.add(item.eventId));
+        const alerts = added.filter((item) => item.reviewStatus === 'UNREVIEWED');
+        if (alerts.length) setQueue((items) => [...items, ...alerts.reverse()]);
       } catch { /* Retry on next poll; do not create an alert from failed requests. */ }
       finally { polling = false; }
     };
@@ -73,6 +82,23 @@ export default function FireAlert() {
     load(); const timer = setInterval(load, 2000);
     return () => { active = false; clearInterval(timer); if (url) URL.revokeObjectURL(url); };
   }, [event]);
+  useEffect(() => {
+    setReportData(null); setReportError('');
+    if (!event || stage !== 'report') return;
+    if (event.preview) {
+      const account = getSession()?.account;
+      setReportData({ eventType: 'FIRE', siteAddress: event.address,
+        controlRoomPhone: event.controlRoomPhone, detailLocation: event.location,
+        detectedAt: event.detectedAt, reporterName: account?.name,
+        reporterPhone: account?.contactPhone, specialNotes: event.specialNotes });
+      return;
+    }
+    let active = true;
+    apiClient.get(`/api/events/${event.eventId}/mock-119-preview`)
+      .then(({ data }) => { if (active) setReportData(data); })
+      .catch((cause) => { if (active) setReportError(apiError(cause)); });
+    return () => { active = false; };
+  }, [event, stage]);
   useEffect(() => {
     if (!event || stage !== 'alert') return;
     deadline.current = Date.now() + 10000; setSeconds(10);
@@ -118,14 +144,16 @@ export default function FireAlert() {
     <div className="console-modal__body">
       {event.preview && <p>미리보기 · 실제 이벤트 변경 및 신고 전송 없음</p>}
       {stage === 'report' ? <>
-        <dl className="history-report-confirm">
-          <div><dt>사고유형</dt><dd>화재</dd></div>
-          <div><dt>주소</dt><dd>{event.address || '미등록'}</dd></div>
-          <div><dt>상세위치</dt><dd>{event.location || '미등록'}</dd></div>
-          <div><dt>탐지시간</dt><dd>{event.detectedAt?.replace('T', ' ')}</dd></div>
-          <div><dt>담당자</dt><dd>{reporter?.name || '미등록'} / {reporter?.phoneNumber || reporter?.phone || '연락처 미등록'}</dd></div>
-          <div><dt>특이사항</dt><dd>{event.specialNotes || '미등록'}</dd></div>
-        </dl><p>119 모의 서버 연결 준비 중입니다. 신고는 아직 전송되지 않았습니다.</p>
+        {reportData ? <dl className="history-report-confirm">
+          <div><dt>사고유형</dt><dd>{{ FIRE: '화재', SMOKE: '연기', FIRE_SMOKE: '화재·연기' }[reportData?.eventType] || '확인 중'}</dd></div>
+          <div><dt>주소</dt><dd>{reportData?.siteAddress || '미등록'}</dd></div>
+          <div><dt>관제실 번호</dt><dd>{reportData?.controlRoomPhone || '미등록'}</dd></div>
+          <div><dt>상세위치</dt><dd>{reportData?.detailLocation || '미등록'}</dd></div>
+          <div><dt>탐지시간</dt><dd>{reportData?.detectedAt?.replace('T', ' ') || '확인 중'}</dd></div>
+          <div><dt>담당자</dt><dd>{reportData?.reporterName || '미등록'} / {reportData?.reporterPhone || '연락처 미등록'}</dd></div>
+          <div><dt>특이사항</dt><dd>{reportData?.specialNotes || '특이사항 없음'}</dd></div>
+        </dl> : <p role={reportError ? 'alert' : undefined}>{reportError ? `신고 정보 조회 실패: ${reportError}` : '신고 정보를 불러오는 중입니다.'}</p>}
+        <p>119 모의 서버 연결 준비 중입니다. 신고는 아직 전송되지 않았습니다.</p>
       </> : <>
         <p>{event.location || '위치 미등록'} · {event.detectedAt?.replace('T', ' ')}</p>
         {clip ? <video src={clip} controls autoPlay muted playsInline aria-label="화재 이벤트 영상 클립" style={{ width: '100%', maxHeight: '45vh', background: '#000' }} /> : <p className="console-empty">{event.preview ? '미리보기에는 저장된 영상 클립이 없습니다.' : '이벤트 영상 클립 준비 중…'}</p>}
