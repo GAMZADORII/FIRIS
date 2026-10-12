@@ -9,7 +9,7 @@ corepack yarn install --immutable
 corepack yarn start
 ```
 http://localhost:5173 접속. `/`는 `/login`으로 이동한다.
-`/login`은 Backend JWT 로그인, `/change-password`는 WORKER 첫 로그인 비밀번호 변경 화면이다. `/dashboard`는 CAM001~CAM009 중 표시할 채널을 선택한다(기본 화면 채널 01~04). 화면 채널 번호는 기존 구역 배치에 따라 표시하며 내부 cameraId는 영상·이벤트 연결을 위해 유지한다. `/history`는 이력·상세·검수·미디어, `/admin`은 ADMIN 전용 작업자·CCTV·오탐 조회 화면이다. 백엔드와 AI 분석기가 함께 실행 중이고 해당 폴더에 영상이 있어야 관제 영상이 보인다.
+`/login`은 Backend JWT 로그인, `/change-password`는 WORKER 첫 로그인 비밀번호 변경 화면이다. `/dashboard`는 CAM001~CAM009 중 표시할 채널을 선택한다(기본 선택은 영상이 있는 CAM001~CAM004). 화면 채널 번호는 기존 구역 배치에 따라 표시하며 내부 cameraId는 영상·이벤트 연결을 위해 유지한다. `/history`는 이력·상세·검수·미디어, `/admin`은 ADMIN 전용 작업자·CCTV·오탐 조회 화면이다. 백엔드와 AI 분석기가 함께 실행 중이고 해당 폴더에 영상이 있어야 관제 영상이 보인다.
 
 선택적으로 `cp .env.example .env` 후 VITE_API_BASE_URL을 설정하고 개발 서버를 재시작한다.
 Axios 클라이언트 기본 주소는 http://localhost:8080 이다.

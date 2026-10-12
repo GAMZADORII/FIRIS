@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom';
 import { apiClient, apiError, fetchMedia } from '../../api/client.js';
 import './Dashboard.css';
 import { Modal } from '../../components/Console/Console.jsx';
-import { cameraChannelOrder, cameraChannelSlots, cameraDisplayName } from '../../utils/cameraChannels.js';
+import { cameraChannelSlots, cameraDisplayName } from '../../utils/cameraChannels.js';
 const cameraSlots = cameraChannelSlots;
-const cameraSelectionKey = 'firis-dashboard-cameras-v2';
+const cameraSelectionKey = 'firis-dashboard-cameras';
 
 const statisticIconPaths = {
   '이벤트 검수 현황': 'M12 3 20 6v5c0 5-4 8-8 10-4-2-8-5-8-10V6l8-3Z M12 8v5 M12 16h.01',
@@ -70,7 +70,7 @@ export default function Dashboard() {
       const saved = JSON.parse(localStorage.getItem(cameraSelectionKey));
       if (Array.isArray(saved)) return saved.filter((id) => cameraSlots.some(([cameraId]) => cameraId === id));
     } catch { /* Use the default four views if storage is unavailable. */ }
-    return cameraChannelOrder.slice(0, 4);
+    return ['CAM001', 'CAM002', 'CAM003', 'CAM004'];
   });
   useEffect(() => {
     try { localStorage.setItem(cameraSelectionKey, JSON.stringify(selectedCameraIds)); } catch { /* Selection remains usable for this session. */ }
