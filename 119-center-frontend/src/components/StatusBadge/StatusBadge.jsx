@@ -1,4 +1,4 @@
-import { responseStatusLabels } from '../../utils/responseSimulation.js';
+import { responseStatusLabels } from '../../utils/responseStatus.js';
 
 export default function StatusBadge({ status }) {
   return <span className={'status-badge ' + status}><i />{responseStatusLabels[status] ?? status}</span>;

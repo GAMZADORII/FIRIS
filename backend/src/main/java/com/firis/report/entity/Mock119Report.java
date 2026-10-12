@@ -4,6 +4,9 @@ import com.firis.account.entity.Account;
 import com.firis.event.entity.FireEvent;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "MOCK_119_REPORT", uniqueConstraints = {
@@ -60,6 +63,45 @@ public class Mock119Report {
     @Column(name = "accepted_at")
     private LocalDateTime acceptedAt;
 
+    // Nullable for legacy reports sent to an external center.
+    @Enumerated(EnumType.STRING)
+    @Column(name = "response_status", length = 20)
+    private Mock119ResponseStatus responseStatus;
+    private LocalDateTime dispatchAt;
+    private LocalDateTime arrivalAt;
+    private LocalDateTime closedAt;
+
+    @OneToMany(mappedBy = "report", cascade = CascadeType.ALL)
+    @OrderBy("occurredAt ASC, historyId ASC")
+    private List<Mock119ReportHistory> history = new ArrayList<>();
+
+    public void registerAtCenter(LocalDateTime now) {
+        if (responseStatus != null) return;
+        responseStatus = Mock119ResponseStatus.PENDING;
+        history.add(new Mock119ReportHistory(this, responseStatus, now));
+    }
+
+    public void dispatch(LocalDateTime now) {
+        if (responseStatus != Mock119ResponseStatus.PENDING) throw new IllegalStateException("Invalid dispatch");
+        responseStatus = Mock119ResponseStatus.DISPATCHED;
+        dispatchAt = now;
+        arrivalAt = now.plusSeconds(60);
+        history.add(new Mock119ReportHistory(this, responseStatus, now));
+    }
+
+    public void arrive(LocalDateTime now) {
+        if (responseStatus != Mock119ResponseStatus.DISPATCHED || arrivalAt.isAfter(now)) return;
+        responseStatus = Mock119ResponseStatus.ARRIVED;
+        history.add(new Mock119ReportHistory(this, responseStatus, arrivalAt));
+    }
+
+    public void close(LocalDateTime now) {
+        if (responseStatus != Mock119ResponseStatus.ARRIVED) throw new IllegalStateException("Invalid completion");
+        responseStatus = Mock119ResponseStatus.CLOSED;
+        closedAt = now;
+        history.add(new Mock119ReportHistory(this, responseStatus, now));
+    }
+
     protected Mock119Report() {}
 
     public Mock119Report(FireEvent event, Account reporter, String requestId,
@@ -79,14 +121,14 @@ public class Mock119Report {
     public void retry() {
         status = Mock119ReportStatus.PENDING;
         failureReason = null;
-        updatedAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
     }
 
     public void accept(String receiptId) {
         status = Mock119ReportStatus.ACCEPTED;
         this.receiptId = receiptId;
         failureReason = null;
-        acceptedAt = LocalDateTime.now();
+        acceptedAt = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
     }
 
     public void fail(String reason) {
@@ -97,13 +139,13 @@ public class Mock119Report {
 
     @PrePersist
     void prePersist() {
-        createdAt = LocalDateTime.now();
+        createdAt = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
         updatedAt = createdAt;
     }
 
     @PreUpdate
     void preUpdate() {
-        updatedAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
     }
 
     public Long getReportId() { return reportId; }
@@ -118,4 +160,11 @@ public class Mock119Report {
     public Mock119ReportStatus getStatus() { return status; }
     public String getReceiptId() { return receiptId; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public LocalDateTime getAcceptedAt() { return acceptedAt; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public Mock119ResponseStatus getResponseStatus() { return responseStatus; }
+    public LocalDateTime getDispatchAt() { return dispatchAt; }
+    public LocalDateTime getArrivalAt() { return arrivalAt; }
+    public LocalDateTime getClosedAt() { return closedAt; }
+    public List<Mock119ReportHistory> getHistory() { return history; }
 }

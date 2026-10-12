@@ -54,16 +54,17 @@ class Mock119ReportStateTest {
     }
 
     @Test
-    void workerWithoutContactConsentCannotReport() {
-        var event = mock(FireEvent.class);
+    void workerWithoutPhoneCanReport() {
+        var event = new FireEvent(Camera.create("CAM003", "CCTV 03", null, null, "ONLINE"),
+                EventType.FIRE, .91, LocalDateTime.now(), "test", LocalDateTime.now());
         var worker = Account.createWorker("W000001", "hash", "작업자");
         worker.changePassword("new-hash");
         when(events.findForMediaUpdate(27L)).thenReturn(Optional.of(event));
         when(accounts.findByLoginId("W000001")).thenReturn(Optional.of(worker));
-
-        assertThatThrownBy(() -> state.prepare(27L, "W000001"))
-                .isInstanceOf(ApiException.class);
-        verify(reports, never()).saveAndFlush(any());
+        var prepared = state.prepare(27L, "W000001");
+        assertThat(prepared.send()).isTrue();
+        assertThat(prepared.message().reporterPhone()).isEmpty();
+        assertThat(prepared.message().detailLocation()).isNull();
     }
 
     @Test
@@ -88,22 +89,34 @@ class Mock119ReportStateTest {
     }
 
     @Test
-    void missingSiteSettingsBlocksReport() {
-        var noSettings = new Mock119ReportState(events, accounts, reports,
-                new Mock119Settings("", ""));
-        var event = new FireEvent(Camera.create("CAM003", "CCTV 03", "창고 A구역", null, "ONLINE"),
-                EventType.FIRE, .91, LocalDateTime.now(), "yolo", LocalDateTime.now());
-        var worker = Account.createWorker("W000001", "hash", "홍길동");
-        worker.changePassword("new-hash");
-        worker.completeContactOnboarding("01012345678", "v1", LocalDateTime.now());
+    void adminCanSubmitWithAllOptionalContactAndAddressFieldsEmpty() {
+        var noSettings = new Mock119ReportState(events, accounts, reports, new Mock119Settings("", ""));
+        var event = new FireEvent(Camera.create("CAM003", "CCTV 03", null, null, "ONLINE"),
+                EventType.FIRE, .91, LocalDateTime.now(), "test", LocalDateTime.now());
+        var admin = Account.createAdmin("report-admin", "hash", "관리자");
         when(events.findById(27L)).thenReturn(Optional.of(event));
         when(events.findForMediaUpdate(27L)).thenReturn(Optional.of(event));
-        when(accounts.findByLoginId("W000001")).thenReturn(Optional.of(worker));
+        when(accounts.findByLoginId("report-admin")).thenReturn(Optional.of(admin));
+        var preview = noSettings.preview(27L, "report-admin");
+        assertThat(preview.readyToReport()).isTrue();
+        assertThat(preview.missingFields()).isEmpty();
+        var message = noSettings.prepare(27L, "report-admin").message();
+        assertThat(message.siteAddress()).isEmpty();
+        assertThat(message.reporterPhone()).isEmpty();
+        assertThat(message.controlRoomPhone()).isEmpty();
+    }
 
-        assertThat(noSettings.preview(27L, "W000001").missingFields())
-                .containsExactly("siteAddress", "controlRoomPhone");
-        assertThatThrownBy(() -> noSettings.prepare(27L, "W000001"))
-                .isInstanceOf(ApiException.class);
+    @Test
+    void suppliedInvalidPhoneIsRejectedInsteadOfStored() {
+        var invalid = new Mock119ReportState(events, accounts, reports, new Mock119Settings("", "not-a-phone"));
+        var event = new FireEvent(Camera.create("CAM003", "CCTV 03", null, null, "ONLINE"),
+                EventType.FIRE, .91, LocalDateTime.now(), "test", LocalDateTime.now());
+        var admin = Account.createAdmin("report-admin", "hash", "관리자");
+        when(events.findById(27L)).thenReturn(Optional.of(event));
+        when(events.findForMediaUpdate(27L)).thenReturn(Optional.of(event));
+        when(accounts.findByLoginId("report-admin")).thenReturn(Optional.of(admin));
+        assertThat(invalid.preview(27L, "report-admin").readyToReport()).isFalse();
+        assertThatThrownBy(() -> invalid.prepare(27L, "report-admin")).isInstanceOf(ApiException.class);
         verify(reports, never()).saveAndFlush(any());
     }
 
@@ -130,5 +143,36 @@ class Mock119ReportStateTest {
         assertThat(prepared.message().siteAddress()).isEqualTo("이전 주소");
         assertThat(prepared.message().detailLocation()).isEqualTo("이전 상세위치");
         assertThat(prepared.message().specialNotes()).isEqualTo("이전 특이사항");
+    }
+
+    @Test
+    void activeAdminCanPreviewAndSubmitWithoutWorkerRole() {
+        var event = new FireEvent(Camera.create("CAM001", "CCTV 01", "공장 A구역", null, "ONLINE"),
+                EventType.FIRE, .95, LocalDateTime.now(), "test", LocalDateTime.now());
+        var admin = Account.createAdmin("report-admin", "hash", "관리자");
+        ReflectionTestUtils.setField(admin, "contactPhone", "01012345678");
+        when(events.findById(27L)).thenReturn(Optional.of(event));
+        when(events.findForMediaUpdate(27L)).thenReturn(Optional.of(event));
+        when(accounts.findByLoginId("report-admin")).thenReturn(Optional.of(admin));
+        when(reports.findByEvent_EventId(27L)).thenReturn(Optional.empty());
+        when(reports.saveAndFlush(any(Mock119Report.class))).thenAnswer(call -> {
+            var report = call.getArgument(0, Mock119Report.class);
+            ReflectionTestUtils.setField(report, "reportId", 12L);
+            return report;
+        });
+        assertThat(state.preview(27L, "report-admin").readyToReport()).isTrue();
+        assertThat(state.prepare(27L, "report-admin").message().reporterLoginId()).isEqualTo("report-admin");
+    }
+
+    @Test
+    void inactiveAdminStillCannotPreviewOrSubmit() {
+        var admin = Account.createAdmin("report-admin", "hash", "관리자");
+        admin.changeStatus(com.firis.account.entity.AccountStatus.INACTIVE);
+        when(events.findById(27L)).thenReturn(Optional.of(mock(FireEvent.class)));
+        when(events.findForMediaUpdate(27L)).thenReturn(Optional.of(mock(FireEvent.class)));
+        when(accounts.findByLoginId("report-admin")).thenReturn(Optional.of(admin));
+        assertThatThrownBy(() -> state.preview(27L, "report-admin")).isInstanceOf(ApiException.class);
+        assertThatThrownBy(() -> state.prepare(27L, "report-admin")).isInstanceOf(ApiException.class);
+        verifyNoInteractions(reports);
     }
 }

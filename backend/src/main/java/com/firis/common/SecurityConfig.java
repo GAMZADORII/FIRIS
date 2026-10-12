@@ -20,9 +20,14 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
+import org.springframework.beans.factory.annotation.Value;
 
 @Configuration
 public class SecurityConfig {
+    @Value("${app.mock-119.center-enabled:false}")
+    private boolean centerEnabled;
+    @Value("${app.mock-119.allowed-origins:http://localhost:5174,http://127.0.0.1:5174,http://localhost:5173,http://127.0.0.1:5173}")
+    private List<String> centerOrigins;
 
     @Bean
     PasswordEncoder passwordEncoder() {
@@ -59,6 +64,10 @@ public class SecurityConfig {
                             );
                         }))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(request -> centerEnabled && (
+                                request.getRequestURI().equals("/api/mock-119-center/reports")
+                                || request.getRequestURI().startsWith("/api/mock-119-center/reports/")
+                                || request.getRequestURI().equals("/ws/mock-119-center"))).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/health").permitAll()
                         // Local demo MP4 files are directly playable by a browser video element.
                         .requestMatchers(HttpMethod.GET, "/videos/**").permitAll()
@@ -70,8 +79,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/api/auth/contact").hasRole("WORKER")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/cameras", "/api/cameras/").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/events/*/mock-119-reports").hasRole("WORKER")
-                        .requestMatchers(HttpMethod.GET, "/api/events/*/mock-119-preview").hasRole("WORKER")
+                        .requestMatchers(HttpMethod.POST, "/api/events/*/mock-119-reports").hasAnyRole("ADMIN", "WORKER")
+                        .requestMatchers(HttpMethod.GET, "/api/events/*/mock-119-preview").hasAnyRole("ADMIN", "WORKER")
                         .requestMatchers(
                                 "/api/cameras/**",
                                 "/api/events/**",
@@ -88,6 +97,7 @@ public class SecurityConfig {
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://127.0.0.1:5173"));
+        if (centerEnabled) centerOrigins.forEach(configuration::addAllowedOrigin);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         configuration.setAllowCredentials(true);

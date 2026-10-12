@@ -3,13 +3,13 @@ import Header from './components/Header/Header.jsx';
 import History from './pages/History/History.jsx';
 import Reception from './pages/Reception/Reception.jsx';
 import ReportSummary from './components/ReportSummary.jsx';
-import { useDemoReports } from './hooks/useDemoReports.js';
-import { responseStatusLabels } from './utils/responseSimulation.js';
+import { useCenterReports } from './hooks/useCenterReports.js';
+import { responseStatusLabels } from './utils/responseStatus.js';
 
 const shortId = (report) => `119-${String(report.reportId).padStart(3, '0')}`;
 
 export default function App() {
-  const { reports, selectedId, setSelectedId, now, resetReports, advanceReport } = useDemoReports();
+  const { reports, selectedId, setSelectedId, now, resetReports, advanceReport, error, connected, loading, busy } = useCenterReports();
   const [tab, setTab] = useState('intake');
   const [filter, setFilter] = useState('');
   const [search, setSearch] = useState('');
@@ -40,19 +40,19 @@ export default function App() {
     setNotice('');
   }
 
-  function advance(status) {
-    advanceReport(status);
-    setNotice(`${shortId(selected)} · ${responseStatusLabels[status]}`);
+  async function advance(status) {
+    if (await advanceReport(status)) setNotice(`${shortId(selected)} · ${responseStatusLabels[status]}`);
   }
 
   function reset() {
     resetReports();
-    setNotice('신고 목록이 초기화되었습니다.');
+    setNotice('신고 목록을 새로 조회합니다.');
   }
 
   return <div className="app-shell">
-    <Header tab={tab} pendingCount={pending.length} onTabChange={setTab} />
+    <Header tab={tab} pendingCount={pending.length} onTabChange={setTab} connected={connected} />
     <main>
+      {error && <p role="alert">{error}</p>}
       <div className="page-heading">
         <div className="page-heading__title">
           <div className="page-heading__headline">
@@ -67,7 +67,8 @@ export default function App() {
       </div>
       {tab === 'history'
         ? <History reports={reports} recentHistory={recentHistory} filteredCount={filtered.length} filter={filter} search={search} onFilterChange={setFilter} onSearchChange={setSearch} />
-        : <Reception selected={selected} pendingCount={pending.length} recentPending={recentPending} now={now} onChoose={choose} onAdvance={advance} onHistoryTab={() => setTab('history')} />}
+        : selected ? <Reception selected={selected} pendingCount={pending.length} recentPending={recentPending} now={now} onChoose={choose} onAdvance={advance} busy={busy} onHistoryTab={() => setTab('history')} />
+        : <p className="empty">{loading ? '신고 목록을 불러오는 중입니다.' : '접수된 신고가 없습니다.'}</p>}
       <footer className="page-footer"><span>119 CENTER / FIRIS PROJECT</span></footer>
     </main>
   </div>;
