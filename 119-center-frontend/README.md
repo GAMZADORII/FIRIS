@@ -133,3 +133,7 @@ Backend는 `Mock119WebSocketTransport`를 통해 **외부 WebSocket 서버에 �
 4. 인증/접근 제어 및 신고자 개인정보 노출 범위 (현재는 더미 정보만 사용)
 
 실제 연동이 결정되면 `src/api/`에서 통신 로직을 추가하고, 현재 `useDemoReports` 상태를 실제 데이터로 교체하면 됩니다. 현재 자동 도착 처리는 브라우저에서만 일어나므로, 여러 접수자가 동일한 상태를 보거나 FIRIS의 신고 상태를 갱신하려면 Backend에 출동/도착/대응 완료 상태 저장 및 동기화 API가 필요합니다.
+
+## 글꼴
+
+FIRIS `narae3` 브랜치의 프론트와 동일한 기본 글꼴 우선순위(`Inter`, `Noto Sans KR`, `Malgun Gothic`)를 사용합니다. 신고 번호, 시각 등 영문·숫자 표기는 `JetBrains Mono`, `Consolas`, `monospace` 순서입니다. 별도의 웹폰트를 내려받지 않으므로 실제 표시 글꼴은 실행 PC에 설치된 폰트에 따라 달라질 수 있습니다.

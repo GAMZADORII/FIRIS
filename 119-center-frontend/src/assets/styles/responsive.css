@@ -266,7 +266,7 @@ main { width: 100%; max-width: 1920px; margin: 0 auto; padding: clamp(12px, 1.5v
 .route-layout { grid-template-columns: minmax(0, 1fr) minmax(160px, 32%); }
 .eta-panel { min-width: 0; }
 .eta-panel > strong {
-  font-family: 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+  font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif;
   font-size: clamp(20px, 1.7vw, 28px);
   letter-spacing: -0.5px;
   line-height: 1.3;
@@ -347,4 +347,20 @@ main { width: 100%; max-width: 1920px; margin: 0 auto; padding: clamp(12px, 1.5v
 @media (min-width: 1100px) {
   .page-heading { flex-wrap: nowrap; }
   .page-heading__title { overflow: hidden; }
+}
+
+
+/* Keep typography stable with the FIRIS narae3 font stack. */
+.queue-meta, .incident-meta, .history time,
+.overview b, .queue-panel__count, .report-summary__stat strong {
+  font-variant-numeric: tabular-nums;
+}
+.queue-item h3, .incident-heading h2 { overflow-wrap: anywhere; line-height: 1.35; }
+.incident-heading > .status-badge { flex-shrink: 0; }
+.media-heading-actions .small-button, .report-summary__reset,
+.primary-button, .queue-panel__count { white-space: nowrap; }
+.eta-panel > strong { font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif; }
+@media (max-width: 600px) {
+  .incident-heading { flex-wrap: wrap; }
+  .incident-heading > .status-badge { margin-left: auto; }
 }
