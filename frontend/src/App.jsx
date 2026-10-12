@@ -1,6 +1,7 @@
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
 import { getSession } from './api/client.js';
 import Login from './pages/Login/Login.jsx';
+import ContactOnboarding from './pages/ContactOnboarding/ContactOnboarding.jsx';
 import Dashboard from './pages/Dashboard/Dashboard.jsx';
 import History from './pages/History/History.jsx';
 import Admin from './pages/Admin/Admin.jsx';
@@ -10,6 +11,7 @@ import { useEffect, useState } from 'react';
 function Protected({ session, admin = false }) {
   if (!session?.accessToken) return <Navigate to="/login" replace />;
   if (session.account?.mustChangePassword) return <Navigate to="/change-password" replace />;
+  if (session.account?.role === 'WORKER' && session.account.contactOnboardingRequired) return <Navigate to="/contact-onboarding" replace />;
   if (admin && session.account?.role !== 'ADMIN') return <Navigate to="/dashboard" replace />;
   return <Outlet />;
 }
@@ -26,6 +28,7 @@ export default function App() {
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<Login />} />
       <Route path="/change-password" element={<Login changePassword />} />
+      <Route path="/contact-onboarding" element={<ContactOnboarding />} />
       <Route element={<Protected session={session} />}>
         <Route element={<MainLayout />}>
         <Route path="/dashboard" element={<Dashboard />} />
