@@ -28,6 +28,8 @@ JSON 예시는 계약을 설명하며 비밀번호·ID·경로·시각은 실제
 | Backend :8080 | GET | /api/cameras/{cameraId}/frame | JPEG, 사용자 JWT(ADMIN/WORKER) 필요; 404 카메라/프레임 없음, 503 AI 연결 실패·오래된 프레임 |
 | Backend :8080 | GET | /api/events, /api/events/{eventId} | 이벤트 이력·상세, 사용자 JWT 필요 |
 | Backend :8080 | PATCH | /api/events/{eventId}/review | 단일 최종 검수, 사용자 JWT 필요 |
+| Backend :8080 | POST | /api/events/{eventId}/response-complete | 현장 대응 완료 및 필요 시 TRUE_FIRE 검수, 사용자 JWT 필요 |
+| Backend :8080 | POST | /api/events/{eventId}/report-timeout | 신규 알림 무응답 시각 기록, 사용자 JWT 필요 |
 | Backend :8080 | GET | /api/events/{eventId}/snapshot, /video | 이벤트 미디어, 사용자 JWT 필요 |
 
 이벤트 API의 Content-Type은 application/json이고 프레임 API의 응답은 image/jpeg이다. Backend health는 인증 없이 프로세스 응답만 확인한다. AI health는 모델 파일의 존재와 Git LFS 포인터 여부만 확인하며 실제 추론 성공은 검사하지 않는다. 두 Backend AI 이벤트 API는 API Key 인증과 준비된 DB를 필요로 한다.
@@ -49,12 +51,15 @@ JSON 예시는 계약을 설명하며 비밀번호·ID·경로·시각은 실제
 | PATCH | /api/admin/workers/{workerId}/status | 오금빈 | ADMIN 상태 변경 |
 | PATCH | /api/admin/workers/{workerId}/password-reset | 오금빈 | ADMIN 비밀번호 초기화 |
 | GET | /api/cameras | 담당 확인 필요 | 고정 CCTV 조회 |
+| POST | /api/cameras | 담당 확인 필요 | ADMIN 확장용 카메라 등록; worker의 새 폴더 인식은 별도 준비 필요 |
 | GET | /api/cameras/{cameraId}/frame | 박상현 | 최신 YOLO 박스 표시 JPEG, ADMIN/WORKER |
 | POST | /api/ai/events | 박상현 (AI 호출: 김형준) | AI 이벤트 즉시 생성 |
 | PATCH | /api/ai/events/{eventId}/media | 박상현 (AI 호출: 김형준) | AI 미디어 경로 갱신 |
 | GET | /api/events | 오금빈 | 이벤트 검색/목록 |
 | GET | /api/events/{eventId} | 박상현 | 이벤트 상세 |
 | PATCH | /api/events/{eventId}/review | 박상현 | ADMIN/WORKER 검수 |
+| POST | /api/events/{eventId}/response-complete | 차나래/박상현 | 현장 대응 완료, ADMIN/WORKER |
+| POST | /api/events/{eventId}/report-timeout | 차나래/박상현 | 신규 알림 10초 무응답 기록, ADMIN/WORKER |
 | GET | /api/statistics/dashboard | 오금빈 | 관제 통계 |
 
 ## 22. 인증
@@ -295,7 +300,7 @@ to
 
 필터 조합 가능.
 
-응답은 페이지 형식(`content`, `totalElements`, `totalPages`, `number`, `size`)이다. `content` 항목은 `eventId`, `cameraId`, `cameraName`, `location`, `eventType`, `confidence`(0~1), `detectedAt`(KST 로컬 시각), `modelVersion`, `reviewStatus`를 포함한다. 최신 발생 시각과 eventId 역순으로 정렬한다. `from`/`to`는 `YYYY-MM-DD`이며 양 끝 날짜를 포함한다. `size` 최대값은 100이다.
+응답은 페이지 형식(`content`, `totalElements`, `totalPages`, `number`, `size`)이다. `content` 항목은 `eventId`, `cameraId`, `cameraName`, `location`, `eventType`, `confidence`(0~1), `detectedAt`(KST 로컬 시각), `modelVersion`, `reviewStatus`, `reportTimedOutAt`, `responseCompletedAt`을 포함한다. 마지막 두 시각은 해당 동작 전에는 `null`이다. 최신 발생 시각과 eventId 역순으로 정렬한다. `from`/`to`는 `YYYY-MM-DD`이며 양 끝 날짜를 포함한다. `size` 최대값은 100이다.
 
 reviewStatus:
 
@@ -324,7 +329,7 @@ GET /api/events/{eventId}
 - Review 상태
 - Review 정보
 
-응답은 목록 항목의 필드에 `snapshotPath`, `videoPath`, `preSeconds`, `postSeconds`, `review`를 더한다. `review`는 미검수 시 `null`, 검수 시 `result`, `falsePositiveReason`, `note`, `reviewerId`, `reviewerName`, `reviewedAt`을 포함한다. 경로는 파일 경로일 뿐 브라우저 URL이 아니다.
+응답은 목록 항목의 필드에 `snapshotPath`, `videoPath`, `preSeconds`, `postSeconds`, `review`를 더한다. `reportTimedOutAt`과 `responseCompletedAt`도 포함한다. `review`는 미검수 시 `null`, 검수 시 `result`, `falsePositiveReason`, `note`, `reviewerId`, `reviewerName`, `reviewedAt`을 포함한다. 경로는 파일 경로일 뿐 브라우저 URL이 아니다.
 
 인증된 미디어 조회: `GET /api/events/{eventId}/snapshot`은 JPEG, `GET /api/events/{eventId}/video`는 원본 MP4, `GET /api/events/{eventId}/video/annotated`는 바운딩 박스 MP4를 반환한다. 세 요청 모두 사용자 JWT가 필요하며, 파일이 아직 없거나 공유 저장소에서 읽을 수 없으면 404이다. 박스 MP4는 저장된 원본 `event.mp4`와 같은 이벤트 폴더의 `event_annotated.mp4`만 조회한다. Backend의 `EVENT_STORAGE_DIR`은 AI와 같은 이벤트 저장소를 가리켜야 한다.
 
@@ -358,6 +363,14 @@ reviewerId를 Frontend Request에서 받지 않는다.
 JWT의 로그인 사용자에서 accountId를 확인하여 저장한다.
 
 첫 검수만 허용하며 이미 검수된 이벤트의 재요청은 409를 반환한다. `FALSE_POSITIVE`는 사유가 필수이고, `TRUE_FIRE`에는 사유를 넣을 수 없다. 응답은 갱신된 이벤트 상세 형식이다.
+
+## 이벤트 대응 완료·알림 무응답 API
+
+`POST /api/events/{eventId}/response-complete` — ADMIN/WORKER JWT 필요, 요청 본문 없음. 이벤트가 미검수이면 요청한 JWT 사용자로 최종 `TRUE_FIRE` 검수를 생성하고 `FIRE_EVENT.response_completed_at`을 서버 시각으로 기록한다. 이미 `TRUE_FIRE`로 검수됐다면 기존 검수 정보는 유지하고 완료 시각만 기록한다. 이미 `FALSE_POSITIVE`이면 400이다. 다시 호출해도 최초 완료 시각을 유지한다. 응답은 갱신된 Event 상세이다. 이 요청은 119 모의 신고를 전송하지 않는다.
+
+`POST /api/events/{eventId}/report-timeout` — ADMIN/WORKER JWT 필요, 요청 본문 없음. 신규 이벤트 알림을 10초간 조작하지 않았을 때 `FIRE_EVENT.report_timed_out_at`을 서버 시각으로 기록한다. 이미 대응 완료했거나 오탐 검수된 이벤트이면 400이다. 다시 호출해도 최초 무응답 시각을 유지한다. 응답은 갱신된 Event 상세이다. 무응답 기록은 실제 119 신고도, `MOCK_119_REPORT` 접수도, 최종 검수도 아니다. 존재하지 않는 eventId는 두 API 모두 404이다.
+
+현재 Frontend 알림의 `119 신고 연결` 버튼은 모의 신고 preview/POST API에 아직 연결되지 않아 비활성화되어 있다. 버튼을 실제로 사용할 때는 아래 119 모의 신고 API 계약을 따라 연결해야 한다.
 
 ## 32. Dashboard 통계 API
 

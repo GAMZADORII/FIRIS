@@ -1,5 +1,7 @@
 # FIRIS 프로젝트 기준 문서
 
+> 이 문서는 초기 팀 합의 원문을 보존한다. 아래의 당시 구현 상태·4채널 시연·CCTV 확장 제외 문구는 현재 코드 상태를 설명하지 않는다. 현재 합의와 구현 상태는 [요구사항](REQUIREMENTS.md), [아키텍처](ARCHITECTURE.md), [ERD](ERD.md), [API 명세](API_SPEC.md)를 우선 확인한다. 현재 Backend는 CAM001~CAM009를 기본 등록하고, Dashboard는 그중 네 화면을 기본 표시한다. 대응 완료/무응답 기록 API가 추가되었으며 영상 입력은 카메라 ID별 폴더를 사용한다.
+
 > 현재 Backend 구현 범위: health check, AI 이벤트 생성·미디어 갱신 및 CAMERA/FIRE_EVENT/EVENT_MEDIA 매핑. [구현·검증 안내](AI_EVENT_IMPLEMENTATION.md)를 함께 확인한다. 금빈님 계정/JWT 및 MySQL 설정이 dev에 병합되어 이 브랜치에도 포함된다.
 > AI 영상 판정·Backend 호출 코드는 `feature/ai-backend-integration`에서 작업 중이다. 실행 설정과 검증 범위는 [AI 연동 안내](AI_INTEGRATION.md)를 따른다.
 

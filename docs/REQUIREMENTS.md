@@ -16,7 +16,7 @@
 
 ## 구현 단계와 최종 범위
 
-초기 뼈대 이후 AI 영상 판정·멀티카메라 worker, Backend 이벤트/계정/카메라 API, Frontend 네 주요 화면의 API 연결을 구현했다. CAM001~CAM004는 Backend 시작 시 없으면 등록한다. Docker의 4채널 실영상·브라우저 전체 시연과 모델 정확도 검증은 남아 있다.
+초기 뼈대 이후 AI 영상 판정·멀티카메라 worker, Backend 이벤트/계정/카메라 API, Frontend 네 주요 화면의 API 연결을 구현했다. CAM001~CAM009는 Backend 시작 시 없으면 등록하며 현재 입력 영상은 CAM001~CAM004에 있다. Docker의 4채널 실영상·브라우저 전체 시연과 모델 정확도 검증은 남아 있다.
 
 ## 목적 및 일정
 
@@ -45,7 +45,7 @@
 
 ## Camera
 
-CCTV는 CAM001~CAM004를 시연용 기본 ID로 사용하며 Backend 시작 시 없으면 등록한다. 이름, 위치, 스트림 URL과 ONLINE/OFFLINE 상태를 보관한다. 확장용 등록 API는 있으나 시연 화면은 조회만 제공한다.
+CCTV는 CAM001~CAM009를 기본 ID로 사용하며 Backend 시작 시 없으면 등록한다. 이름, 위치, 스트림 URL과 ONLINE/OFFLINE 상태를 보관한다. Dashboard는 9개 중 표시할 채널을 선택하고 기본값은 CAM001~CAM004 네 화면이다. CAM005~CAM009의 입력 영상은 현재 빈 폴더이므로 영상을 넣기 전에는 관제 프레임이 나오지 않는다. DB의 ONLINE 값은 실제 영상 수신 성공 여부를 검증한 값이 아니다. 확장용 등록 API는 있으나 현재 화면은 9개 기본 채널 선택만 제공한다.
 
 ## AI 및 이벤트
 
@@ -53,6 +53,7 @@ CCTV는 CAM001~CAM004를 시연용 기본 ID로 사용하며 Backend 시작 시 
 - PyTorch 또는 TensorFlow를 사용할 수 있다. 일반 Classification에 종속하지 않고 모델 인터페이스를 추상화한다.
 - AI 클래스는 FIRE/SMOKE이고 Backend Event Type은 FIRE/SMOKE/FIRE_SMOKE이다.
 - 한 프레임만으로 이벤트를 만들지 않고 Temporal Validation을 적용한다. 클래스별 첫 탐지 후 실제 영상 시간 최소 2초와 최근 샘플의 70% 이상 탐지를 현재 실험 시작값으로 사용한다.
+- 시연 영상은 `storage/videos/{cameraId}/`에 카메라별로 둔다. 각 폴더의 파일을 이름순으로 분석하고 실행 중 그 폴더에 추가한 영상도 다음 탐색에서 읽는다. 현재 worker는 시작할 때 존재하는 최대 9개 폴더만 처리한다. 한 폴더에 영상만 모아두면 파일과 cameraId를 연결할 규칙이 없으므로 자동 배정하지 않는다.
 - Frame Buffer는 AI에 둔다. 이벤트 전후 약 5초는 조정 가능한 예시이다.
 - 위험 확정 → Snapshot 확보 → POST /api/ai/events → FIRE_EVENT 및 EVENT_MEDIA 생성 → eventId 반환 → 이후 프레임 수집/영상 저장 → PATCH /api/ai/events/{eventId}/media 순서를 따른다.
 - 영상이 완성되기 전에 이벤트를 조회할 수 있어야 한다. 생성 직후 video_path는 NULL일 수 있다.
@@ -63,6 +64,8 @@ CCTV는 CAM001~CAM004를 시연용 기본 ID로 사용하며 Backend 시작 시 
 - ADMIN/WORKER는 TRUE_FIRE 또는 FALSE_POSITIVE로 검수한다.
 - EVENT_REVIEW 행이 없으면 UNREVIEWED로 판단한다. UNREVIEWED를 result에 저장하지 않는다.
 - 이벤트당 최종 검수 행은 최대 하나이다. UI에서 검수 완료 이벤트는 읽기 전용으로 표시한다.
+- 대응 완료 버튼은 이벤트에 완료 시각을 기록하고, 미검수 이벤트라면 해당 JWT 사용자로 TRUE_FIRE 최종 검수를 생성한다. 이미 오탐으로 검수된 이벤트에는 사용할 수 없다. 119 모의 신고를 자동 전송하지 않는다.
+- 신규 이벤트 알림은 화면에서 10초간 조작이 없으면 무응답 시각을 기록하고 닫는다. 무응답은 119 신고·최종 검수와 다르며, 이후 오탐 검수 또는 대응 완료가 가능하다.
 - 오탐 사유는 STEAM/LIGHT/REFLECTION/DUST/WELDING/ETC이며 note를 입력할 수 있다.
 - reviewerId를 요청으로 받지 않고 JWT의 로그인 accountId로 저장한다.
 - 별도 Statistics Table 없이 FIRE_EVENT/EVENT_REVIEW를 집계한다.
@@ -79,7 +82,7 @@ CCTV는 CAM001~CAM004를 시연용 기본 ID로 사용하며 Backend 시작 시 
 | History /history | 기간/CCTV/Event Type/Review Status 필터, 페이지네이션, 이벤트 상세 Drawer/Modal |
 | Admin /admin | ADMIN 전용 작업자 목록/추가/초기화/활성·비활성. WORKER에게 메뉴 숨김, 삭제 기능 없음 |
 
-Dashboard는 CCTV 65~70%, 현황 30~35%를 목표로 하고 기본 2x2 CCTV Grid를 사용한다.
+Dashboard는 CCTV 65~70%, 현황 30~35%를 목표로 하고 기본 2x2 CCTV Grid를 사용한다. 9개 채널 중 표시할 화면을 선택하고 선택 내용은 브라우저 로컬 저장소에 보관한다.
 카드에는 Camera Name, Location, ONLINE/OFFLINE, LIVE, 영상, FIRE/SMOKE, Confidence, Overlay/Bounding Box를 표시한다.
 위험 시 Red Border/Warning Badge를 표시한다. 우측에는 오늘 이벤트/미검수/실제 화재/오탐/ONLINE CCTV 및 유형별 현황을 둔다.
 최근 위험 이벤트 3~5개와 신규 이벤트 Red Alert Toast 및 이벤트 확인 동작을 제공한다.
@@ -94,7 +97,7 @@ Red는 경고/Primary Button/유형 강조/선택 메뉴/위험 Border/중요 Ba
 ## 최종 제외 기능
 
 회원가입, 작업자 비밀번호 찾기·초기화 요청, 관리자 비밀번호 찾기·변경·추가·초기화 요청,
-CCTV 추가·수정·삭제, 건물/시설 등록 관리, 자동 AI 재학습, 이메일/SMS 알림, 복잡한 Multi Admin 구조.
+CCTV 추가·수정·삭제 화면과 운영 관리 흐름(확장용 등록 API는 존재), 건물/시설 등록 관리, 자동 AI 재학습, 이메일/SMS 알림, 복잡한 Multi Admin 구조.
 
 ## 담당 및 개발 원칙
 

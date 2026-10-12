@@ -37,7 +37,7 @@ python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 `curl http://localhost:8000/health` → `{"status":"ok"}`.
 
-영상 자동 분석은 별도 터미널에서 `cd ai && .venv/bin/python -m app.services.multi_camera_service --model yolo --sample-fps 3 --loop`로 실행한다. 원본 영상은 `storage/videos/CAM001`~`CAM004`에 넣는다. Docker Compose는 `ai-worker`를 별도 서비스로 실행한다. 자세한 준비물과 검증 순서는 [AI 연동 안내](docs/AI_INTEGRATION.md)에 있다.
+영상 자동 분석은 별도 터미널에서 `cd ai && .venv/bin/python -m app.services.multi_camera_service --model yolo --sample-fps 3 --loop`로 실행한다. 원본 영상은 카메라 ID별 `storage/videos/CAM001`~`CAM009` 폴더에 넣는다. 현재 영상 파일은 CAM001~CAM004에만 있으며, 나머지는 입력 대기 폴더이다. Docker Compose는 `ai-worker`를 별도 서비스로 실행한다. 자세한 준비물과 검증 순서는 [AI 연동 안내](docs/AI_INTEGRATION.md)에 있다.
 
 ### Backend
 ```bash
@@ -69,8 +69,8 @@ AI 모델 가중치와 `storage/videos/CAM001`~`CAM004`의 시연 입력 영상�
 - [PROJECT_CONTEXT](docs/PROJECT_CONTEXT.md): 팀 합의 전체, 담당 분담 및 개발 원칙
 - [REQUIREMENTS](docs/REQUIREMENTS.md): 계정, CCTV, 탐지, 화면, 제외 범위
 - [ARCHITECTURE](docs/ARCHITECTURE.md): 파트 책임과 이벤트/미디어 흐름
-- [ERD](docs/ERD.md): 향후 테이블과 관계 (Entity/DDL 없음)
-- [API_SPEC](docs/API_SPEC.md): 현재 health check와 향후 이벤트 API
+- [ERD](docs/ERD.md): 현재 주요 테이블과 관계
+- [API_SPEC](docs/API_SPEC.md): 현재 인증·이벤트·119 모의 신고 API 계약
 
 **기능 구현 전 문서를 먼저 확인한다. 설계 변경은 팀 합의 후 코드보다 먼저 문서에 반영한다.**
 카메라 초기 등록과 이벤트 조회·검수, Dashboard API 연결은 구현했다. 4개 실제 영상과 Docker·브라우저를 함께 사용한 현장 시연, RTSP와 모델 정확도 검증은 후속 작업이다. 최종 제외 기능은 REQUIREMENTS의 별도 목록을 따른다.
