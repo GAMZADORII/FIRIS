@@ -12,7 +12,7 @@ Node.js 20.19+ 또는 22.12+ 사용.
 
 ```powershell
 cd 119-center-frontend
-npm ci
+npm install
 npm run dev
 ```
 
@@ -20,7 +20,8 @@ npm run dev
 - 검사: `npm test`
 - 빌드: `npm run build`
 - 메인 FIRIS 프론트는 `5173`, 119-center 프론트는 `5174` 사용
-- 독립 UI라 npm / 기존 `package-lock.json`을 그대로 사용합니다. 메인 `frontend/`의 Yarn 설정을 변경하지 않습니다.
+- 독립 UI라 npm을 사용합니다. 메인 `frontend/`의 Yarn 설정은 변경하지 않습니다.
+- `package-lock.json`은 기존 ZIP에서 비어 있던 버전 항목을 제거한 잠금 파일입니다. 로컬 `npm install`이 성공하면 현재 환경에 맞게 재생성된 잠금 파일을 PR에 포함하세요.
 
 ## 폴더 구조
 
@@ -55,6 +56,13 @@ npm run dev
         ├── responseSimulation.js
         └── responseSimulation.test.js
 ```
+
+## 반응형 레이아웃
+
+- **1100px 이상, 화면 높이 700px 이상:** 화면 전체 스크롤 없이 신고 목록·CCTV·발생 위치·신고 정보·출동 경로·처리 버튼을 배치. 신고가 많거나 내용이 길면 해당 패널 내부만 스크롤.
+- **601~1099px:** 신고 목록을 가로 카드로 전환하고 상세 화면을 넓게 사용. 화면 높이가 부족하면 세로 스크롤을 허용.
+- **600px 이하:** 탐지 영상 → 위치 → 신고 정보 → 출동 경로 순으로 세로 배치하고 하단 처리 버튼은 스크롤 중에도 접근 가능.
+- 확대 영상, 신고이력 상세 모달, 60초 자동 도착 등 동작은 기존과 동일.
 
 ## 현재 동작
 
