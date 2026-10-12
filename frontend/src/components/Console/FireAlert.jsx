@@ -4,6 +4,8 @@ import { Modal } from './Console.jsx';
 import { cameraDisplayName } from '../../utils/cameraChannels.js';
 
 const reasons = { STEAM: '수증기', LIGHT: '빛', REFLECTION: '반사', DUST: '먼지', WELDING: '용접', ETC: '기타' };
+const ALERT_PAGE_SIZE = 20;
+
 export default function FireAlert() {
   const [queue, setQueue] = useState([]);
   const event = queue[0];
@@ -26,34 +28,44 @@ export default function FireAlert() {
   useEffect(() => {
     let active = true, polling = false;
     let latestEventId = null;
+    let pollFailureLogged = false;
     const poll = async () => {
       if (polling) return;
       polling = true;
       try {
+        const first = (await apiClient.get('/api/events', { params: { page: 0, size: ALERT_PAGE_SIZE } })).data;
+        if (!active) return;
         if (latestEventId === null) {
           // Existing events are the initial baseline, not new alerts.
-          const { data } = await apiClient.get('/api/events/latest-id');
-          if (active) latestEventId = data.latestEventId;
+          latestEventId = Math.max(0, ...first.content.map((item) => item.eventId));
+          pollFailureLogged = false;
           return;
         }
         const added = [];
-        let nextId = latestEventId;
-        for (let batch = 0; batch < 10; batch++) {
-          const { data } = await apiClient.get('/api/events', {
-            params: { page: 0, size: 100, afterEventId: nextId },
-          });
+        let page = 0;
+        let current = first;
+        while (page < current.totalPages) {
+          added.push(...current.content.filter((item) => item.eventId > latestEventId));
+          if (current.content.length < ALERT_PAGE_SIZE || current.content.some((item) => item.eventId <= latestEventId)) break;
+          page += 1;
+          if (page >= current.totalPages) break;
+          current = (await apiClient.get('/api/events', { params: { page, size: ALERT_PAGE_SIZE } })).data;
           if (!active) return;
-          if (!data.content.length) break;
-          added.push(...data.content);
-          nextId = data.content[data.content.length - 1].eventId;
-          if (data.content.length < 100) break;
         }
-        latestEventId = nextId;
-        const alerts = added.filter((item) => item.reviewStatus === 'UNREVIEWED');
+        if (added.length) {
+          latestEventId = Math.max(...added.map((item) => item.eventId));
+          window.dispatchEvent(new Event('firis-events-changed'));
+        }
+        const alerts = added.sort((a, b) => a.eventId - b.eventId)
+          .filter((item) => item.reviewStatus === 'UNREVIEWED');
         if (alerts.length) setQueue((items) => [...items, ...alerts.filter(
           (alert) => !items.some((item) => item.eventId === alert.eventId)
         )]);
-      } catch { /* Retry on next poll; do not create an alert from failed requests. */ }
+        pollFailureLogged = false;
+      } catch (cause) {
+        if (!pollFailureLogged) console.warn('화재 알림 이벤트 조회 실패. 다음 조회에서 재시도합니다.', apiError(cause));
+        pollFailureLogged = true;
+      }
       finally { polling = false; }
     };
     const open = ({ detail }) => {
