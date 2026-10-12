@@ -28,6 +28,10 @@ class Capture:
         self.index += 1
         return True, frame
 
+    def set(self, _property, value):
+        self.index = min(int(value), len(self.frames))
+        return True
+
     def release(self):
         self.released = True
 
@@ -70,6 +74,51 @@ class Publisher:
 
 
 class VideoServiceTest(unittest.TestCase):
+    def test_realtime_playback_skips_stale_frames(self):
+        capture = Capture(100)
+        published = []
+
+        class EncodedPublisher:
+            def publish_encoded(self, camera_id, jpeg):
+                published.append(camera_id)
+
+        clock = iter([0.0, 0.0, 2.0, 10.0])
+        with patch("app.services.video_service.cv2.VideoCapture", return_value=capture), patch(
+            "app.services.video_service.time.monotonic", side_effect=lambda: next(clock, 10.0)
+        ), patch("app.services.video_service.time.sleep"):
+            process_video(
+                "sample.mp4", "CAM001", realtime=True, emit_events=False,
+                sample_fps=2, display_fps=4, max_realtime_lag_seconds=0.5,
+                client=Client([]), storage=Storage([]),
+                detector=lambda *_: {"detected": [], "probabilities": {}, "boxes": []},
+                publisher=EncodedPublisher(),
+            )
+        self.assertGreater(capture.index, 20)
+        self.assertLess(len(published), 20)
+
+    def test_skipped_frames_use_timeline_fps_for_event_video(self):
+        calls = []
+        capture = Capture(61)
+
+        def detector(*_args):
+            return {"detected": ["fire"], "probabilities": {"fire": 0.9}, "boxes": []}
+
+        clock = iter([0.0, 0.0, 1.0, 1.0, 2.0, 2.0])
+        with patch("app.services.video_service.cv2.VideoCapture", return_value=capture), patch(
+            "app.services.video_service.time.monotonic", side_effect=lambda: next(clock, 2.0)
+        ), patch("app.services.video_service.time.sleep"):
+            process_video(
+                "sample.mp4", "CAM001", realtime=True, sample_fps=1,
+                window_seconds=2, required_ratio=0.7, buffer_seconds=5, post_seconds=1,
+                client=Client(calls), storage=Storage(calls), detector=detector,
+                publisher=Publisher(), max_realtime_lag_seconds=0.5,
+            )
+
+        video_call = next(call for call in calls if call[0] == "video")
+        self.assertEqual(video_call[1], 3)
+        self.assertAlmostEqual(video_call[2], 1.0)
+        self.assertEqual(calls[-1][3:], (1, 1))
+
     def test_live_frames_update_between_inference_samples(self):
         capture = Capture(30)
         inferred = []

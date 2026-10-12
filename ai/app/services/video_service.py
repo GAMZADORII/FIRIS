@@ -34,8 +34,10 @@ def process_video(source: str | int, camera_id: str, model: str = "yolo",
                   realtime: bool = False,
                   emit_events: bool = True,
                   display_fps: float = 10.0,
+                  max_realtime_lag_seconds: float = 0.5,
                   stop: threading.Event | None = None) -> list[dict]:
-    if not camera_id or buffer_seconds < 0 or post_seconds < 0 or display_fps <= 0:
+    if (not camera_id or buffer_seconds < 0 or post_seconds < 0 or display_fps <= 0
+            or max_realtime_lag_seconds < 0):
         raise ValueError("camera_id is required and buffer durations must be nonnegative")
     load_dotenv(Path(__file__).resolve().parents[2] / ".env")
     client = client or BackendEventClient()
@@ -56,6 +58,7 @@ def process_video(source: str | int, camera_id: str, model: str = "yolo",
     validator = TemporalValidator(window_seconds, effective_sample_fps, required_ratio)
     pre_frames = deque(maxlen=max(1, ceil(fps * buffer_seconds)))
     pre_annotated_frames = deque(maxlen=pre_frames.maxlen)
+    pre_timestamps = deque(maxlen=pre_frames.maxlen)
     latest_result = {"detected": [], "probabilities": {}, "boxes": []}
     live = isinstance(source, int) or str(source).startswith(("rtsp://", "http://", "https://"))
     started = time.monotonic()
@@ -69,12 +72,16 @@ def process_video(source: str | int, camera_id: str, model: str = "yolo",
         nonlocal pending
         if pending is None:
             return
+        clip_span = pending["last_timestamp"] - pending["first_timestamp"]
+        video_fps = ((len(pending["frames"]) - 1) / clip_span
+                     if len(pending["frames"]) > 1 and clip_span > 0 else fps)
         metadata = storage.write_video(
-            pending["metadata"], pending["frames"], fps,
+            pending["metadata"], pending["frames"], video_fps,
             annotated_frames=pending["annotated_frames"],
         )
+        actual_pre = round(max(0.0, pending["timestamp"] - pending["first_timestamp"]))
         actual_post = round(max(0.0, pending["last_timestamp"] - pending["timestamp"]))
-        client.update_media(pending["backend_id"], metadata["video"], pending["pre_seconds"], actual_post)
+        client.update_media(pending["backend_id"], metadata["video"], actual_pre, actual_post)
         events.append(metadata)
         pending = None
 
@@ -85,7 +92,14 @@ def process_video(source: str | int, camera_id: str, model: str = "yolo",
                 break
             timestamp = time.monotonic() - started if live else frame_index / fps
             if realtime and not live:
-                delay = timestamp - (time.monotonic() - started)
+                elapsed = time.monotonic() - started
+                lag = elapsed - timestamp
+                if lag > max_realtime_lag_seconds:
+                    target_frame = max(frame_index, int(elapsed * fps))
+                    if capture.set(cv2.CAP_PROP_POS_FRAMES, target_frame):
+                        frame_index = target_frame
+                        continue
+                delay = timestamp - elapsed
                 if delay > 0:
                     time.sleep(delay)
             frame_index += 1
@@ -112,6 +126,7 @@ def process_video(source: str | int, camera_id: str, model: str = "yolo",
                     publisher.publish(camera_id, frame, latest_result)
             pre_frames.append(packed_frame)
             pre_annotated_frames.append(packed_annotated)
+            pre_timestamps.append(timestamp)
 
             if pending is not None:
                 pending["frames"].append(packed_frame)
@@ -144,8 +159,8 @@ def process_video(source: str | int, camera_id: str, model: str = "yolo",
                 "metadata": metadata,
                 "backend_id": backend_id,
                 "timestamp": timestamp,
+                "first_timestamp": pre_timestamps[0],
                 "last_timestamp": timestamp,
-                "pre_seconds": round(max(0.0, (len(pre_frames) - 1) / fps)),
                 "frames": list(pre_frames),
                 "annotated_frames": list(pre_annotated_frames),
             }

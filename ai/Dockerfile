@@ -4,6 +4,9 @@ WORKDIR /app
 
 COPY requirements.txt .
 
+RUN pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu \
+    torch==2.8.0 torchvision==0.23.0
+
 RUN pip install --no-cache-dir -r requirements.txt
 
 RUN apt-get update \

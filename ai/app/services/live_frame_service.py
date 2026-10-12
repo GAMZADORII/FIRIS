@@ -49,14 +49,14 @@ def annotate(frame, detection: dict):
 
 
 class LiveFramePublisher:
-    def publish(self, camera_id: str, frame, detection: dict) -> None:
+    def publish(self, camera_id: str, frame, detection: dict) -> bool:
         success, jpeg = cv2.imencode(".jpg", annotate(frame, detection),
                                     [cv2.IMWRITE_JPEG_QUALITY, 85])
         if not success:
             raise RuntimeError("Failed to encode live frame")
-        self.publish_encoded(camera_id, jpeg.tobytes())
+        return self.publish_encoded(camera_id, jpeg.tobytes())
 
-    def publish_encoded(self, camera_id: str, jpeg: bytes) -> None:
+    def publish_encoded(self, camera_id: str, jpeg: bytes) -> bool:
         path = frame_path(camera_id)
         path.parent.mkdir(parents=True, exist_ok=True)
         temporary = path.with_suffix(".jpg.tmp")
@@ -64,10 +64,11 @@ class LiveFramePublisher:
         for attempt in range(REPLACE_RETRIES):
             try:
                 temporary.replace(path)
-                return
+                return True
             except PermissionError:
                 if attempt == REPLACE_RETRIES - 1:
-                    raise
+                    temporary.unlink(missing_ok=True)
+                    return False
                 time.sleep(REPLACE_RETRY_DELAY_SECONDS)
 
 

@@ -83,7 +83,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Analyze several video folders as parallel cameras")
     parser.add_argument("--root", help="override VIDEO_STORAGE_DIR; relative to the working directory")
     parser.add_argument("--model", default="yolo")
-    parser.add_argument("--sample-fps", type=float, default=3.0)
+    parser.add_argument("--sample-fps", type=float, default=1.0)
+    parser.add_argument("--display-fps", type=float, default=4.0)
     parser.add_argument("--loop", action="store_true", help="repeat camera playlists for continuous demonstrations")
     parser.add_argument("--threshold", type=float, default=None,
                         help="detection confidence cutoff (for example 0.9); default uses model thresholds")
@@ -109,6 +110,7 @@ def main() -> None:
     options = {
         "model": args.model,
         "sample_fps": args.sample_fps,
+        "display_fps": args.display_fps,
         "threshold": args.threshold,
         "detector": SharedDetector(predict),
         "client": BackendEventClient(),

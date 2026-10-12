@@ -58,6 +58,16 @@ class LiveFrameTest(unittest.TestCase):
             self.assertEqual(frame_path("CAM001").read_bytes(), b"jpeg-data")
             self.assertEqual(attempts, 3)
 
+    def test_persistent_frame_lock_drops_one_update_without_crashing(self):
+        with tempfile.TemporaryDirectory() as directory, patch.dict(
+            os.environ, {"LIVE_FRAME_DIR": directory}
+        ), patch.object(Path, "replace", side_effect=PermissionError("locked")), patch(
+            "time.sleep"
+        ):
+            published = LiveFramePublisher().publish_encoded("CAM001", b"jpeg-data")
+            self.assertFalse(published)
+            self.assertFalse(frame_path("CAM001").with_suffix(".jpg.tmp").exists())
+
 
 if __name__ == "__main__":
     unittest.main()
