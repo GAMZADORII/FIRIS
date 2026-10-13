@@ -25,8 +25,11 @@ def _overlap(left: list[float], right: list[float]) -> float:
 
 class TemporalValidator:
     def __init__(self, window_seconds: float = 2.0, sample_fps: float = 5.0,
-                 required_ratio: float = 0.7, clear_seconds: float = 2.0):
-        if window_seconds <= 0 or sample_fps <= 0 or not 0 < required_ratio <= 1 or clear_seconds <= 0:
+                 required_ratio: float = 0.7, clear_seconds: float = 2.0,
+                 adaptive_window: bool = False, max_window_seconds: float = 30.0,
+                 max_sample_gap_seconds: float = 6.0):
+        if (window_seconds <= 0 or sample_fps <= 0 or not 0 < required_ratio <= 1
+                or clear_seconds <= 0 or max_window_seconds <= 0 or max_sample_gap_seconds <= 0):
             raise ValueError("Temporal validation settings must be positive and ratio within (0, 1]")
         self.window_seconds = window_seconds
         self.sample_fps = sample_fps
@@ -39,17 +42,47 @@ class TemporalValidator:
         self.last_detected_at: dict[str, float] = {}
         self.armed = True
         self.clear_since: float | None = None
+        self.adaptive_window = adaptive_window
+        self.max_window_seconds = max(window_seconds, max_window_seconds)
+        self.max_sample_gap_seconds = max_sample_gap_seconds
+        self.active_window_seconds = window_seconds
+        self.intervals: deque[float] = deque(maxlen=max(8, self.minimum_samples - 1))
+        self.last_observed_at: float | None = None
+        self.reason = "waiting_for_samples"
 
     def observe(self, timestamp: float, detection: dict) -> Confirmation | None:
+        if self.last_observed_at is not None:
+            gap = timestamp - self.last_observed_at
+            if gap <= 0:
+                self.reason = "stale_sample"
+                return None
+            if gap > self.max_sample_gap_seconds:
+                self.samples.clear()
+                self.intervals.clear()
+                self.first_detected_at.clear()
+                self.last_detected_at.clear()
+                self.clear_since = None
+                self.active_window_seconds = self.window_seconds
+            else:
+                self.intervals.append(gap)
+        self.last_observed_at = timestamp
+        if self.adaptive_window and self.intervals:
+            self.active_window_seconds = min(self.max_window_seconds, max(
+                self.window_seconds,
+                # Use the actual span of the required observations, including
+                # jitter, instead of capping every camera at six seconds.
+                sum(list(self.intervals)[-(self.minimum_samples - 1):]) * 1.1
+            ))
         self.samples.append((timestamp, detection))
-        while self.samples and timestamp - self.samples[0][0] > self.window_seconds:
+        while self.samples and timestamp - self.samples[0][0] > self.active_window_seconds + 1e-9:
             self.samples.popleft()
 
         detected = set(detection.get("detected", []))
         for label in ("fire", "smoke"):
             last_seen = self.last_detected_at.get(label)
             if label in detected:
-                if last_seen is None or timestamp - last_seen > self.clear_seconds:
+                continuity_limit = (self.active_window_seconds if self.adaptive_window else self.clear_seconds)
+                if last_seen is None or timestamp - last_seen > continuity_limit:
                     self.first_detected_at[label] = timestamp
                 self.last_detected_at[label] = timestamp
             elif last_seen is not None and timestamp - last_seen >= self.clear_seconds:
@@ -64,7 +97,12 @@ class TemporalValidator:
         else:
             self.clear_since = None
 
-        if not self.armed or len(self.samples) < self.minimum_samples:
+        self.reason = "no_detection" if not detected else "waiting_for_duration"
+        if not self.armed:
+            self.reason = "duplicate_suppressed"
+            return None
+        if len(self.samples) < self.minimum_samples:
+            self.reason = "insufficient_samples"
             return None
 
         required_hits = ceil(len(self.samples) * self.required_ratio)
@@ -76,6 +114,7 @@ class TemporalValidator:
                 continue
             positive = [sample for _, sample in self.samples if label in sample.get("detected", [])]
             if len(positive) < required_hits:
+                self.reason = "insufficient_positive_ratio"
                 continue
             # Detection models must support a common region; classification models have no boxes.
             candidates = [box["xyxy"] for sample in positive for box in sample.get("boxes", [])
@@ -85,6 +124,7 @@ class TemporalValidator:
                         for box in sample.get("boxes", [])) for sample in positive)
                 for candidate in candidates
             ) < required_hits:
+                self.reason = "inconsistent_region"
                 continue
             confidence = max(float(sample.get("probabilities", {}).get(label, 0.0)) for sample in positive)
             confirmed.append((label, confidence))
@@ -92,6 +132,7 @@ class TemporalValidator:
         if not confirmed:
             return None
         self.armed = False
+        self.reason = "confirmed"
         labels = {label for label, _ in confirmed}
         event_type = "FIRE_SMOKE" if len(labels) == 2 else next(iter(labels)).upper()
         return Confirmation(event_type, max(confidence for _, confidence in confirmed))
