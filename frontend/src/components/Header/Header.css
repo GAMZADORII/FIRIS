@@ -95,6 +95,7 @@
 }
 .app-header__logout:active { background: #42262b; }
 .app-header__notification-button {
+  position: relative;
   display: grid;
   place-items: center;
   width: 38px;
@@ -120,6 +121,24 @@
 .app-header__notification-heading button { background: transparent; border: 0; color: #bfc1ca; cursor: pointer; font-size: 22px; }
 .app-header__notification-panel p { text-align: center; font-size: 13px; padding: 22px 0 12px; }
 .app-header__notification-panel > small { display: block; text-align: center; color: #9a9da7; font-size: 10px; padding-bottom: 12px; }
+.app-header__notification-button--unread { color: #ffb300; border-color: #ad742d; background: #382818; }
+.app-header__notification-count { position: absolute; top: -7px; right: -8px; min-width: 20px; height: 20px; padding: 0 4px; display: grid; place-items: center; border-radius: 10px; background: #d72e35; color: #fff; font-size: 11px; font-weight: 700; border: 2px solid #121316; }
+.app-header__notification-heading h2 small { color: #ffcd80; font-size: 12px; margin-left: 6px; }
+.app-header__notification-panel { width: 360px; max-width: calc(100vw - 32px); max-height: calc(100dvh - 160px); overflow: auto; }
+.app-header__notification-tools { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 14px 0 8px; font-size: 11px; color: #a9adb6; }
+.app-header__notification-tools button { background: transparent; border: 0; color: #ffd799; font-size: 12px; cursor: pointer; padding: 6px; }
+.app-header__notification-tools button:disabled { color: #777b85; cursor: default; }
+.app-header__notification-list { list-style: none; padding: 0; margin: 0; }
+.app-header__notification-list li + li { border-top: 1px solid #34363e; }
+.app-header__notification-item { width: 100%; min-width: 0; border: 0; background: transparent; color: #b6bac4; text-align: left; padding: 12px 10px; display: grid; gap: 6px; cursor: pointer; border-left: 2px solid transparent; }
+.app-header__notification-item--unread { background: #352627; border-left-color: #ef646b; color: #f0f0f4; }
+.app-header__notification-item:hover { background: #303139; }
+.app-header__notification-item strong { display: flex; align-items: center; gap: 6px; font-size: 13px; min-width: 0; }
+.app-header__notification-item strong > span:last-child { margin-left: auto; color: #a9adb6; font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-header__unread-dot { flex: 0 0 6px; height: 6px; border-radius: 50%; background: #ff777d; }
+.app-header__notification-location { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+.app-header__notification-item time { color: #a9adb6; font-size: 11px; }
+.app-header__notification-history { width: 100%; margin-top: 12px; padding: 9px; border: 1px solid #454852; border-radius: 4px; background: #25272d; color: #e4e5e9; font-size: 12px; cursor: pointer; }
 
 @media (max-width: 1000px) {
   .app-header { gap: 14px; padding-right: 16px; }
