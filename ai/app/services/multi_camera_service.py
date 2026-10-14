@@ -51,8 +51,10 @@ class SharedDetector:
 
 def run_camera(camera_id: str, folder: Path, stop: threading.Event, **options) -> None:
     loop = options.pop('loop', False)
+    options.setdefault('async_analysis', True)
     # The folder is rescanned every round, so new files are picked up without a restart.
     processed: set[Path] = set()
+    waiting_logged = False
     while not stop.is_set():
         try:
             videos = sorted(
@@ -63,15 +65,21 @@ def run_camera(camera_id: str, folder: Path, stop: threading.Event, **options) -
             log.exception("%s: cannot read %s", camera_id, folder)
             videos = []
         if not videos:
+            if not waiting_logged:
+                log.info("%s: waiting_for_files processed=%s", camera_id, len(processed))
+                waiting_logged = True
             stop.wait(EMPTY_FOLDER_DELAY)
             continue
+        waiting_logged = False
         for video in videos:
             if stop.is_set():
                 return
             log.info("%s -> %s", camera_id, video.name)
+            if video in processed:
+                log.info("%s: replay_detection; event creation enabled for %s", camera_id, video.name)
             try:
                 process_video(str(video), camera_id, realtime=True, stop=stop,
-                              emit_events=video not in processed, **options)
+                              emit_events=True, **options)
                 processed.add(video)
             except Exception:
                 # A broken file or a backend hiccup skips this video, not the whole camera.

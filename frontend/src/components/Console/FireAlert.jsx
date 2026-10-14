@@ -1,18 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
-import { apiClient, apiError, fetchMedia, getSession } from '../../api/client.js';
+import { apiClient, apiError, getSession } from '../../api/client.js';
 import { Modal } from './Console.jsx';
+import EventAlertMedia from './EventAlertMedia.jsx';
 import { connectCenter } from '../../api/mock119Socket.js';
 import { cameraDisplayName } from '../../utils/cameraChannels.js';
+import { hasActiveReport, keepManualAlerts, afterCompletedReports } from '../../utils/alertSuppression.js';
 import { formatPhone } from '../../utils/phone.js';
 
 const reasons = { STEAM: '수증기', LIGHT: '빛', REFLECTION: '반사', DUST: '먼지', WELDING: '용접', ETC: '기타' };
+// Temporarily disabled for the presentation; restore to true after the demo.
+const AUTO_CLOSE_ENABLED = false;
 export default function FireAlert() {
   const [queue, setQueue] = useState([]);
   const event = queue[0];
   const currentEventId = useRef(null);
   currentEventId.current = event?.eventId;
   const [stage, setStage] = useState('alert');
-  const [clip, setClip] = useState(null);
   const [seconds, setSeconds] = useState(10);
   const [reason, setReason] = useState('ETC');
   const [error, setError] = useState('');
@@ -22,6 +25,12 @@ export default function FireAlert() {
   const [busy, setBusy] = useState(false);
   const lock = useRef(false);
   const deadline = useRef(0);
+  const suppressAutomatic = useRef(false);
+  const suppressAlerts = () => {
+    suppressAutomatic.current = true;
+    setQueue(keepManualAlerts);
+    if (!event?.manualOpen) { setStage('alert'); setError(''); }
+  };
   const close = () => {
     if (lock.current) return;
     setQueue((items) => items.slice(1));
@@ -40,7 +49,20 @@ export default function FireAlert() {
       if (polling) return;
       polling = true;
       try {
-        if (latestEventId === null) {
+        // Query every page: an older ongoing report can be behind closed reports.
+        const reports = [];
+        for (let page = 0; ; page++) {
+          const { data } = await apiClient.get('/api/mock-119-center/reports', { params: { page, size: 100 } });
+          if (!active) return;
+          reports.push(...data.content);
+          if (page + 1 >= data.totalPages) break;
+        }
+        const suppressed = hasActiveReport(reports);
+        suppressAutomatic.current = suppressed;
+        if (suppressed) {
+          setQueue(keepManualAlerts);
+        }
+        if (latestEventId === null || suppressed) {
           // Existing events are the initial baseline, not new alerts.
           const { data } = await apiClient.get('/api/events/latest-id');
           if (active) latestEventId = data.latestEventId;
@@ -59,7 +81,9 @@ export default function FireAlert() {
           if (data.content.length < 100) break;
         }
         latestEventId = nextId;
-        const alerts = added.filter((item) => item.reviewStatus === 'UNREVIEWED' && !item.responseCompletedAt);
+        if (suppressAutomatic.current) return;
+        const alerts = added.filter((item) => item.reviewStatus === 'UNREVIEWED'
+          && !item.responseCompletedAt && afterCompletedReports(item, reports));
         if (alerts.length) setQueue((items) => [...items, ...alerts.filter(
           (alert) => !items.some((item) => item.eventId === alert.eventId)
         )]);
@@ -68,35 +92,15 @@ export default function FireAlert() {
     };
     const open = ({ detail }) => {
       if (detail?.preview && !import.meta.env.DEV) return;
-      if (detail) setQueue((items) => items.some((item) => item.eventId === detail.eventId) ? items : [...items, detail]);
+      if (detail) setQueue((items) => items.some((item) => item.eventId === detail.eventId) ? items : [...items, { ...detail, manualOpen: true }]);
     };
     window.addEventListener('firis-open-fire-alert', open);
+    window.addEventListener('firis-events-changed', poll);
     poll();
     const timer = setInterval(poll, 5000);
-    return () => { active = false; clearInterval(timer); window.removeEventListener('firis-open-fire-alert', open); };
+    return () => { active = false; clearInterval(timer); window.removeEventListener('firis-open-fire-alert', open); window.removeEventListener('firis-events-changed', poll); };
   }, []);
-  useEffect(() => {
-    setClip(null); setReason('ETC');
-    if (!event || event.preview) return;
-    let active = true, url, polling = false;
-    const load = async () => {
-      if (polling || url) return;
-      polling = true;
-      try {
-        const { data } = await apiClient.get(`/api/events/${event.eventId}`);
-        if (!data.videoPath) return;
-        const next = await fetchMedia(`/api/events/${event.eventId}/video/annotated`).catch((cause) => {
-          if (cause.response?.status === 404) return fetchMedia(`/api/events/${event.eventId}/video`);
-          throw cause;
-        });
-        if (!active) URL.revokeObjectURL(next);
-        else { url = next; setClip(next); }
-      } catch { /* The clip may still be being generated. */ }
-      finally { polling = false; }
-    };
-    load(); const timer = setInterval(load, 2000);
-    return () => { active = false; clearInterval(timer); if (url) URL.revokeObjectURL(url); };
-  }, [event]);
+  useEffect(() => { setReason('ETC'); setStage('alert'); setError(''); }, [event?.eventId]);
   useEffect(() => {
     setReportData(null); setReportError(''); setDelivery(null);
     if (!event || stage !== 'report') return;
@@ -115,13 +119,14 @@ export default function FireAlert() {
     return () => { active = false; };
   }, [event, stage]);
   useEffect(() => {
-    if (!event || stage !== 'alert') return;
+    if (!AUTO_CLOSE_ENABLED || !event || stage !== 'alert') return;
     deadline.current = Date.now() + 10000; setSeconds(10);
     let active = true;
     const reset = () => { if (!lock.current) { deadline.current = Date.now() + 10000; setSeconds(10); } };
     const actions = ['pointerdown', 'keydown', 'input', 'wheel'];
     actions.forEach((name) => document.addEventListener(name, reset, true));
     const timer = setInterval(async () => {
+      if (suppressAutomatic.current && !event.manualOpen) return;
       if (lock.current) return;
       const remaining = Math.max(0, Math.ceil((deadline.current - Date.now()) / 1000));
       setSeconds(remaining);
@@ -167,9 +172,22 @@ export default function FireAlert() {
     const eventId = event.eventId;
     lock.current = true; setBusy(true); setReportError('');
     try {
-      const { data } = await apiClient.post(`/api/events/${eventId}/mock-119-reports`);
-      if (currentEventId.current === eventId) setDelivery(data);
-      if (data.status === 'ACCEPTED') dismissReport(eventId);
+
+const { data } = await apiClient.post(
+  `/api/events/${eventId}/mock-119-reports`
+);
+
+if (currentEventId.current === eventId) {
+  setDelivery(data);
+}
+
+if (data.status === 'ACCEPTED') {
+  if (data.responseStatus !== 'CLOSED') {
+    suppressAlerts();
+  }
+  dismissReport(eventId);
+}
+
       window.dispatchEvent(new Event('firis-events-changed'));
     } catch (cause) { setReportError(apiError(cause)); }
     finally { lock.current = false; setBusy(false); }
@@ -211,8 +229,8 @@ export default function FireAlert() {
         {reportError && reportData && <p role="alert">{reportError}</p>}
       </> : <>
         <p>{event.location || '위치 미등록'} · {event.detectedAt?.replace('T', ' ')}</p>
-        {clip ? <video src={clip} controls autoPlay muted playsInline aria-label="화재 이벤트 영상 클립" style={{ width: '100%', maxHeight: '45vh', background: '#000' }} /> : <p className="console-empty">{event.preview ? '미리보기에는 저장된 영상 클립이 없습니다.' : '이벤트 영상 클립 준비 중…'}</p>}
-        {stage === 'alert' && <p>{busy ? '무응답 기록 저장 중…' : `${seconds}초 동안 조작이 없으면 자동으로 닫힙니다.`}</p>}
+        <EventAlertMedia key={event.eventId} event={event} />
+        {AUTO_CLOSE_ENABLED && stage === 'alert' && <p>{busy ? '무응답 기록 저장 중…' : `${seconds}초 동안 조작이 없으면 자동으로 닫힙니다.`}</p>}
         {stage === 'false-positive' && <label>오탐 사유 <select value={reason} onChange={(e) => setReason(e.target.value)}>{Object.entries(reasons).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>}
         {stage === 'complete' && <p>현장 대응이 완료되었나요? 화재 확정 및 대응 완료로 기록합니다. 119 신고는 전송하지 않습니다.</p>}
         {queue.length > 1 && <p>추가 확인 대기 {queue.length - 1}건</p>}

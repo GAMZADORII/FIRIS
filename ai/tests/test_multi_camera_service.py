@@ -94,10 +94,28 @@ class MultiCameraServiceTest(unittest.TestCase):
                 calls.append((Path(source).name, options['emit_events']))
                 if len(calls) == 3:
                     stop.set()
+                return [{"backend_event_id": 1, "video": "event.mp4"}]
 
             with patch("app.services.multi_camera_service.process_video", side_effect=process):
                 run_camera("CAM001", folder, stop, loop=True)
-        self.assertEqual(calls, [("001.mp4", True), ("002.mp4", True), ("001.mp4", False)])
+        self.assertEqual(calls, [("001.mp4", True), ("002.mp4", True), ("001.mp4", True)])
+
+    def test_loop_enables_events_regardless_of_previous_save_result(self):
+        stop = threading.Event()
+        calls = []
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            (folder / "001.mp4").touch()
+
+            def process(_source, _camera_id, **options):
+                calls.append(options["emit_events"])
+                if len(calls) == 3:
+                    stop.set()
+                return [{"video": "event.mp4"}] if len(calls) == 2 else []
+
+            with patch("app.services.multi_camera_service.process_video", side_effect=process):
+                run_camera("CAM001", folder, stop, loop=True)
+        self.assertEqual(calls, [True, True, True])
 
     def test_real_videos_continue_updating_one_camera_frame(self):
         stop = threading.Event()

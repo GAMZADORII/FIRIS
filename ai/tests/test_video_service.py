@@ -1,12 +1,14 @@
 import unittest
 import cv2
 import tempfile
+import threading
 from pathlib import Path
 from unittest.mock import patch
 
 import numpy as np
 
 from app.services.video_service import process_video
+from app.services.temporal_service import Confirmation
 
 
 class Capture:
@@ -74,6 +76,107 @@ class Publisher:
 
 
 class VideoServiceTest(unittest.TestCase):
+    def test_slow_inference_does_not_stop_display_or_queue_more_inference(self):
+        started, release = threading.Event(), threading.Event()
+        calls, published = [], []
+        capture = Capture(30)
+
+        def detector(*_):
+            calls.append(True)
+            started.set()
+            if not release.wait(2):
+                raise AssertionError("display was blocked by inference")
+            return {"detected": [], "probabilities": {}, "boxes": []}
+
+        class Display:
+            def publish_encoded(self, _camera, _jpeg):
+                self_test.assertTrue(started.wait(2))
+                published.append(True)
+                if len(published) == 5:
+                    self_test.assertEqual(len(calls), 1)
+                    release.set()
+
+        self_test = self
+        with patch("app.services.video_service.cv2.VideoCapture", return_value=capture):
+            process_video("sample.mp4", "CAM001", async_analysis=True, emit_events=False,
+                          client=Client([]), storage=Storage([]), detector=detector, publisher=Display())
+        self.assertEqual(len(published), 30)
+        self.assertTrue(capture.released)
+
+    def test_last_inference_is_observed_at_eof(self):
+        release = threading.Event()
+        capture = Capture(1)
+        original_read = capture.read
+        calls = []
+
+        def read():
+            value = original_read()
+            if not value[0]:
+                release.set()
+            return value
+
+        def detector(*_):
+            self.assertTrue(release.wait(2))
+            return {"detected": ["fire"], "probabilities": {"fire": 0.9}, "boxes": []}
+
+        capture.read = read
+        with patch("app.services.video_service.cv2.VideoCapture", return_value=capture), patch(
+            "app.services.video_service.TemporalValidator"
+        ) as validator:
+            validator.return_value.observe.return_value = Confirmation("FIRE", 0.9)
+            events = process_video("sample.mp4", "CAM001", async_analysis=True,
+                                   client=Client(calls), storage=Storage(calls), detector=detector,
+                                   publisher=Publisher())
+        self.assertEqual(len(events), 1)
+        validator.return_value.observe.assert_called_once()
+        self.assertEqual(validator.return_value.observe.call_args.args[0], 0)
+        self.assertEqual(calls[-1][0], "patch")
+
+    def test_encoding_does_not_block_capture_and_is_drained_before_return(self):
+        release = threading.Event()
+        calls = []
+        capture = Capture(60)
+        self_test = self
+
+        class SlowStorage(Storage):
+            def write_video(self, *args, **kwargs):
+                self_test.assertTrue(release.wait(2), "capture was blocked by encoding")
+                return super().write_video(*args, **kwargs)
+
+        class Display:
+            def publish_encoded(self, _camera, _jpeg):
+                if capture.index >= 45:
+                    release.set()
+
+        with patch("app.services.video_service.cv2.VideoCapture", return_value=capture):
+            events = process_video("sample.mp4", "CAM001", post_seconds=1,
+                                   client=Client(calls), storage=SlowStorage(calls),
+                                   detector=lambda *_: {"detected": ["fire"], "probabilities": {"fire": 0.9}},
+                                   publisher=Display())
+        self.assertEqual(len(events), 1)
+        self.assertEqual(calls[-1][0], "patch")
+        self.assertEqual(capture.index, 60)
+
+    def test_media_failure_is_logged_without_stopping_capture(self):
+        calls = []
+        capture = Capture(60)
+
+        class FailedStorage(Storage):
+            def write_video(self, *args, **kwargs):
+                raise RuntimeError("encoder unavailable")
+
+        with patch("app.services.video_service.cv2.VideoCapture", return_value=capture), self.assertLogs(
+            "camera.events", level="ERROR"
+        ) as logs:
+            events = process_video("sample.mp4", "CAM001", post_seconds=1,
+                                   client=Client(calls), storage=FailedStorage(calls),
+                                   detector=lambda *_: {"detected": ["fire"], "probabilities": {"fire": 0.9}},
+                                   publisher=Publisher())
+        self.assertEqual(events, [])
+        self.assertEqual(capture.index, 60)
+        self.assertTrue(any("event_id=31" in line for line in logs.output))
+        self.assertEqual(sum(call[0] == "post" for call in calls), 1)
+
     def test_realtime_playback_skips_stale_frames(self):
         capture = Capture(100)
         published = []
@@ -96,7 +199,7 @@ class VideoServiceTest(unittest.TestCase):
         self.assertGreater(capture.index, 20)
         self.assertLess(len(published), 20)
 
-    def test_skipped_frames_use_timeline_fps_for_event_video(self):
+    def test_skipped_frames_are_resampled_at_source_fps(self):
         calls = []
         capture = Capture(61)
 
@@ -115,9 +218,37 @@ class VideoServiceTest(unittest.TestCase):
             )
 
         video_call = next(call for call in calls if call[0] == "video")
-        self.assertEqual(video_call[1], 13)
-        self.assertAlmostEqual(video_call[2], 4.0)
+        self.assertEqual(video_call[1], 30)
+        self.assertAlmostEqual(video_call[2], 10.0)
         self.assertEqual(calls[-1][3:], (2, 1))
+
+    def test_sparse_frames_trim_prebuffer_and_post_overshoot_to_ten_seconds(self):
+        calls = []
+        capture = Capture(9)
+        capture.frames = [np.full((16, 16, 3), i * 20, dtype=np.uint8) for i in range(9)]
+        storage = Storage(calls)
+        # Confirmation at 10s; retain [5s, 15s), even though reads arrive at
+        # 2s intervals and the first frame after the post deadline is at 16s.
+        clock = iter([0.0, *range(0, 18, 2)])
+        with patch("app.services.video_service.cv2.VideoCapture", return_value=capture), patch(
+            "app.services.video_service.time.monotonic", side_effect=lambda: next(clock)
+        ), patch("app.services.video_service.TemporalValidator") as validator:
+            validator.return_value.observe.side_effect = [
+                None, None, None, None, None, Confirmation("FIRE", 0.9), None, None, None,
+            ]
+            process_video(
+                0, "CAM001", client=Client(calls), storage=storage,
+                detector=lambda *_: {"detected": [], "probabilities": {}, "boxes": []},
+                publisher=Publisher(),
+            )
+        video_call = next(call for call in calls if call[0] == "video")
+        self.assertEqual(video_call[1:], (100, 10.0))
+        self.assertEqual(calls[-1][3:], (5, 5))
+        self.assertEqual(len(storage.annotated_frames), 100)
+        for index, expected in [(0, 40), (9, 40), (10, 60), (90, 140), (99, 140)]:
+            frame = cv2.imdecode(np.frombuffer(storage.frames[index], dtype=np.uint8), cv2.IMREAD_COLOR)
+            self.assertAlmostEqual(float(frame.mean()), expected, delta=1)
+            self.assertEqual(storage.frames[index], storage.annotated_frames[index])
 
     def test_live_frames_update_between_inference_samples(self):
         capture = Capture(30)
@@ -162,6 +293,7 @@ class VideoServiceTest(unittest.TestCase):
 
     def test_process_video_generates_both_real_mp4s(self):
         from app.services.event_service import EventStorage
+        open_video = cv2.VideoCapture
         capture = Capture(40)
         capture.frames = [np.zeros((100, 100, 3), dtype=np.uint8) for _ in capture.frames]
         def detector(*_args):
@@ -179,6 +311,14 @@ class VideoServiceTest(unittest.TestCase):
             self.assertEqual(len(events), 1)
             paths = [events[0][key] for key in ("video", "annotated_video")]
             self.assertTrue(all(Path(path).is_file() for path in paths))
+            for path in paths:
+                saved = open_video(path)
+                try:
+                    self.assertTrue(saved.isOpened())
+                    duration = saved.get(cv2.CAP_PROP_FRAME_COUNT) / saved.get(cv2.CAP_PROP_FPS)
+                    self.assertAlmostEqual(duration, 3.0, places=2)
+                finally:
+                    saved.release()
         # Storage codec decoding/frame equality is independently tested in EventStorageTest.
 
     def test_snapshot_post_postframes_video_patch_order(self):
