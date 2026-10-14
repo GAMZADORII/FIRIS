@@ -58,8 +58,7 @@
 .console-eyebrow {
   color: #ffb3ac;
   font:
-    700 10px Consolas,
-    monospace;
+    700 10px var(--font-family-ui);
   letter-spacing: 1.3px;
   margin: 0 0 6px;
 }
@@ -162,7 +161,7 @@
   font-size: 10px;
 }
 .console-mono {
-  font-family: Consolas, monospace;
+  font-family: var(--font-family-ui);
 }
 .console-badge {
   display: inline-block;
@@ -208,12 +207,18 @@
   max-height: calc(100dvh - 40px);
   box-shadow: 0 24px 100px #0009;
   font:
-    12px "Malgun Gothic",
-    sans-serif;
+    12px var(--font-family-ui);
 }
 .console-modal--wide {
   width: min(900px, calc(100vw - 32px));
 }
+.console-modal.event-report-modal { font-size: 13px; line-height: 1.5; }
+.event-report-modal .console-modal__header small { font-size: 11px; }
+.event-report-modal .console-muted,
+.event-report-modal .console-badge { font-size: 12px; }
+.event-report-modal .console-modal__header > div { min-width: 0; overflow-wrap: anywhere; }
+.event-report-modal .console-modal__header > button { flex-shrink: 0; }
+.event-report-modal .console-modal__body { overflow-wrap: anywhere; }
 .console-modal::backdrop {
   background: #000b;
   backdrop-filter: blur(5px);
@@ -232,8 +237,7 @@
 }
 .console-modal__header small {
   font:
-    9px Consolas,
-    monospace;
+    9px var(--font-family-ui);
   letter-spacing: 0.7px;
 }
 .console-modal__header button {

@@ -211,7 +211,7 @@ if (data.status === 'ACCEPTED') {
     finally { lock.current = false; setBusy(false); }
   }
   if (!event) return null;
-  return <Modal key={stage === 'report' ? 'report' : 'alert'} wide={stage !== 'report'} title={stage === 'report' ? '119 신고 정보를 확인해주세요.' : '화재 의심 이벤트 감지'} subtitle={`EVT-${event.eventId} · ${cameraDisplayName(event.cameraId, event.cameraName)}`} onClose={close}>
+  return <Modal className="event-report-modal" key={stage === 'report' ? 'report' : 'alert'} wide={stage !== 'report'} title={stage === 'report' ? '119 신고 정보를 확인해주세요.' : '화재 의심 이벤트 감지'} subtitle={`EVT-${event.eventId} · ${cameraDisplayName(event.cameraId, event.cameraName)}`} onClose={close}>
     <div className="console-modal__body">
       {event.preview && <p>미리보기 · 실제 이벤트 변경 및 신고 전송 없음</p>}
       {stage === 'report' ? <>
