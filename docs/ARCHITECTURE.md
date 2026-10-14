@@ -142,3 +142,6 @@ AI/Backend/Frontend Dockerfile과 Jenkins Pipeline이 있으며, docker-compose.
 - JWT 저장/갱신, 비활성화·초기화 이후 기존 토큰 처리
 
 미정 사항을 임의로 구현하거나 기존 계약을 바꾸지 않는다. 관련 담당자 및 사용자 확인 후 문서를 먼저 수정한다.
+
+## CCTV 관리
+관리자 화면은 기존 POST /api/cameras와 신규 DELETE /api/cameras/{cameraId}를 호출한다. CAMERA.deleted로 논리 삭제하여 이전 이력의 참조를 보존한다. 목록·관제 선택·새 AI 이벤트·최신 프레임에서는 삭제된 CCTV를 제외한다. 초기 등록기는 삭제된 행을 기존 ID로 인식하므로 재시작 후 복원하지 않는다. 관제 선택은 고정 9개 제한 대신 API의 전체 등록 목록을 사용하며 기존 채널 표시 순서는 유지한다.

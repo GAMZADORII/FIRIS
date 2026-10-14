@@ -4,6 +4,8 @@ import com.firis.camera.dto.CameraResponse;
 import com.firis.camera.dto.CreateCameraRequest;
 import com.firis.camera.service.CameraService;
 import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -27,6 +29,12 @@ public class CameraController {
     @GetMapping
     public List<CameraResponse> getCameras() {
         return cameraService.getCameras();
+    }
+
+    @DeleteMapping("/{cameraId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteCamera(@PathVariable String cameraId) {
+        cameraService.deleteCamera(cameraId);
     }
 
     @PostMapping

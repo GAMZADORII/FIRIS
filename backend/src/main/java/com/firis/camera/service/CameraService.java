@@ -29,7 +29,7 @@ public class CameraService {
 
     @Transactional(readOnly = true)
     public List<CameraResponse> getCameras() {
-        return cameraRepository.findAll(Sort.by("cameraId")).stream()
+        return cameraRepository.findAllByDeletedFalse(Sort.by("cameraId")).stream()
                 .map(CameraResponse::from)
                 .toList();
     }
@@ -55,6 +55,13 @@ public class CameraService {
             throw e;
         }
         return CameraResponse.from(camera);
+    }
+
+    @Transactional
+    public void deleteCamera(String cameraId) {
+        Camera camera = cameraRepository.findById(cameraId)
+                .orElseThrow(() -> new ApiException(ErrorCode.CAMERA_NOT_FOUND));
+        camera.delete();
     }
 
     private void validateStreamUrl(String streamUrl) {

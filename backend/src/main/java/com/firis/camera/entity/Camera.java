@@ -18,6 +18,9 @@ public class Camera {
     @Column(nullable = false, length = 20)
     private String status;
 
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private boolean deleted;
+
     protected Camera() {}
     public static Camera create(String cameraId, String cameraName, String location, String streamUrl, String status) {
         return create(cameraId, cameraName, location, streamUrl, status, null);
@@ -33,6 +36,9 @@ public class Camera {
         camera.status = status;
         return camera;
     }
+    public void delete() { deleted = true; status = "OFFLINE"; }
+    public boolean isDeleted() { return deleted; }
+
     public String getCameraId() { return cameraId; }
     public String getCameraName() { return cameraName; }
     public String getLocation() { return location; }

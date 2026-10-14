@@ -17,6 +17,8 @@ const date = (value) => value?.replace('T', ' ') || '—';
 export default function History() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [events, setEvents] = useState([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [query, setQuery] = useState('');
   const [type, setType] = useState('전체');
   const [status, setStatus] = useState('전체');
@@ -48,6 +50,7 @@ export default function History() {
   useEffect(() => {
     let active = true;
     async function load() {
+      setEventsLoading(true);
       try {
         const first = (await apiClient.get('/api/events', { params: { page: 0, size: 100 } })).data;
         const pages = Math.ceil(first.totalElements / 100);
@@ -55,6 +58,7 @@ export default function History() {
           apiClient.get('/api/events', { params: { page: index + 1, size: 100 } })));
         if (active) { setEvents([ ...first.content, ...rest.flatMap(({ data }) => data.content) ]); setError(''); }
       } catch (cause) { if (active) setError(apiError(cause)); }
+      finally { if (active) setEventsLoading(false); }
     }
     load();
     return () => { active = false; };
@@ -84,17 +88,6 @@ export default function History() {
     return () => { active = false; urls.forEach(URL.revokeObjectURL); };
   }, [selectedId, revision]);
 
-  function previewReport() {
-    openFireAlert({
-      eventId: 'PREVIEW', preview: true, reviewStatus: 'UNREVIEWED',
-      address: '경기도 ○○시 ○○로 123', location: '제1공장 2층 생산라인 A',
-      cameraName: 'CCTV 1', detectedAt: '2026-10-08T14:32:18',
-      specialNotes: '리튬배터리 보관구역 (미리보기 예시)',
-    });
-  }
-  useEffect(() => {
-    if (import.meta.env.DEV && searchParams.get('preview') === 'report') previewReport();
-  }, [searchParams]);
   async function review(result) {
     if (reviewLock.current) return;
     reviewLock.current = true;
@@ -126,10 +119,25 @@ export default function History() {
     ['미처리', events.filter((event) => event.reviewStatus === 'UNREVIEWED').length, 'UNPROCESSED'],
     ['처리완료', events.filter((event) => event.reviewStatus !== 'UNREVIEWED').length, 'RESOLVED'],
   ];
-  function exportEvents() {
-    const header = '이벤트 ID,발생 시각,채널,위치,유형,신뢰도,상태';
-    const rows = filtered.map((event) => [event.eventId, date(event.detectedAt), cameraDisplayName(event.cameraId, event.cameraName), event.location, types[event.eventType], (event.confidence * 100).toFixed(1), states[event.reviewStatus]].map((value) => `"${String(value ?? '').replaceAll('"', '""')}"`).join(','));
-    downloadFile('FIRIS-이벤트-이력.csv', [header, ...rows].join('\r\n'), 'text/csv;charset=utf-8');
+  async function exportEvents() {
+    setExporting(true);
+    try {
+      const { createHistoryPdf } = await import('../../utils/historyPdf.js');
+      const rows = filtered.map((event) => [
+        String(event.eventId), date(event.detectedAt), cameraDisplayName(event.cameraId, event.cameraName),
+        event.location || '미등록', types[event.eventType] || event.eventType,
+        `${(event.confidence * 100).toFixed(1)}%`, states[event.reviewStatus] || event.reviewStatus,
+      ]);
+      const filters = [
+        `기간: ${start || '전체'} ~ ${end || '전체'}`, `유형: ${type}`, `상태: ${status}`,
+        query && `검색: ${query}`, timeoutOnly && '무응답 · 신고 확인 필요',
+      ].filter(Boolean).join(' / ');
+      const doc = await createHistoryPdf({ rows, filters });
+      doc.save('FIRIS-이벤트-이력.pdf');
+      setError('');
+    } catch (cause) {
+      setError(cause.message || 'PDF 다운로드에 실패했습니다. 다시 시도해주세요.');
+    } finally { setExporting(false); }
   }
   function downloadReport() {
     if (!selected) return;
@@ -151,7 +159,7 @@ export default function History() {
   }
 
   return <main className="console-page history-page">
-    <PageHeading eyebrow="FIRIS EVENT ARCHIVE / INCIDENT INTELLIGENCE" title="이벤트 이력 조회">{import.meta.env.DEV && <button onClick={previewReport}>화재 알림 미리보기</button>}<span className="console-muted">실제 이벤트 기록 · KST 기준</span><button onClick={exportEvents}>↓ 이력 내보내기</button></PageHeading>
+    <PageHeading eyebrow="FIRIS EVENT ARCHIVE / INCIDENT INTELLIGENCE" title="이벤트 이력 조회"><button onClick={exportEvents} disabled={exporting || eventsLoading}>{exporting ? 'PDF 생성 중…' : '↓ 이력 PDF 다운로드'}</button></PageHeading>
     {error && <p role="alert" className="console-notice">{error}</p>}
     <section className="history-summary" aria-label="이벤트 요약">{summary.map(([label, value, english], index) => <article key={label} className={`history-summary__card history-summary__card--${index}`}><span>{label}</span><strong>{String(value).padStart(2, '0')}<small>건</small></strong><p>{english}</p></article>)}</section>
     <section className="console-toolbar history-filters" aria-label="이벤트 검색" onChange={() => setPage(1)}>

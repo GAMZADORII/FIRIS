@@ -37,7 +37,7 @@ public class Mock119ReportState {
                 .orElseThrow(() -> new ApiException(ErrorCode.EVENT_NOT_FOUND));
         var reporter = accounts.findByLoginId(loginId)
                 .orElseThrow(() -> new ApiException(ErrorCode.UNAUTHORIZED));
-        if ((reporter.getRole() != Role.WORKER && reporter.getRole() != Role.ADMIN) || !reporter.isActive()) {
+        if ((reporter.getRole() != Role.WORKER && !reporter.getRole().isAdministrator()) || !reporter.isActive()) {
             throw new ApiException(ErrorCode.FORBIDDEN);
         }
         var missing = new ArrayList<String>();
@@ -59,7 +59,7 @@ public class Mock119ReportState {
                 .orElseThrow(() -> new ApiException(ErrorCode.EVENT_NOT_FOUND));
         var reporter = accounts.findByLoginId(loginId)
                 .orElseThrow(() -> new ApiException(ErrorCode.UNAUTHORIZED));
-        if ((reporter.getRole() != Role.WORKER && reporter.getRole() != Role.ADMIN) || !reporter.isActive()) {
+        if ((reporter.getRole() != Role.WORKER && !reporter.getRole().isAdministrator()) || !reporter.isActive()) {
             throw new ApiException(ErrorCode.FORBIDDEN);
         }
         var existing = reports.findByEvent_EventId(eventId);

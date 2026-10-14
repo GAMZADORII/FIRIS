@@ -88,12 +88,14 @@ class Mock119ReportStateTest {
         verifyNoInteractions(reports);
     }
 
-    @Test
-    void adminCanSubmitWithAllOptionalContactAndAddressFieldsEmpty() {
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
+    void adminCanSubmitWithAllOptionalContactAndAddressFieldsEmpty(boolean superAdmin) {
         var noSettings = new Mock119ReportState(events, accounts, reports, new Mock119Settings("", ""));
         var event = new FireEvent(Camera.create("CAM003", "CCTV 03", null, null, "ONLINE"),
                 EventType.FIRE, .91, LocalDateTime.now(), "test", LocalDateTime.now());
-        var admin = Account.createAdmin("report-admin", "hash", "관리자");
+        var admin = superAdmin ? Account.createSuperAdmin("report-admin", "hash", "최고 관리자")
+                : Account.createAdmin("report-admin", "hash", "관리자");
         when(events.findById(27L)).thenReturn(Optional.of(event));
         when(events.findForMediaUpdate(27L)).thenReturn(Optional.of(event));
         when(accounts.findByLoginId("report-admin")).thenReturn(Optional.of(admin));

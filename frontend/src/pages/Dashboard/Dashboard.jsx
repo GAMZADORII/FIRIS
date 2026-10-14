@@ -3,8 +3,7 @@ import { Link } from 'react-router-dom';
 import { apiClient, apiError, fetchMedia } from '../../api/client.js';
 import './Dashboard.css';
 import { Modal } from '../../components/Console/Console.jsx';
-import { cameraChannelSlots, cameraDisplayName } from '../../utils/cameraChannels.js';
-const cameraSlots = cameraChannelSlots;
+import { compareCameras, cameraDisplayName } from '../../utils/cameraChannels.js';
 const cameraSelectionKey = 'firis-dashboard-cameras';
 
 const statisticIconPaths = {
@@ -68,17 +67,16 @@ export default function Dashboard() {
   const [selectedCameraIds, setSelectedCameraIds] = useState(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(cameraSelectionKey));
-      if (Array.isArray(saved)) return saved.filter((id) => cameraSlots.some(([cameraId]) => cameraId === id));
+      if (Array.isArray(saved)) return saved.filter((id) => typeof id === 'string');
     } catch { /* Use the default four views if storage is unavailable. */ }
     return ['CAM001', 'CAM002', 'CAM003', 'CAM004'];
   });
   useEffect(() => {
     try { localStorage.setItem(cameraSelectionKey, JSON.stringify(selectedCameraIds)); } catch { /* Selection remains usable for this session. */ }
   }, [selectedCameraIds]);
-  const availableCameras = cameraSlots.map(([cameraId, location]) => ({
-    ...(cameras.find((camera) => camera.cameraId === cameraId) || { cameraId, status: '연결 준비', unregistered: true }),
-    cameraName: cameraDisplayName(cameraId),
-    location,
+  const availableCameras = [...cameras].sort(compareCameras).map((camera) => ({
+    ...camera, cameraName: cameraDisplayName(camera.cameraId, camera.cameraName),
+    location: camera.location || '위치 미등록',
   }));
   const visibleCameras = availableCameras.filter((camera) => selectedCameraIds.includes(camera.cameraId));
   const expandedCamera = availableCameras.find((camera) => camera.cameraId === expandedCameraId);
@@ -105,7 +103,7 @@ export default function Dashboard() {
           apiClient.get('/api/events', { params: { page: 0, size: 1, reviewStatus: 'FALSE_POSITIVE' } }),
         ]);
         if (!active) return;
-        setCameras(cameraResult.data.filter((camera) => /^CAM00[1-9]$/.test(camera.cameraId)).sort((a, b) => a.cameraId.localeCompare(b.cameraId)));
+        setCameras(cameraResult.data);
         setEvents(recent.data.content);
         setCounts({ today: daily.data.totalElements, unreviewed: pending.data.totalElements, fire: real.data.totalElements, falsePositive: falsePositives.data.totalElements });
         setError('');
@@ -128,7 +126,7 @@ export default function Dashboard() {
       { label: '화재 확정', value: counts.fire, tone: 'red' },
       { label: '오탐 판정', value: counts.falsePositive, tone: 'amber' },
     ] },
-    { label: 'CCTV FEED INTEGRITY', value: `${visibleCameras.length} / 9`, unit: '', detail: `표시 중 / 전체 화면 · ONLINE ${online}대`, tone: 'neutral' },
+    { label: 'CCTV FEED INTEGRITY', value: `${visibleCameras.length} / ${availableCameras.length}`, unit: '', detail: `표시 중 / 전체 화면 · ONLINE ${online}대`, tone: 'neutral' },
   ];
   return (
     <main className="dashboard">
@@ -153,10 +151,10 @@ export default function Dashboard() {
   </> : <p className="stat-card__detail">{error ? '이벤트 정보를 불러오지 못했습니다.' : '감지 이력 없음'}</p>}
 </article></div></aside>
       </div>
-      {selectorOpen && <Modal title="CCTV 화면 선택" subtitle={`표시 중 ${visibleCameras.length} / 9대`} onClose={() => setSelectorOpen(false)}>
+      {selectorOpen && <Modal title="CCTV 화면 선택" subtitle={`표시 중 ${visibleCameras.length} / ${availableCameras.length}대`} onClose={() => setSelectorOpen(false)}>
         <div className="console-modal__body">
           <p>대시보드에 표시할 화면을 선택하세요. 화면을 꺼도 영상 분석은 계속됩니다.</p>
-          <div className="camera-selector-actions"><button onClick={() => setSelectedCameraIds(cameraSlots.map(([id]) => id))}>전체 켜기</button><button onClick={() => setSelectedCameraIds([])}>전체 끄기</button></div>
+          <div className="camera-selector-actions"><button onClick={() => setSelectedCameraIds(availableCameras.map((camera) => camera.cameraId))}>전체 켜기</button><button onClick={() => setSelectedCameraIds([])}>전체 끄기</button></div>
           <div className="camera-selector-grid">{availableCameras.map((camera) => <label key={camera.cameraId} className="camera-selector-item"><div><strong>{camera.location}</strong><small>{camera.cameraName}</small></div><input type="checkbox" role="switch" aria-label={`${camera.location} 화면 표시`} checked={selectedCameraIds.includes(camera.cameraId)} onChange={(event) => setSelectedCameraIds((ids) => event.target.checked ? [...ids, camera.cameraId] : ids.filter((id) => id !== camera.cameraId))} /></label>)}</div>
         </div><footer className="console-modal__footer"><button onClick={() => setSelectorOpen(false)}>완료</button></footer>
       </Modal>}
