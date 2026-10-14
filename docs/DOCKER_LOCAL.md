@@ -1,0 +1,29 @@
+# dev 브랜치 Docker 로컬 실행
+
+저장소 루트의 `.env`를 Compose가 읽는다. 이번 로컬 설정에는 랜덤 JWT/API/DB 키를 준비했다. 실제 값은 Git에서 제외한다.
+
+```bash
+cd ~/FIRIS
+sudo docker compose up -d --build --remove-orphans --wait
+sudo docker compose ps
+```
+
+Frontend: http://localhost:5173/login
+119 모의 접수센터: http://localhost:5174
+Backend health: http://localhost:8080/api/health
+AI health: http://localhost:8000/health
+
+초기 관리자 로그인은 루트 `.env`의 ADMIN_LOGIN_ID와 ADMIN_PASSWORD를 사용한다. 기존 DB에 관리자가 있으면 초기 비밀번호 설정은 기존 계정을 변경하지 않는다.
+
+`main`에서 생성한 이미지도 `--build`로 dev 소스로 다시 빌드하며 `--remove-orphans`로 이전 Compose 서비스 컨테이너를 정리한다. 볼륨은 삭제하지 않는다. 기존 main의 AI named volume은 남아 있으나 dev는 ai/model과 storage의 호스트 파일을 사용한다.
+
+AI 모델과 시연 영상은 Git LFS 실제 파일이 필요하다. `git lfs pull`로 내려받는다. Docker 컨테이너는 이미지 내부 소스로 실행하므로 코드 수정 후에는 다시 빌드한다.
+
+```bash
+sudo docker compose logs --tail=100 backend frontend ai-worker
+sudo docker compose down
+```
+
+`down -v`는 MySQL 데이터까지 삭제하므로 사용하지 않는다.
+
+관제실 번호는 DB의 공통 설정 테이블이 아니라 루트 `.env`의 `MOCK_119_CONTROL_ROOM_PHONE`에서 읽는다. 이번 로컬 값은 `041-123-4567`이다. Backend 컨테이너를 재생성하면 신고 preview에 표시되고 새 신고 레코드에 번호가 저장된다. 이미 제출한 신고는 당시 번호를 보존한다.
