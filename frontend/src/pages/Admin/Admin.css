@@ -29,8 +29,7 @@
   background: #111215;
   color: #ffd28c;
   font:
-    700 10px Consolas,
-    monospace;
+    700 10px var(--font-family-ui);
   padding: 4px 6px;
   margin-left: 2px;
 }
@@ -83,10 +82,48 @@
 .admin-table td {
   height: 84px;
 }
+.admin-table {
+  table-layout: fixed;
+  min-width: 1200px;
+}
+.admin-table.console-table th,
+.admin-table.console-table td {
+  padding: 0 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-table.console-table th { height: 54px; font-size: 12px; line-height: 18px; }
+.admin-table.console-table td { font-size: 14px; line-height: 20px; }
+.admin-table.console-table small { font-size: 12px; line-height: 18px; }
+.admin-table .admin-person { width: 100%; max-width: 160px; }
+.admin-table .admin-person strong,
+.admin-table small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-table .console-badge,
+.admin-table .admin-session { font-size: 12px; line-height: 18px; }
+.admin-table .console-badge {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+.admin-row-actions { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.admin-table.console-table button {
+  max-width: 100%;
+  height: 28px;
+  padding: 3px 8px;
+  font-size: 12px;
+  line-height: 20px;
+  white-space: nowrap;
+}
 .admin-session {
   font:
-    11px Consolas,
-    monospace;
+    11px var(--font-family-ui);
   color: #808897;
 }
 .admin-session--active {
@@ -153,14 +190,12 @@
   display: block;
   color: #ffb4ae;
   font:
-    700 40px Consolas,
-    monospace;
+    700 40px var(--font-family-ui);
   margin-top: 18px;
 }
 .admin-stats small {
   font:
-    12px "Malgun Gothic",
-    sans-serif;
+    12px var(--font-family-ui);
   margin-left: 10px;
   color: #a0a4af;
 }

@@ -4,7 +4,7 @@
   background:
     radial-gradient(ellipse at 50% 0%, #252629 0, transparent 55%), #101113;
   color: #e4e4e9;
-  font-family: Inter, "Malgun Gothic", sans-serif;
+  font-family: var(--font-family-ui);
   position: relative;
   display: flex;
   align-items: center;
@@ -40,7 +40,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  font-size: 10px;
+  font-size: 11px;
 }
 .login-statusbar > div,
 .login-footer > div {
@@ -52,8 +52,7 @@
 .login-node {
   color: #ffaaa4;
   font:
-    700 10px Consolas,
-    monospace;
+    700 11px var(--font-family-ui);
   display: flex;
   align-items: center;
   gap: 7px;
@@ -73,8 +72,7 @@
   background: #303034;
   padding: 4px 7px;
   font:
-    700 9px Consolas,
-    monospace;
+    700 10px var(--font-family-ui);
   white-space: nowrap;
 }
 .login-layout {
@@ -114,8 +112,7 @@
 }
 .login-overview__heading > span {
   font:
-    9px Consolas,
-    monospace;
+    10px var(--font-family-ui);
   color: #e5aca7;
   background: #2b2528;
   padding: 4px 6px;
@@ -151,8 +148,7 @@
 .login-features article > span {
   color: #a9a3a7;
   font:
-    8px Consolas,
-    monospace;
+    9px var(--font-family-ui);
 }
 .login-features h3 {
   font-size: 12px;
@@ -160,7 +156,7 @@
 }
 .login-features p {
   color: #9fa2ae;
-  font-size: 10px;
+  font-size: 11px;
   margin: 0;
 }
 .login-overview__copy {
@@ -168,8 +164,7 @@
 }
 .login-eyebrow {
   font:
-    700 9px Consolas,
-    monospace;
+    700 10px var(--font-family-ui);
   letter-spacing: 1.2px;
   color: #edaaa6;
   margin: 0 0 12px;
@@ -195,8 +190,7 @@
   padding: 12px;
   color: #c2b9b8;
   font:
-    8px Consolas,
-    monospace;
+    9px var(--font-family-ui);
   letter-spacing: 0.4px;
 }
 .login-access {
@@ -224,7 +218,7 @@
   background: #9d1722;
   color: #ffdcda;
   padding: 4px 7px;
-  font-size: 9px;
+  font-size: 10px;
   white-space: nowrap;
 }
 .login-access__intro {
@@ -296,7 +290,7 @@
   color: #ffb3ac;
 }
 .login-account-help {
-  font-size: 10px;
+  font-size: 11px;
   color: #b7b8c0;
   line-height: 1.7;
   margin: 0 0 22px;
@@ -313,14 +307,12 @@
   padding: 14px 10px;
   width: 100%;
   font:
-    700 15px "Malgun Gothic",
-    sans-serif;
+    700 15px var(--font-family-ui);
   cursor: pointer;
 }
 .login-submit span {
   font:
-    700 11px Consolas,
-    monospace;
+    700 11px var(--font-family-ui);
 }
 .login-submit:hover {
   background: #eb3b43;
@@ -375,7 +367,7 @@
 }
 .login-access__notice p {
   color: #b8a9ab;
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.8;
   margin: 0;
 }
@@ -387,14 +379,12 @@
   padding-top: 24px;
   margin-top: auto;
   font:
-    8px Consolas,
-    monospace;
+    9px var(--font-family-ui);
 }
 .login-footer {
   color: #9fa4b1;
   font:
-    9px Consolas,
-    monospace;
+    10px var(--font-family-ui);
 }
 .login-footer__badge {
   background: #a62931;
