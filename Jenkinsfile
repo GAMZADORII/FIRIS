@@ -46,11 +46,18 @@ pipeline {
             }
         }
 
+        stage('Build 119 Center') {
+            steps {
+                sh 'docker build -t firis-119-center-frontend:ci ./119-center-frontend'
+            }
+        }
+
         stage('Verify Images') {
             steps {
                 sh 'docker image inspect firis-ai:ci > /dev/null'
                 sh 'docker image inspect firis-backend:ci > /dev/null'
                 sh 'docker image inspect firis-frontend:ci > /dev/null'
+                sh 'docker image inspect firis-119-center-frontend:ci > /dev/null'
                 sh 'docker images | grep firis'
             }
         }
@@ -75,6 +82,7 @@ pipeline {
                     docker tag firis-ai:ci firis-ai:local
                     docker tag firis-backend:ci firis-backend:local
                     docker tag firis-frontend:ci firis-frontend:local
+                    docker tag firis-119-center-frontend:ci firis-119-center-frontend:local
                 '''
             }
         }
@@ -92,7 +100,7 @@ pipeline {
                       --no-build \
                       --no-deps \
                       --force-recreate \
-                      backend ai frontend
+                      backend ai frontend 119-center-frontend
 
                     docker compose \
                       --project-directory "$DEPLOY_DIR" \
@@ -144,6 +152,7 @@ pipeline {
                     check_url "AI" "http://host.docker.internal:8000/health"
                     check_url "Backend" "http://host.docker.internal:8080/api/health"
                     check_url "Frontend" "http://host.docker.internal:5173/" "localhost:5173"
+                    check_url "119 Center" "http://host.docker.internal:5174/" "localhost:5174"
 
                     worker_id=$(docker compose \
                       --project-directory "$DEPLOY_DIR" \
