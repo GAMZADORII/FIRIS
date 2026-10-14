@@ -497,3 +497,6 @@ Backend 발신 JSON:
 
 ## CCTV 삭제
 `DELETE /api/cameras/{cameraId}`: ADMIN/SUPER_ADMIN만 허용하며 성공 시 204이다. 존재하지 않는 ID는 404 CAMERA_NOT_FOUND, 이미 삭제된 ID는 204로 처리한다. 논리 삭제하며 이력은 보존한다. GET /api/cameras는 삭제되지 않은 카메라만 반환한다. 삭제된 CCTV의 새 AI 이벤트 및 최신 프레임 조회는 404이다. POST 등록 시 삭제된 ID도 중복으로 409 처리한다. 영상 주소는 기존 등록 API에 따라 HTTP/HTTPS만 허용한다.
+
+## 권한별 계정 분포
+`GET /api/admin/accounts/role-counts`: ADMIN/SUPER_ADMIN만 허용한다. 응답은 `{ "superAdmins": 2, "admins": 1, "workers": 0 }` 형식이며 실제 DB의 역할별 계정 수를 반환한다. 활성·비활성 계정을 모두 포함하고 개인 정보는 반환하지 않는다.

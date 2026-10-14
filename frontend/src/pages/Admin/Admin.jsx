@@ -19,6 +19,8 @@ const tabs = [
 
 export default function Admin() {
   const [tab, setTab] = useState('members');
+  const [roleCounts, setRoleCounts] = useState(null);
+  const [roleCountsError, setRoleCountsError] = useState('');
   const [workers, setWorkers] = useState([]);
   const [cameras, setCameras] = useState([]);
   const [falseEvents, setFalseEvents] = useState([]);
@@ -89,6 +91,16 @@ export default function Admin() {
     }).catch((cause) => { if (active) setError(apiError(cause)); });
     return () => { active = false; };
   }, [revision]);
+
+  useEffect(() => {
+    if (tab !== 'stats') return;
+    let active = true;
+    setRoleCounts(null); setRoleCountsError('');
+    apiClient.get('/api/admin/accounts/role-counts').then(({ data }) => {
+      if (active) setRoleCounts(data);
+    }).catch((cause) => { if (active) setRoleCountsError(apiError(cause)); });
+    return () => { active = false; };
+  }, [tab, revision]);
 
   useEffect(() => {
     if (tab !== 'members') return;
@@ -185,7 +197,7 @@ export default function Admin() {
       <div className="admin-review-grid" aria-busy={reviewsLoading}>{reviewsLoading ? <p role="status" className="console-muted">오탐 목록을 불러오는 중입니다.</p> : falseEvents.map((event) => <FalsePositiveCard key={event.eventId} event={event} onOpen={() => setReviewDetailId(event.eventId)} />)}{!reviewsLoading && !reviewsError && !falseEvents.length && <p className="console-muted">선택한 조건의 오탐 이벤트가 없습니다.</p>}</div>
       <div className="admin-pagination"><span className="console-muted" aria-live="polite">총 {reviewsTotal}건 중 {falseEvents.length ? reviewsPage * REVIEWS_PAGE_SIZE + 1 : 0}–{falseEvents.length ? reviewsPage * REVIEWS_PAGE_SIZE + falseEvents.length : 0}건 표시</span><nav aria-label="오탐 목록 페이지"><button disabled={reviewsLoading || !!reviewsError || reviewsPage === 0} onClick={() => setReviewsPage((value) => value - 1)}>‹ 이전</button><>{Array.from({ length: reviewsPages }, (_, index) => index + 1).map((number) => <button key={number} aria-label={`${number}페이지`} aria-current={reviewsPage + 1 === number ? 'page' : undefined} disabled={reviewsLoading || !!reviewsError || !reviewsTotal} onClick={() => setReviewsPage(number - 1)}>{number}</button>)}</><button disabled={reviewsLoading || !!reviewsError || reviewsPage + 1 >= reviewsPages} onClick={() => setReviewsPage((value) => value + 1)}>다음 ›</button></nav><span className="console-muted admin-pagination__signature">FIRIS / ACCESS CONTROL SYSTEM</span></div>
     </>}
-    {tab === 'stats' && <><section className="console-toolbar"><div><h2>관제 운영 통계</h2></div></section><div className="admin-stats">{[['등록 관제 요원', workers.length, '명'], ['활성 작업자', workers.filter((worker) => worker.status === 'ACTIVE').length, '명'], ['활성 CCTV', cameras.filter((camera) => camera.status === 'ONLINE').length, '채널'], ['전체 오탐', falseEventTotal, '건']].map(([label, value, unit]) => <article className="console-panel" key={label}><span>{label}</span><strong>{value}<small>{unit}</small></strong></article>)}</div><section className="console-panel admin-role-stats"><h3>권한별 계정 분포</h3><div><span>작업자</span><meter min="0" max={Math.max(workers.length, 1)} value={workers.length} /><b>{workers.length}명</b></div></section></>}
+    {tab === 'stats' && <><section className="console-toolbar"><div><h2>관제 운영 통계</h2></div></section><div className="admin-stats">{[['등록 관제 요원', workers.length, '명'], ['활성 작업자', workers.filter((worker) => worker.status === 'ACTIVE').length, '명'], ['활성 CCTV', cameras.filter((camera) => camera.status === 'ONLINE').length, '채널'], ['전체 오탐', falseEventTotal, '건']].map(([label, value, unit]) => <article className="console-panel" key={label}><span>{label}</span><strong>{value}<small>{unit}</small></strong></article>)}</div><section className="console-panel admin-role-stats"><h3>권한별 계정 분포</h3>{roleCountsError ? <p role="alert" className="console-notice">{roleCountsError}</p> : !roleCounts ? <p role="status" className="console-muted">계정 분포를 불러오는 중입니다.</p> : [['최고 관리자', roleCounts.superAdmins], ['관리자', roleCounts.admins], ['작업자', roleCounts.workers]].map(([label, count]) => <div key={label}><span>{label}</span><meter aria-label={`${label} 계정 비율`} min="0" max={Math.max(roleCounts.superAdmins + roleCounts.admins + roleCounts.workers, 1)} value={count} /><b>{count}명</b></div>)}</section></>}
     {tab === 'stats' && <footer className="console-foot admin-footer"><span>FIRIS / ACCESS CONTROL SYSTEM</span></footer>}
     {cameraEditor && <Modal title="CCTV 추가" subtitle="CAMERA MANAGEMENT" className="camera-management-modal" onClose={closeCameraModal}><form onSubmit={createCamera}><fieldset disabled={cameraBusy} className="console-modal__body console-form">
       <label>CCTV ID<input required maxLength={30} pattern="[A-Za-z0-9_\-]{1,30}" placeholder="예: CAM010" value={cameraDraft.cameraId} onChange={changeCameraField('cameraId')} /><small>영문, 숫자, 밑줄, 하이픈을 사용할 수 있습니다. 삭제된 ID는 재사용할 수 없습니다.</small></label>

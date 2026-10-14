@@ -1,6 +1,7 @@
 package com.firis.account.service;
 
 import com.firis.account.dto.CreateWorkerRequest;
+import com.firis.account.dto.AccountRoleCountsResponse;
 import com.firis.account.dto.CreateWorkerResponse;
 import com.firis.account.dto.ResetPasswordResponse;
 import com.firis.account.dto.UpdateWorkerStatusRequest;
@@ -59,6 +60,14 @@ public class AccountService {
                 saved.getStatus(),
                 saved.isMustChangePassword()
         );
+    }
+
+    @Transactional(readOnly = true)
+    public AccountRoleCountsResponse getRoleCounts() {
+        return new AccountRoleCountsResponse(
+                accountRepository.countByRole(Role.SUPER_ADMIN),
+                accountRepository.countByRole(Role.ADMIN),
+                accountRepository.countByRole(Role.WORKER));
     }
 
     @Transactional(readOnly = true)

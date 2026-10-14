@@ -56,6 +56,23 @@ class SuperAdminAccessTest {
         assertThat(call("GET", "/api/admin/workers", null, null).statusCode()).isEqualTo(401);
     }
 
+    @Test void roleCountsIncludeAllRolesAndAreRestrictedToAdministrators() throws Exception {
+        var superAdmin = accounts.saveAndFlush(Account.createSuperAdmin("counts-super", "hash", "최고 관리자"));
+        var admin = accounts.saveAndFlush(Account.createAdmin("counts-admin", "hash", "관리자"));
+        var worker = Account.createWorker("counts-worker", "hash", "작업자");
+        worker.changePassword("changed-hash");
+        accounts.saveAndFlush(worker);
+        var response = call("GET", "/api/admin/accounts/role-counts", tokens.generateToken(superAdmin), null);
+        assertThat(response.statusCode()).isEqualTo(200);
+        var counts = mapper.readTree(response.body());
+        assertThat(counts.path("superAdmins").asLong()).isEqualTo(accounts.countByRole(com.firis.account.entity.Role.SUPER_ADMIN));
+        assertThat(counts.path("admins").asLong()).isEqualTo(accounts.countByRole(com.firis.account.entity.Role.ADMIN));
+        assertThat(counts.path("workers").asLong()).isEqualTo(accounts.countByRole(com.firis.account.entity.Role.WORKER));
+        assertThat(call("GET", "/api/admin/accounts/role-counts", tokens.generateToken(admin), null).statusCode()).isEqualTo(200);
+        assertThat(call("GET", "/api/admin/accounts/role-counts", tokens.generateToken(worker), null).statusCode()).isEqualTo(403);
+        assertThat(call("GET", "/api/admin/accounts/role-counts", null, null).statusCode()).isEqualTo(401);
+    }
+
     private HttpResponse<String> call(String method, String path, String token, String body) throws Exception {
         var request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + path))
                 .header("Content-Type", "application/json");
