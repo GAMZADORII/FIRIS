@@ -1,0 +1,16 @@
+.onboarding-shell { max-width: 760px; }
+.onboarding-panel { margin-top: 16px; padding: 32px; border: 1px solid #37383f; background: #1b1c20; border-radius: 4px; }
+.onboarding-panel h1 { margin: 20px 0 12px; font-size: 24px; line-height: 1.5; }
+.onboarding-intro { color: #a9adb6; font-size: 13px; line-height: 1.7; margin-bottom: 20px; }
+.onboarding-terms { padding: 18px; background: #121316; border: 1px solid #37383f; border-radius: 3px; font-size: 13px; line-height: 1.8; }
+.onboarding-terms h2 { margin: 0 0 12px; font-size: 15px; }
+.onboarding-terms h2 span { color: #ffd28c; font-size: 12px; margin-left: 8px; }
+.onboarding-terms ol { margin: 0; padding-left: 20px; }
+.onboarding-terms li + li { margin-top: 8px; }
+.onboarding-terms p { margin: 0; }
+.onboarding-terms p + p { margin-top: 8px; }
+.login-form > .onboarding-check { display: flex; gap: 10px; align-items: flex-start; margin: 14px 0 24px; cursor: pointer; line-height: 1.7; }
+.onboarding-check input { flex: none; width: 18px; height: 18px; margin: 2px 0 0; accent-color: #d72e35; }
+.onboarding-panel .login-submit:disabled { opacity: .5; cursor: not-allowed; }
+.onboarding-secondary { display: block; width: 100%; padding: 12px; margin-top: 10px; background: transparent; color: #d0d1d8; border: 1px solid #37383f; border-radius: 3px; cursor: pointer; }
+@media (max-width: 680px) { .onboarding-panel { padding: 20px; } .onboarding-panel h1 { font-size: 20px; } .onboarding-shell .login-statusbar { flex-wrap: wrap; } }

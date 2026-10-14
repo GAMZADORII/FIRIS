@@ -13,6 +13,7 @@ export default function App() {
   const [tab, setTab] = useState('intake');
   const [filter, setFilter] = useState('');
   const [search, setSearch] = useState('');
+  const [historyPage, setHistoryPage] = useState(1);
   const [notice, setNotice] = useState('');
 
   // Keep temporary action feedback inside the existing heading row, without changing page height.
@@ -32,7 +33,12 @@ export default function App() {
     (!filter || report.responseStatus === filter) &&
     `${report.reportId} ${report.facility} ${report.detailLocation} ${report.cameraId}`.toLowerCase().includes(search.toLowerCase())
   ), [reports, filter, search]);
-  const recentHistory = [...filtered].sort((a, b) => b.reportedAt.localeCompare(a.reportedAt)).slice(0, 5);
+  const historyPageSize = 5;
+  const historyPageCount = Math.max(1, Math.ceil(filtered.length / historyPageSize));
+  const currentHistoryPage = Math.min(historyPage, historyPageCount);
+  const recentHistory = [...filtered].sort((a, b) => b.reportedAt.localeCompare(a.reportedAt) || b.reportId - a.reportId)
+    .slice((currentHistoryPage - 1) * historyPageSize, currentHistoryPage * historyPageSize);
+  useEffect(() => setHistoryPage(page => Math.min(page, historyPageCount)), [historyPageCount]);
 
   function choose(reportId) {
     setSelectedId(reportId);
@@ -40,8 +46,12 @@ export default function App() {
     setNotice('');
   }
 
-  async function advance(status) {
-    if (await advanceReport(status)) setNotice(`${shortId(selected)} · ${responseStatusLabels[status]}`);
+  async function advance(status, reportId = selected?.reportId) {
+    const target = reports.find(report => report.reportId === reportId);
+    if (!target) return false;
+    const succeeded = await advanceReport(status, reportId);
+    if (succeeded) setNotice(`${shortId(target)} · ${responseStatusLabels[status]}`);
+    return succeeded;
   }
 
   function reset() {
@@ -61,12 +71,12 @@ export default function App() {
               {notice ? `✓ ${notice}` : ''}
             </span>
           </div>
-          {tab === 'history' && <p className="page-subtitle">최근 신고 5건과 단계별 처리 기록을 확인합니다.</p>}
+          {tab === 'history' && <p className="page-subtitle">전체 신고 이력과 단계별 처리 기록을 확인합니다.</p>}
         </div>
         <ReportSummary waiting={waiting} active={active} closed={closed} onReset={reset} />
       </div>
       {tab === 'history'
-        ? <History reports={reports} recentHistory={recentHistory} filteredCount={filtered.length} filter={filter} search={search} onFilterChange={setFilter} onSearchChange={setSearch} />
+        ? <History reports={reports} recentHistory={recentHistory} filteredCount={filtered.length} page={currentHistoryPage} pageCount={historyPageCount} pageSize={historyPageSize} onPageChange={setHistoryPage} filter={filter} search={search} onFilterChange={value => { setFilter(value); setHistoryPage(1); }} onSearchChange={value => { setSearch(value); setHistoryPage(1); }} onAdvance={advance} busy={busy} error={error} />
         : selected ? <Reception selected={selected} pendingCount={pending.length} recentPending={recentPending} now={now} onChoose={choose} onAdvance={advance} busy={busy} onHistoryTab={() => setTab('history')} />
         : <p className="empty">{loading ? '신고 목록을 불러오는 중입니다.' : '접수된 신고가 없습니다.'}</p>}
       <footer className="page-footer"><span>119 CENTER / FIRIS PROJECT</span></footer>

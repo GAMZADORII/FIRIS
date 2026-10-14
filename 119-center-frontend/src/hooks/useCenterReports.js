@@ -36,8 +36,8 @@ export function useCenterReports() {
     const recovery = setInterval(refresh, 30000);
     return () => { alive.current = false; disconnect(); clearInterval(tick); clearInterval(recovery); };
   }, [refresh]);
-  async function advanceReport(responseStatus) {
-    const r = reports.find(row => row.reportId === selectedId);
+  async function advanceReport(responseStatus, reportId = selectedId) {
+    const r = reports.find(row => row.reportId === reportId);
     if (!r || actionLock.current) return false;
     actionLock.current = true; setBusy(true); setError('');
     try {

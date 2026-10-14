@@ -61,11 +61,11 @@ export default function Login({ changePassword = false }) {
         await apiClient.patch('/api/auth/password', { currentPassword: password, newPassword: nextPassword });
         const session = getSession();
         saveSession({ ...session, account: { ...session.account, mustChangePassword: false } });
-        navigate('/dashboard', { replace: true });
+        navigate(session.account?.role === 'WORKER' && session.account.contactOnboardingRequired ? '/contact-onboarding' : '/dashboard', { replace: true });
       } else {
         const { data } = await apiClient.post('/api/auth/login', { loginId: loginId.trim(), password });
         saveSession(data);
-        navigate(data.account.mustChangePassword ? '/change-password' : '/dashboard', { replace: true });
+        navigate(data.account.mustChangePassword ? '/change-password' : data.account.role === 'WORKER' && data.account.contactOnboardingRequired ? '/contact-onboarding' : '/dashboard', { replace: true });
       }
     } catch (error) {
       setMessage(apiError(error));

@@ -24,3 +24,4 @@
   .history-modal-content, .history-modal-notes {grid-template-columns: 1fr;}
   .history-modal-heading h3 {font-size: 16px;}
 }
+.history-modal-actions{display:flex;align-items:center;justify-content:flex-end;gap:12px;flex-wrap:wrap;margin-top:20px;padding-top:16px;border-top:1px solid #353740}.history-modal-error{color:#ff9b9b;font-size:12px;line-height:1.6}
