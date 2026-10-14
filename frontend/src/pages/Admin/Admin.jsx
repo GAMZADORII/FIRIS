@@ -8,7 +8,7 @@ import { formatPhone } from '../../utils/phone.js';
 
 const MEMBERS_PAGE_SIZE = 4;
 const CAMERAS_PAGE_SIZE = 4;
-const REVIEWS_PAGE_SIZE = 6;
+const REVIEWS_PAGE_SIZE = 4;
 const reasonName = { STEAM: '수증기', LIGHT: '빛', REFLECTION: '반사', DUST: '먼지', WELDING: '용접', ETC: '기타' };
 const tabs = [
   ['members', 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0 M20 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75', '회원 관리'],
@@ -168,5 +168,27 @@ function FalsePositiveCard({ event, onOpen }) {
     apiClient.get(`/api/events/${event.eventId}`).then(({ data }) => { if (active) setDetail(data); }).catch((cause) => { if (active) setError(apiError(cause)); });
     return () => { active = false; };
   }, [event.eventId]);
-  return <article className="console-panel admin-review"><div><span className="console-mono">FP-{event.eventId}</span><Badge tone="green">오탐 검수 완료</Badge>{detail?.review?.trainingCandidate && <Badge tone="amber">자동 학습 후보</Badge>}</div><h3>{reasonName[detail?.review?.falsePositiveReason] || '사유 확인 중'}</h3><p>{cameraDisplayName(event.cameraId, event.cameraName)} · {event.location}</p><p className="console-mono">{event.detectedAt?.replace('T', ' ')}</p>{detail?.review?.note && <p>{detail.review.note}</p>}{error && <p role="alert">{error}</p>}<button onClick={onOpen}>이벤트 상세 보기 ↗</button></article>;
+  return <article className="console-panel admin-review">
+    <div className="admin-review__header"><span className="console-mono admin-review__id">FP-{event.eventId}</span><Badge tone="green">오탐 검수 완료</Badge></div>
+    <div className="admin-review__reason"><span>오탐 사유</span><h3>{reasonName[detail?.review?.falsePositiveReason] || '사유 확인 중'}</h3></div>
+    <dl className="admin-review__facts">
+      <div><dt><ReviewCardIcon type="camera" />CCTV</dt><dd>{cameraDisplayName(event.cameraId, event.cameraName)}</dd></div>
+      <div><dt><ReviewCardIcon type="location" />설치 위치</dt><dd>{event.location || '미등록'}</dd></div>
+      <div><dt><ReviewCardIcon type="clock" />감지 시각</dt><dd className="console-mono">{event.detectedAt?.replace('T', ' ') || '미기록'}</dd></div>
+      <div><dt><ReviewCardIcon type="person" />검수자</dt><dd>{detail?.review?.reviewerName || '미기록'}</dd></div>
+    </dl>
+    <section className="admin-review__memo" aria-label="검수 메모 미리보기"><span>검수 메모</span><p>{detail?.review?.note || '등록된 검수 메모가 없습니다.'}</p></section>
+    {error && <p role="alert" className="admin-error">{error}</p>}
+    <footer className="admin-review__footer"><button onClick={onOpen}>이벤트 상세 보기 <span aria-hidden="true">↗</span></button></footer>
+  </article>;
+}
+
+function ReviewCardIcon({ type }) {
+  const paths = {
+    person: 'M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z M4 21v-2a8 8 0 0 1 16 0v2',
+    camera: 'M3 5h12v14H3z M15 10l6-3v10l-6-3',
+    location: 'M20 10c0 6-8 11-8 11S4 16 4 10a8 8 0 1 1 16 0Z M15 10a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z',
+    clock: 'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z M12 7v5l3 2',
+  };
+  return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={paths[type]} /></svg>;
 }

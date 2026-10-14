@@ -67,10 +67,11 @@ export default function EventDetailModal({ eventId, onClose }) {
             <small>{detail.location}</small>
             {video && <button type="button" className="history-capture__media-toggle" onClick={() => setShowVideo((value) => !value)}>{showVideo ? '캡처 보기' : '이벤트 영상 보기'}</button>}
           </div>
-          <div className="history-telemetry"><p>AI 탐지 정보</p><div className="history-metrics"><div><span>AI 분석 신뢰도</span><strong>{(detail.confidence * 100).toFixed(1)}%</strong></div><div><span>모델 버전</span><strong>{detail.modelVersion || '미기록'}</strong></div></div><div className="history-assignee"><Badge tone="green">오탐 검수 완료</Badge>{detail.review?.trainingCandidate && <Badge tone="amber">자동 학습 후보</Badge>}</div>{!loadingMedia && !video && <p className="console-muted">등록된 이벤트 영상이 없습니다.</p>}</div>
+          <div className="history-telemetry"><p>AI 탐지 정보</p><div className="history-metrics"><div><span>AI 분석 신뢰도</span><strong>{(detail.confidence * 100).toFixed(1)}%</strong></div><div><span>모델 버전</span><strong>{detail.modelVersion || '미기록'}</strong></div></div><div className="history-assignee"><Badge tone="green">오탐 검수 완료</Badge></div>{!loadingMedia && !video && <p className="console-muted">등록된 이벤트 영상이 없습니다.</p>}</div>
         </div>
         {mediaError && <p role="alert" className="console-notice">{mediaError}</p>}
         <ReviewInformation review={detail.review} />
+        {detail.review?.trainingCandidate && <p className="console-muted">이 오탐 이벤트는 학습후보로 자동 저장되었습니다.</p>}
       </>}
     </div><footer className="console-modal__footer"><button onClick={onClose}>창 닫기</button></footer>
   </Modal>;
