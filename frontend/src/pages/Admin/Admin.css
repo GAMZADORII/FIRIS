@@ -108,22 +108,35 @@
   gap: 16px;
 }
 .admin-review {
-  padding: 24px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-top: 2px solid #5d3638;
 }
-.admin-review > div {
+.admin-review__header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #303139;
 }
-.admin-review h3 {
-  font-size: 21px;
-  margin-top: 28px;
-}
-.admin-review p {
-  color: #a5a9b5;
-  margin-bottom: 24px;
-}
+.admin-review__id { color: #c8cdd8; font-size: 12px; letter-spacing: .5px; }
+.admin-review__header .console-badge { margin-left: auto; flex-shrink: 0; }
+.admin-review__reason { padding: 14px 0; }
+.admin-review__reason > span,
+.admin-review__memo > span { color: #9198a7; font-size: 11px; }
+.admin-review__reason h3 { font-size: 21px; margin: 5px 0 0; color: #f0f2f6; }
+.admin-review__facts { display: grid; gap: 11px; margin: 0 0 16px; }
+.admin-review__facts > div { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 12px; align-items: start; }
+.admin-review__facts dt { display: flex; align-items: center; gap: 7px; font-size: 12px; color: #9198a7; line-height: 1.5; }
+.admin-review__facts svg { flex-shrink: 0; margin-top: 1px; }
+.admin-review__facts dd { margin: 0; font-size: 13px; line-height: 1.5; color: #c6ccd7; overflow-wrap: anywhere; }
+.admin-review__memo { padding: 11px 13px; background: #17181c; border: 1px solid #2c2e35; border-radius: 4px; }
+.admin-review__memo p { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; white-space: pre-wrap; overflow-wrap: anywhere; color: #acb3c0; font-size: 12px; line-height: 1.6; margin: 6px 0 0; min-height: 38px; }
+.admin-review__footer { margin-top: auto; padding-top: 16px; display: flex; justify-content: flex-end; }
+.admin-review__footer button { display: inline-flex; align-items: center; gap: 10px; }
+.admin-review > .admin-error { margin-top: 10px; font-size: 12px; }
 .admin-stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

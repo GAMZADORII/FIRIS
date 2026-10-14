@@ -23,8 +23,9 @@ public class EventController {
             @RequestParam(required = false) String cameraId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
-            @RequestParam(required = false) Long afterEventId) {
-        return service.list(page, size, eventType, reviewStatus, cameraId, from, to, afterEventId);
+            @RequestParam(required = false) Long afterEventId,
+            @RequestParam(required = false) com.firis.event.entity.FalsePositiveReason falsePositiveReason) {
+        return service.list(page, size, eventType, reviewStatus, cameraId, from, to, afterEventId, falsePositiveReason);
     }
 
     @GetMapping("/latest-id")
