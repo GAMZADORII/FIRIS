@@ -1,3 +1,4 @@
+import { isAdministrator } from './utils/roles.js';
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
 import { getSession } from './api/client.js';
 import Login from './pages/Login/Login.jsx';
@@ -12,7 +13,7 @@ function Protected({ session, admin = false }) {
   if (!session?.accessToken) return <Navigate to="/login" replace />;
   if (session.account?.mustChangePassword) return <Navigate to="/change-password" replace />;
   if (session.account?.role === 'WORKER' && session.account.contactOnboardingRequired) return <Navigate to="/contact-onboarding" replace />;
-  if (admin && session.account?.role !== 'ADMIN') return <Navigate to="/dashboard" replace />;
+  if (admin && !isAdministrator(session.account?.role)) return <Navigate to="/dashboard" replace />;
   return <Outlet />;
 }
 

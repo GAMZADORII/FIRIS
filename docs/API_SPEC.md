@@ -491,3 +491,6 @@ Backend 발신 JSON:
 - Dashboard 집계 기간(오늘/전체), ONLINE CCTV 및 최근 이벤트 데이터 전달 방식은 기존 예시 필드를 바꾸지 않고 담당자와 먼저 확인한다.
 - workerId가 account_id에 대응하는 방식, API 성공 상태 코드/오류 형식, JWT 수명/갱신 및 AI API Key 검증은 AI_EVENT_IMPLEMENTATION.md를 따른다.
 - 필드 필수 여부·문자열 길이 검증·재시도/멱등성 등 API에 아직 없는 조건은 ERD와 함께 확인한다.
+
+## SUPER_ADMIN 권한
+최고 관리자는 기존 ADMIN에게 허용된 `/api/admin/**`, 카메라 등록, 이벤트 조회·검수·모의 신고, 통계 API를 사용할 수 있다. 로그인 응답 및 JWT role은 `SUPER_ADMIN`이다. 작업자 전용 계정 초기 비밀번호 변경·연락처 등록에는 접근하지 않는다.

@@ -84,6 +84,12 @@ public class Account {
         return new Account(loginId, passwordHash, name, Role.ADMIN, false, AccountStatus.ACTIVE);
     }
 
+    public static Account createSuperAdmin(String loginId, String passwordHash, String name) {
+        Account account = new Account(loginId, passwordHash, name, Role.SUPER_ADMIN, false, AccountStatus.ACTIVE);
+        account.contactOnboardingRequired = false;
+        return account;
+    }
+
     public static Account createWorker(String loginId, String passwordHash, String name) {
         Account worker = new Account(loginId, passwordHash, name, Role.WORKER, true, AccountStatus.ACTIVE);
         worker.contactOnboardingRequired = true;

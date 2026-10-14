@@ -105,7 +105,7 @@
 
 ## 값 및 관계
 
-- ACCOUNT.role: ADMIN / WORKER. status: ACTIVE / INACTIVE.
+- ACCOUNT.role: SUPER_ADMIN / ADMIN / WORKER. status: ACTIVE / INACTIVE.
 - ACCOUNT.must_change_password는 DB 기본값 FALSE이나 WORKER 생성·초기화 시 TRUE로 설정한다.
 - CAMERA.status: ONLINE / OFFLINE. camera_id는 camera-1 등의 고정 데이터 ID이다.
 - FIRE_EVENT.event_type: FIRE / SMOKE / FIRE_SMOKE.

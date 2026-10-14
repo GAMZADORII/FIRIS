@@ -27,3 +27,9 @@ sudo docker compose down
 `down -v`는 MySQL 데이터까지 삭제하므로 사용하지 않는다.
 
 관제실 번호는 DB의 공통 설정 테이블이 아니라 루트 `.env`의 `MOCK_119_CONTROL_ROOM_PHONE`에서 읽는다. 이번 로컬 값은 `041-123-4567`이다. Backend 컨테이너를 재생성하면 신고 preview에 표시되고 새 신고 레코드에 번호가 저장된다. 이미 제출한 신고는 당시 번호를 보존한다.
+
+## 최고 관리자
+
+권한은 SUPER_ADMIN > ADMIN이며 최고 관리자는 기존 관리자 메뉴와 API를 사용할 수 있다. `superadmin1`(박상현), `superadmin2`(차나래)는 로컬 MySQL에 별도 등록한다. 기존 관리자/작업자 계정은 유지한다. 비밀번호는 BCrypt 해시로 저장한다. 재시작·재빌드가 계정 비밀번호를 덮어쓰지 않는다.
+
+MySQL account.role이 기존 두 값으로 제한된 ENUM이면 [역할 확장 SQL](sql/001-super-admin-role.sql)을 먼저 적용한다. 새 환경에서는 변경된 Entity가 세 역할을 생성한다. 두 계정은 초기 관리자 자동 생성 로직과 별도로 관리한다. 다른 DB에 동일한 로컬 계정을 준비할 때는 [계정 등록 SQL](sql/002-seed-local-super-admins.sql)을 사용한다. 이미 있는 login_id는 덮어쓰지 않는다.

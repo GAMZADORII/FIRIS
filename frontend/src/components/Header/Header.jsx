@@ -1,3 +1,4 @@
+import { isAdministrator, roleLabel } from '../../utils/roles.js';
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { clearSession } from '../../api/client.js';
@@ -50,7 +51,7 @@ export default function Header({ user = null }) {
         <img src={firisLogo} alt="FIRIS" />
       </NavLink>
       <nav className="app-header__navigation" aria-label="주요 메뉴">
-        {navigationItems.filter(({ to }) => to !== '/admin' || user?.role === 'ADMIN').map(({ to, label }) => (
+        {navigationItems.filter(({ to }) => to !== '/admin' || isAdministrator(user?.role)).map(({ to, label }) => (
           <NavLink
             key={to}
             to={to}
@@ -112,7 +113,7 @@ export default function Header({ user = null }) {
         </div>
         <div className="app-header__user">
           <span className="app-header__avatar" aria-hidden="true">{(user?.name || '?').slice(0, 1)}</span>
-          <div><strong>{user?.name || '사용자'}</strong><small>{user?.role === 'ADMIN' ? '관리자' : '작업자'}</small></div>
+          <div><strong>{user?.name || '사용자'}</strong><small>{roleLabel(user?.role)}</small></div>
         </div>
         <button className="app-header__logout" type="button" aria-label="로그아웃" title="로그아웃" onClick={() => { clearSession(); navigate('/login', { replace: true }); }}>
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

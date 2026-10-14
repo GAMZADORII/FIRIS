@@ -77,15 +77,15 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/auth/contact-consent").hasRole("WORKER")
                         .requestMatchers(HttpMethod.GET, "/api/auth/contact").hasRole("WORKER")
                         .requestMatchers(HttpMethod.PATCH, "/api/auth/contact").hasRole("WORKER")
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/cameras", "/api/cameras/").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/events/*/mock-119-reports").hasAnyRole("ADMIN", "WORKER")
-                        .requestMatchers(HttpMethod.GET, "/api/events/*/mock-119-preview").hasAnyRole("ADMIN", "WORKER")
+                        .requestMatchers("/api/admin/**").hasAnyRole("SUPER_ADMIN", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/cameras", "/api/cameras/").hasAnyRole("SUPER_ADMIN", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/events/*/mock-119-reports").hasAnyRole("SUPER_ADMIN", "ADMIN", "WORKER")
+                        .requestMatchers(HttpMethod.GET, "/api/events/*/mock-119-preview").hasAnyRole("SUPER_ADMIN", "ADMIN", "WORKER")
                         .requestMatchers(
                                 "/api/cameras/**",
                                 "/api/events/**",
                                 "/api/statistics/**"
-                        ).hasAnyRole("ADMIN", "WORKER")
+                        ).hasAnyRole("SUPER_ADMIN", "ADMIN", "WORKER")
                         .anyRequest().denyAll())
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
