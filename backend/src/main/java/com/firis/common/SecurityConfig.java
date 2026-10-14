@@ -78,6 +78,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/auth/contact").hasRole("WORKER")
                         .requestMatchers(HttpMethod.PATCH, "/api/auth/contact").hasRole("WORKER")
                         .requestMatchers("/api/admin/**").hasAnyRole("SUPER_ADMIN", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/cameras/*").hasAnyRole("SUPER_ADMIN", "ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/cameras", "/api/cameras/").hasAnyRole("SUPER_ADMIN", "ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/events/*/mock-119-reports").hasAnyRole("SUPER_ADMIN", "ADMIN", "WORKER")
                         .requestMatchers(HttpMethod.GET, "/api/events/*/mock-119-preview").hasAnyRole("SUPER_ADMIN", "ADMIN", "WORKER")

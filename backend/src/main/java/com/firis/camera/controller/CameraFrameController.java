@@ -34,7 +34,7 @@ public class CameraFrameController {
 
     @GetMapping(value = "/{cameraId}/frame", produces = MediaType.IMAGE_JPEG_VALUE)
     public ResponseEntity<byte[]> frame(@PathVariable String cameraId) {
-        if (!cameraId.matches("[A-Za-z0-9_-]{1,30}") || !cameras.existsById(cameraId)) {
+        if (!cameraId.matches("[A-Za-z0-9_-]{1,30}") || !cameras.existsByCameraIdAndDeletedFalse(cameraId)) {
             return ResponseEntity.notFound().build();
         }
         if (aiApiKey.isBlank()) {

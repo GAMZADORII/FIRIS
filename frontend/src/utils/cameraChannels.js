@@ -17,3 +17,9 @@ export function cameraDisplayName(cameraId, fallback) {
   const number = cameraChannelNumber(cameraId);
   return number == null ? (fallback || cameraId || 'CCTV') : `CCTV ${String(number).padStart(2, '0')}`;
 }
+
+export function compareCameras(a, b) {
+  const first = cameraChannelNumber(a.cameraId) ?? Number.MAX_SAFE_INTEGER;
+  const second = cameraChannelNumber(b.cameraId) ?? Number.MAX_SAFE_INTEGER;
+  return first - second || a.cameraId.localeCompare(b.cameraId);
+}

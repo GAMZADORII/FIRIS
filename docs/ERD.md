@@ -127,3 +127,5 @@ AI 이벤트 생성 API는 FIRE_EVENT와 Snapshot 경로를 가진 EVENT_MEDIA�
 관계의 0..1은 저장 구조상 최대 하나를 뜻한다. 최종 검수도 이벤트당 하나이다.
 검수자는 JWT에서 가져오고, 작업자를 삭제하지 않아 검수 이력을 유지한다.
 통계 전용 테이블은 만들지 않는다. 외래키 삭제 정책, 추가 인덱스, 시간대 등 명시되지 않은 정책은 구현 전에 확인한다.
+
+CAMERA.deleted: BOOLEAN NOT NULL DEFAULT FALSE. 논리 삭제 후 기존 FIRE_EVENT의 FK 및 이력 조회는 유지한다.

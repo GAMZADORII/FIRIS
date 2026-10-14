@@ -15,6 +15,7 @@ public enum ErrorCode {
     WORKER_NOT_FOUND(HttpStatus.NOT_FOUND, "작업자를 찾을 수 없습니다."),
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "요청한 파일을 찾을 수 없습니다."),
     BAD_REQUEST(HttpStatus.BAD_REQUEST, "요청 값을 확인해주세요."),
+    CAMERA_NOT_FOUND(HttpStatus.NOT_FOUND, "등록되지 않은 CCTV입니다."),
     CAMERA_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 등록된 카메라 ID입니다."),
     EVENT_NOT_FOUND(HttpStatus.NOT_FOUND, "이벤트를 찾을 수 없습니다."),
     EVENT_ALREADY_REVIEWED(HttpStatus.CONFLICT, "이미 검수된 이벤트입니다."),

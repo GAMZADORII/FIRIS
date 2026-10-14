@@ -302,3 +302,25 @@
     grid-template-columns: 1fr;
   }
 }
+
+.camera-management-modal fieldset {
+  border: 0;
+  margin: 0;
+  min-width: 0;
+}
+.camera-management-modal textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 72px;
+  padding: 10px;
+  resize: vertical;
+  color: #e8e8eb;
+  background: #24252a;
+  border: 1px solid #41434a;
+  border-radius: 3px;
+  font: inherit;
+}
+.camera-management-modal small {
+  color: #9498a4;
+  overflow-wrap: anywhere;
+}

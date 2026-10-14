@@ -24,7 +24,7 @@ public class AiEventService {
 
     @Transactional
     public CreateAiEventResponse create(CreateAiEventRequest request) {
-        var camera = cameras.findById(request.cameraId()).orElseThrow(() ->
+        var camera = cameras.findById(request.cameraId()).filter(registered -> !registered.isDeleted()).orElseThrow(() ->
             new AiEventException(HttpStatus.NOT_FOUND, "CAMERA_NOT_FOUND", "등록되지 않은 CCTV입니다."));
         if (!Double.isFinite(request.confidence())) {
             throw new AiEventException(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "Confidence가 올바르지 않습니다.");

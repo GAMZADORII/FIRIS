@@ -45,7 +45,7 @@
 
 ## Camera
 
-CCTV는 CAM001~CAM009를 기본 ID로 사용하며 Backend 시작 시 없으면 등록한다. 이름, 위치, 스트림 URL과 ONLINE/OFFLINE 상태를 보관한다. Dashboard는 9개 중 표시할 채널을 선택하고 기본값은 CAM001~CAM004 네 화면이다. CAM005~CAM009의 입력 영상은 현재 빈 폴더이므로 영상을 넣기 전에는 관제 프레임이 나오지 않는다. DB의 ONLINE 값은 실제 영상 수신 성공 여부를 검증한 값이 아니다. 확장용 등록 API는 있으나 현재 화면은 9개 기본 채널 선택만 제공한다.
+CCTV는 CAM001~CAM009를 기본 ID로 사용하며 Backend 시작 시 없으면 등록한다. 이름, 위치, 스트림 URL과 ONLINE/OFFLINE 상태를 보관한다. Dashboard는 삭제되지 않은 등록 CCTV 중 표시할 채널을 선택하고 기본값은 CAM001~CAM004 네 화면이다. CAM005~CAM009의 입력 영상은 현재 빈 폴더이므로 영상을 넣기 전에는 관제 프레임이 나오지 않는다. DB의 ONLINE 값은 실제 영상 수신 성공 여부를 검증한 값이 아니다. 관리자 화면에서 CCTV를 추가·삭제하며 관제 화면 선택에도 등록 목록을 반영한다.
 
 관제 화면의 채널 번호는 기존 구역 순서(공장 A·B·C / 공장 D·E·창고 A / 창고 B·C·D)에 맞춰 01~09를 표시한다. 실제 `cameraId`와 영상 폴더·기존 이벤트 참조는 변경하지 않는다. 예를 들어 공장 C구역은 내부적으로 CAM005를 유지하지만 화면에는 CCTV 03으로 표시한다.
 
@@ -84,7 +84,7 @@ CCTV는 CAM001~CAM009를 기본 ID로 사용하며 Backend 시작 시 없으면 
 | History /history | 기간/CCTV/Event Type/Review Status 필터, 페이지네이션, 이벤트 상세 Drawer/Modal |
 | Admin /admin | ADMIN 전용 작업자 목록/추가/초기화/활성·비활성. WORKER에게 메뉴 숨김, 삭제 기능 없음 |
 
-Dashboard는 CCTV 65~70%, 현황 30~35%를 목표로 하고 기본 2x2 CCTV Grid를 사용한다. 9개 채널 중 표시할 화면을 선택하고 선택 내용은 브라우저 로컬 저장소에 보관한다.
+Dashboard는 CCTV 65~70%, 현황 30~35%를 목표로 하고 기본 2x2 CCTV Grid를 사용한다. 등록된 채널 중 표시할 화면을 선택하고 선택 내용은 브라우저 로컬 저장소에 보관한다.
 카드에는 Camera Name, Location, ONLINE/OFFLINE, LIVE, 영상, FIRE/SMOKE, Confidence, Overlay/Bounding Box를 표시한다.
 위험 시 Red Border/Warning Badge를 표시한다. 우측에는 오늘 이벤트/미검수/실제 화재/오탐/ONLINE CCTV 및 유형별 현황을 둔다.
 최근 위험 이벤트 3~5개와 신규 이벤트 Red Alert Toast 및 이벤트 확인 동작을 제공한다.
@@ -119,3 +119,6 @@ API 이름, DB 컬럼, 테이블, 페이지, 역할, 모델 구조를 임의로 
 
 ## 최고 관리자 권한
 `SUPER_ADMIN`은 `ADMIN` 위의 역할로 기존 관리자 기능과 관제·이력·모의 신고 기능에 접근한다. 작업자 전용 비밀번호 변경·연락처 등록은 기존 정책을 유지한다. 최고 관리자 계정은 DB에서 별도 등록하며 기존 관리자 자동 초기화와 작업자 생성 API는 최고 관리자를 생성하거나 변경하지 않는다.
+
+## CCTV 추가·삭제
+ADMIN과 SUPER_ADMIN은 CCTV 관리에서 ID·이름·위치·HTTP(S) 영상 주소·상태·특이사항을 등록하고 삭제 확인 후 제거할 수 있다. 삭제는 CAMERA.deleted=TRUE 및 OFFLINE으로 표시하며 기존 이벤트·검수·미디어를 보존한다. 삭제된 ID는 재사용하지 않고, 자동 초기 등록이 복원하지 않는다. 관리·관제 목록은 삭제되지 않은 모든 카메라를 표시한다. 영상 입력·AI 분석 설정은 등록과 별도로 준비한다.

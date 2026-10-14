@@ -494,3 +494,6 @@ Backend 발신 JSON:
 
 ## SUPER_ADMIN 권한
 최고 관리자는 기존 ADMIN에게 허용된 `/api/admin/**`, 카메라 등록, 이벤트 조회·검수·모의 신고, 통계 API를 사용할 수 있다. 로그인 응답 및 JWT role은 `SUPER_ADMIN`이다. 작업자 전용 계정 초기 비밀번호 변경·연락처 등록에는 접근하지 않는다.
+
+## CCTV 삭제
+`DELETE /api/cameras/{cameraId}`: ADMIN/SUPER_ADMIN만 허용하며 성공 시 204이다. 존재하지 않는 ID는 404 CAMERA_NOT_FOUND, 이미 삭제된 ID는 204로 처리한다. 논리 삭제하며 이력은 보존한다. GET /api/cameras는 삭제되지 않은 카메라만 반환한다. 삭제된 CCTV의 새 AI 이벤트 및 최신 프레임 조회는 404이다. POST 등록 시 삭제된 ID도 중복으로 409 처리한다. 영상 주소는 기존 등록 API에 따라 HTTP/HTTPS만 허용한다.

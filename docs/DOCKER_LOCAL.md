@@ -33,3 +33,7 @@ sudo docker compose down
 권한은 SUPER_ADMIN > ADMIN이며 최고 관리자는 기존 관리자 메뉴와 API를 사용할 수 있다. `superadmin1`(박상현), `superadmin2`(차나래)는 로컬 MySQL에 별도 등록한다. 기존 관리자/작업자 계정은 유지한다. 비밀번호는 BCrypt 해시로 저장한다. 재시작·재빌드가 계정 비밀번호를 덮어쓰지 않는다.
 
 MySQL account.role이 기존 두 값으로 제한된 ENUM이면 [역할 확장 SQL](sql/001-super-admin-role.sql)을 먼저 적용한다. 새 환경에서는 변경된 Entity가 세 역할을 생성한다. 두 계정은 초기 관리자 자동 생성 로직과 별도로 관리한다. 다른 DB에 동일한 로컬 계정을 준비할 때는 [계정 등록 SQL](sql/002-seed-local-super-admins.sql)을 사용한다. 이미 있는 login_id는 덮어쓰지 않는다.
+
+## CCTV 추가·삭제 반영
+
+Backend와 Frontend를 함께 재빌드한다. 기본 `DDL_AUTO=update`에서는 CAMERA.deleted 열을 기존 행의 FALSE 기본값과 함께 추가한다. 스키마를 수동 관리하는 환경은 [열 추가 SQL](sql/003-camera-soft-delete.sql)을 먼저 적용한다. 삭제해도 DB의 기존 이벤트와 영상 파일은 남으며 삭제한 CCTV ID는 재사용하지 않는다. CCTV 등록이 영상 파일을 업로드하거나 AI worker를 재설정하지는 않는다. 현재 AI worker의 최대 9개 입력 폴더 제한은 유지한다.
