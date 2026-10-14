@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react';
 import { apiClient, apiError } from '../../api/client.js';
 import { Badge, Modal, PageHeading } from '../../components/Console/Console.jsx';
 import './Admin.css';
+import EventDetailModal from '../../components/Console/EventDetailModal.jsx';
 import { cameraChannelNumber, cameraDisplayName } from '../../utils/cameraChannels.js';
 import { formatPhone } from '../../utils/phone.js';
 
 const MEMBERS_PAGE_SIZE = 4;
 const CAMERAS_PAGE_SIZE = 4;
+const REVIEWS_PAGE_SIZE = 6;
 const reasonName = { STEAM: '수증기', LIGHT: '빛', REFLECTION: '반사', DUST: '먼지', WELDING: '용접', ETC: '기타' };
 const tabs = [
   ['members', 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0 M20 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75', '회원 관리'],
@@ -20,6 +22,15 @@ export default function Admin() {
   const [workers, setWorkers] = useState([]);
   const [cameras, setCameras] = useState([]);
   const [falseEvents, setFalseEvents] = useState([]);
+  const [falseEventTotal, setFalseEventTotal] = useState(0);
+  const [reviewsTotal, setReviewsTotal] = useState(0);
+  const [reviewsPage, setReviewsPage] = useState(0);
+  const [reviewsPages, setReviewsPages] = useState(1);
+  const [reviewsCamera, setReviewsCamera] = useState('');
+  const [reviewsReason, setReviewsReason] = useState('');
+  const [reviewDetailId, setReviewDetailId] = useState(null);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviewsError, setReviewsError] = useState('');
   const [query, setQuery] = useState('');
   const [membersPage, setMembersPage] = useState(1);
   const [camerasPage, setCamerasPage] = useState(1);
@@ -34,14 +45,14 @@ export default function Admin() {
     Promise.all([
       apiClient.get('/api/admin/workers'),
       apiClient.get('/api/cameras'),
-      apiClient.get('/api/events', { params: { page: 0, size: 100, reviewStatus: 'FALSE_POSITIVE' } }),
+      apiClient.get('/api/events', { params: { page: 0, size: 1, reviewStatus: 'FALSE_POSITIVE' } }),
     ]).then(([workerResult, cameraResult, eventResult]) => {
       if (!active) return;
       setWorkers(workerResult.data);
       setCameras(cameraResult.data
         .filter((camera) => cameraChannelNumber(camera.cameraId) !== null)
         .sort((a, b) => cameraChannelNumber(a.cameraId) - cameraChannelNumber(b.cameraId)));
-      setFalseEvents(eventResult.data.content);
+      setFalseEventTotal(eventResult.data.totalElements);
       setError('');
     }).catch((cause) => { if (active) setError(apiError(cause)); });
     return () => { active = false; };
@@ -68,6 +79,26 @@ export default function Admin() {
       document.removeEventListener('visibilitychange', refreshContacts);
     };
   }, [tab]);
+
+  useEffect(() => {
+    if (tab !== 'reviews') return;
+    let active = true;
+    setReviewsLoading(true); setReviewsError(''); setFalseEvents([]);
+    apiClient.get('/api/events', { params: {
+      page: reviewsPage, size: REVIEWS_PAGE_SIZE, reviewStatus: 'FALSE_POSITIVE',
+      ...(reviewsCamera ? { cameraId: reviewsCamera } : {}),
+      ...(reviewsReason ? { falsePositiveReason: reviewsReason } : {}),
+    } }).then(({ data }) => {
+      if (!active) return;
+      const pageCount = Math.max(data.totalPages, 1);
+      setReviewsTotal(data.totalElements); setReviewsPages(pageCount);
+      if (!reviewsCamera && !reviewsReason) setFalseEventTotal(data.totalElements);
+      if (reviewsPage >= pageCount) { setReviewsPage(pageCount - 1); return; }
+      setFalseEvents(data.content);
+    }).catch((cause) => { if (active) setReviewsError(apiError(cause)); })
+      .finally(() => { if (active) setReviewsLoading(false); });
+    return () => { active = false; };
+  }, [tab, reviewsPage, reviewsCamera, reviewsReason, revision]);
 
   async function createWorker(event) {
     event.preventDefault();
@@ -102,7 +133,7 @@ export default function Admin() {
   const currentCamerasPage = Math.min(camerasPage, camerasPageCount);
   const camerasPageStart = (currentCamerasPage - 1) * CAMERAS_PAGE_SIZE;
   const visibleCameras = cameras.slice(camerasPageStart, camerasPageStart + CAMERAS_PAGE_SIZE);
-  const tabCounts = { members: String(workers.length).padStart(2, '0'), cameras: `${cameras.length} CH`, reviews: `${falseEvents.length} 건`, stats: 'KPI' };
+  const tabCounts = { members: String(workers.length).padStart(2, '0'), cameras: `${cameras.length} CH`, reviews: `${falseEventTotal} 건`, stats: 'KPI' };
 
   return <main className="console-page admin-page">
     <PageHeading eyebrow="FIRIS ROOT CONSOLE / SECURE LAYER" title="시스템 관리자 통제 센터"><span className="console-muted">◉ 실제 서버 데이터</span><button disabled title="백업 API 미구현">시스템 설정 백업</button><button disabled title="감사 로그 API 미구현">감사 로그 내보내기</button></PageHeading>
@@ -116,14 +147,20 @@ export default function Admin() {
     </>}
     {tab === 'cameras' && <><section className="console-toolbar"><div><h2>CCTV 채널 및 관제 구역 관리</h2><p>미리 등록된 카메라의 현재 상태를 조회합니다.</p></div><Badge tone="amber">{cameras.filter((camera) => camera.status === 'ONLINE').length} / {cameras.length} 활성</Badge></section><div className="console-table-wrap"><table className="console-table admin-table"><thead><tr>{['표시 채널', '설치 위치', '해상도', '감지 설정', '채널 제어'].map((label) => <th key={label}>{label}</th>)}</tr></thead><tbody>{visibleCameras.map((camera) => <tr key={camera.cameraId}><td className="console-mono">{cameraDisplayName(camera.cameraId, camera.cameraName)}</td><td>{camera.location}</td><td>미등록</td><td><Badge tone={camera.status === 'ONLINE' ? 'green' : ''}>{camera.status}</Badge></td><td>{camera.streamUrl ? <a href={camera.streamUrl} target="_blank" rel="noreferrer">재생 확인</a> : <button disabled title="카메라 변경 API 미구현">조회 전용</button>}</td></tr>)}</tbody></table></div></>}
     {tab === 'cameras' && <div className="admin-pagination"><span className="console-muted" aria-live="polite">총 {cameras.length}개 중 {cameras.length ? camerasPageStart + 1 : 0}–{Math.min(camerasPageStart + CAMERAS_PAGE_SIZE, cameras.length)}개 표시</span><nav aria-label="CCTV 목록 페이지"><button disabled={currentCamerasPage === 1} onClick={() => setCamerasPage(currentCamerasPage - 1)}>‹ 이전</button>{Array.from({ length: camerasPageCount }, (_, index) => index + 1).map((number) => <button key={number} aria-label={`${number}페이지`} aria-current={currentCamerasPage === number ? 'page' : undefined} disabled={!cameras.length} onClick={() => setCamerasPage(number)}>{number}</button>)}<button disabled={currentCamerasPage === camerasPageCount} onClick={() => setCamerasPage(currentCamerasPage + 1)}>다음 ›</button></nav><span className="console-muted admin-pagination__signature">FIRIS / ACCESS CONTROL SYSTEM</span></div>}
-    {tab === 'reviews' && <><section className="console-toolbar"><div><h2>오탐 검토 및 학습 데이터 관리</h2><p>오탐으로 검수된 이벤트를 조회합니다. 학습 후보 지정 API는 아직 없습니다.</p></div></section><div className="admin-review-grid">{falseEvents.map((event) => <FalsePositiveCard key={event.eventId} event={event} />)}{!falseEvents.length && <p className="console-muted">오탐으로 검수된 이벤트가 없습니다.</p>}</div></>}
-    {tab === 'stats' && <><section className="console-toolbar"><div><h2>관제 운영 통계</h2><p>실제 서버 데이터 기준 집계입니다.</p></div></section><div className="admin-stats">{[['등록 관제 요원', workers.length, '명'], ['활성 작업자', workers.filter((worker) => worker.status === 'ACTIVE').length, '명'], ['활성 CCTV', cameras.filter((camera) => camera.status === 'ONLINE').length, '채널'], ['조회된 오탐', falseEvents.length, '건']].map(([label, value, unit]) => <article className="console-panel" key={label}><span>{label}</span><strong>{value}<small>{unit}</small></strong></article>)}</div><section className="console-panel admin-role-stats"><h3>권한별 계정 분포</h3><div><span>작업자</span><meter min="0" max={Math.max(workers.length, 1)} value={workers.length} /><b>{workers.length}명</b></div></section></>}
-    {tab !== 'members' && tab !== 'cameras' && <footer className="console-foot admin-footer"><span>FIRIS / ACCESS CONTROL SYSTEM</span></footer>}
+    {tab === 'reviews' && <>
+      <section className="console-toolbar"><div><h2>오탐 검토 및 학습 데이터 관리</h2><p>오탐으로 검수된 이벤트는 자동으로 학습 후보에 저장됩니다.</p></div><div className="console-actions"><select aria-label="오탐 CCTV 필터" value={reviewsCamera} disabled={reviewsLoading} onChange={(event) => { setReviewsCamera(event.target.value); setReviewsPage(0); }}><option value="">전체 CCTV</option>{cameras.map((camera) => <option key={camera.cameraId} value={camera.cameraId}>{cameraDisplayName(camera.cameraId, camera.cameraName)}</option>)}</select><select aria-label="오탐 사유 필터" value={reviewsReason} disabled={reviewsLoading} onChange={(event) => { setReviewsReason(event.target.value); setReviewsPage(0); }}><option value="">전체 오탐 사유</option>{Object.entries(reasonName).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div></section>
+      {reviewsError && <p role="alert" className="console-notice">{reviewsError}</p>}
+      <div className="admin-review-grid" aria-busy={reviewsLoading}>{reviewsLoading ? <p role="status" className="console-muted">오탐 목록을 불러오는 중입니다.</p> : falseEvents.map((event) => <FalsePositiveCard key={event.eventId} event={event} onOpen={() => setReviewDetailId(event.eventId)} />)}{!reviewsLoading && !reviewsError && !falseEvents.length && <p className="console-muted">선택한 조건의 오탐 이벤트가 없습니다.</p>}</div>
+      <div className="admin-pagination"><span className="console-muted" aria-live="polite">총 {reviewsTotal}건 중 {falseEvents.length ? reviewsPage * REVIEWS_PAGE_SIZE + 1 : 0}–{falseEvents.length ? reviewsPage * REVIEWS_PAGE_SIZE + falseEvents.length : 0}건 표시</span><nav aria-label="오탐 목록 페이지"><button disabled={reviewsLoading || !!reviewsError || reviewsPage === 0} onClick={() => setReviewsPage((value) => value - 1)}>‹ 이전</button><>{Array.from({ length: reviewsPages }, (_, index) => index + 1).map((number) => <button key={number} aria-label={`${number}페이지`} aria-current={reviewsPage + 1 === number ? 'page' : undefined} disabled={reviewsLoading || !!reviewsError || !reviewsTotal} onClick={() => setReviewsPage(number - 1)}>{number}</button>)}</><button disabled={reviewsLoading || !!reviewsError || reviewsPage + 1 >= reviewsPages} onClick={() => setReviewsPage((value) => value + 1)}>다음 ›</button></nav><span className="console-muted admin-pagination__signature">FIRIS / ACCESS CONTROL SYSTEM</span></div>
+    </>}
+    {tab === 'stats' && <><section className="console-toolbar"><div><h2>관제 운영 통계</h2><p>실제 서버 데이터 기준 집계입니다.</p></div></section><div className="admin-stats">{[['등록 관제 요원', workers.length, '명'], ['활성 작업자', workers.filter((worker) => worker.status === 'ACTIVE').length, '명'], ['활성 CCTV', cameras.filter((camera) => camera.status === 'ONLINE').length, '채널'], ['전체 오탐', falseEventTotal, '건']].map(([label, value, unit]) => <article className="console-panel" key={label}><span>{label}</span><strong>{value}<small>{unit}</small></strong></article>)}</div><section className="console-panel admin-role-stats"><h3>권한별 계정 분포</h3><div><span>작업자</span><meter min="0" max={Math.max(workers.length, 1)} value={workers.length} /><b>{workers.length}명</b></div></section></>}
+    {tab === 'stats' && <footer className="console-foot admin-footer"><span>FIRIS / ACCESS CONTROL SYSTEM</span></footer>}
+    {reviewDetailId !== null && <EventDetailModal eventId={reviewDetailId} onClose={() => setReviewDetailId(null)} />}
     {editor && <Modal title="신규 관제관 등록" subtitle="PERSONNEL ACCESS MANAGEMENT" onClose={() => setEditor(false)}><form onSubmit={createWorker}><div className="console-modal__body console-form"><label>이름<input required maxLength={50} value={name} onChange={(event) => setName(event.target.value)} /></label><label>사원번호<input disabled value="저장 시 자동 발급" readOnly /></label><label>이메일<input disabled value="현재 수집하지 않음" readOnly /></label><label>연락처<input disabled value="관제관 최초 로그인 시 등록" readOnly /></label><p className="console-muted">계정 생성 후 발급되는 로그인 ID와 임시 비밀번호를 작업자에게 전달하세요.</p>{error && <p role="alert" className="admin-error">{error}</p>}</div><footer className="console-modal__footer"><button type="button" onClick={() => setEditor(false)}>취소</button><button type="submit" className="console-primary">관제관 등록</button></footer></form></Modal>}
   </main>;
 }
 
-function FalsePositiveCard({ event }) {
+function FalsePositiveCard({ event, onOpen }) {
   const [detail, setDetail] = useState(null);
   const [error, setError] = useState('');
   useEffect(() => {
@@ -131,5 +168,5 @@ function FalsePositiveCard({ event }) {
     apiClient.get(`/api/events/${event.eventId}`).then(({ data }) => { if (active) setDetail(data); }).catch((cause) => { if (active) setError(apiError(cause)); });
     return () => { active = false; };
   }, [event.eventId]);
-  return <article className="console-panel admin-review"><div><span className="console-mono">FP-{event.eventId}</span><Badge tone="green">오탐 검수 완료</Badge></div><h3>{reasonName[detail?.review?.falsePositiveReason] || '사유 확인 중'}</h3><p>{cameraDisplayName(event.cameraId, event.cameraName)} · {event.location}</p>{detail?.review?.note && <p>{detail.review.note}</p>}{error && <p role="alert">{error}</p>}<button disabled title="학습 후보 지정 API 미구현">✓ 학습 후보로 지정</button></article>;
+  return <article className="console-panel admin-review"><div><span className="console-mono">FP-{event.eventId}</span><Badge tone="green">오탐 검수 완료</Badge>{detail?.review?.trainingCandidate && <Badge tone="amber">자동 학습 후보</Badge>}</div><h3>{reasonName[detail?.review?.falsePositiveReason] || '사유 확인 중'}</h3><p>{cameraDisplayName(event.cameraId, event.cameraName)} · {event.location}</p><p className="console-mono">{event.detectedAt?.replace('T', ' ')}</p>{detail?.review?.note && <p>{detail.review.note}</p>}{error && <p role="alert">{error}</p>}<button onClick={onOpen}>이벤트 상세 보기 ↗</button></article>;
 }

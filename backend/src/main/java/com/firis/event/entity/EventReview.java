@@ -27,11 +27,17 @@ public class EventReview {
     @Column(name = "reviewed_at", nullable = false)
     private LocalDateTime reviewedAt;
 
+    @Column(name = "training_candidate", nullable = false, columnDefinition = "boolean default false")
+    private boolean trainingCandidate;
+
+    public boolean isTrainingCandidate() { return trainingCandidate; }
+
     protected EventReview() {}
     public EventReview(FireEvent event, Account reviewer, ReviewResult result,
             FalsePositiveReason reason, String note, LocalDateTime reviewedAt) {
         this.event = event; this.reviewer = reviewer; this.result = result;
         this.falsePositiveReason = reason; this.note = note; this.reviewedAt = reviewedAt;
+        this.trainingCandidate = result == ReviewResult.FALSE_POSITIVE;
     }
     public FireEvent getEvent() { return event; }
     public Account getReviewer() { return reviewer; }

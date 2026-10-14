@@ -34,6 +34,13 @@ public class EventQueryService {
     @Transactional(readOnly = true)
     public EventPageResponse list(int page, int size, EventType eventType,
             String reviewStatus, String cameraId, LocalDate from, LocalDate to, Long afterEventId) {
+        return list(page, size, eventType, reviewStatus, cameraId, from, to, afterEventId, null);
+    }
+
+    @Transactional(readOnly = true)
+    public EventPageResponse list(int page, int size, EventType eventType,
+            String reviewStatus, String cameraId, LocalDate from, LocalDate to, Long afterEventId,
+            FalsePositiveReason falsePositiveReason) {
         if (page < 0 || size < 1 || size > 100 || (from != null && to != null && from.isAfter(to))
                 || (afterEventId != null && afterEventId < 0)) {
             throw new ApiException(ErrorCode.BAD_REQUEST);
@@ -43,6 +50,8 @@ public class EventQueryService {
             try { reviewResult = ReviewResult.valueOf(reviewStatus); }
             catch (IllegalArgumentException e) { throw new ApiException(ErrorCode.BAD_REQUEST); }
         }
+        if (falsePositiveReason != null && reviewStatus != null && !reviewStatus.isBlank()
+                && !"FALSE_POSITIVE".equals(reviewStatus)) throw new ApiException(ErrorCode.BAD_REQUEST);
         final ReviewResult resultFilter = reviewResult;
         Specification<FireEvent> filter = (root, query, cb) -> {
             var predicates = new java.util.ArrayList<jakarta.persistence.criteria.Predicate>();
@@ -51,13 +60,20 @@ public class EventQueryService {
             if (cameraId != null && !cameraId.isBlank()) predicates.add(cb.equal(root.get("camera").get("cameraId"), cameraId));
             if (from != null) predicates.add(cb.greaterThanOrEqualTo(root.get("detectedAt"), from.atStartOfDay()));
             if (to != null) predicates.add(cb.lessThan(root.get("detectedAt"), to.plusDays(1).atStartOfDay()));
-            if (reviewStatus != null && !reviewStatus.isBlank()) {
+            if ((reviewStatus != null && !reviewStatus.isBlank()) || falsePositiveReason != null) {
                 Subquery<Long> subquery = query.subquery(Long.class);
                 var review = subquery.from(EventReview.class);
                 subquery.select(review.get("reviewId"));
                 var matchesEvent = cb.equal(review.get("event").get("eventId"), root.get("eventId"));
-                subquery.where(resultFilter == null ? matchesEvent : cb.and(matchesEvent, cb.equal(review.get("result"), resultFilter)));
-                predicates.add(reviewStatus.equals("UNREVIEWED") ? cb.not(cb.exists(subquery)) : cb.exists(subquery));
+                var reviewPredicates = new java.util.ArrayList<jakarta.persistence.criteria.Predicate>();
+                reviewPredicates.add(matchesEvent);
+                if (resultFilter != null) reviewPredicates.add(cb.equal(review.get("result"), resultFilter));
+                if (falsePositiveReason != null) {
+                    reviewPredicates.add(cb.equal(review.get("result"), ReviewResult.FALSE_POSITIVE));
+                    reviewPredicates.add(cb.equal(review.get("falsePositiveReason"), falsePositiveReason));
+                }
+                subquery.where(reviewPredicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+                predicates.add("UNREVIEWED".equals(reviewStatus) ? cb.not(cb.exists(subquery)) : cb.exists(subquery));
             }
             return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
         };
