@@ -10,7 +10,7 @@ export function downloadFile(name, content, type = "text/plain;charset=utf-8") {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export function Modal({ title, subtitle, onClose, children, wide = false }) {
+export function Modal({ title, subtitle, onClose, children, wide = false, className = "" }) {
   const ref = useRef(null);
   useEffect(() => {
     const dialog = ref.current;
@@ -27,7 +27,7 @@ export function Modal({ title, subtitle, onClose, children, wide = false }) {
   return (
     <dialog
       ref={ref}
-      className={`console-modal ${wide ? "console-modal--wide" : ""}`}
+      className={`console-modal ${wide ? "console-modal--wide" : ""} ${className}`}
       onCancel={(event) => { event.preventDefault(); onClose(); }}
       aria-labelledby="console-modal-title"
     >

@@ -1,0 +1,45 @@
+/* Locally hosted Noto Sans KR variable font. License: /fonts/OFL.txt. */
+@font-face {
+  font-family: 'Noto Sans KR';
+  src: url('/fonts/NotoSansKR-Variable.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+:root {
+  --font-family-ui: 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+  font-family: var(--font-family-ui);
+}
+
+/* Cover browser defaults (forms, code/pre), SVG text and generated labels.
+   Set only the family so each component keeps its size, weight and spacing. */
+*,
+*::before,
+*::after,
+*::marker {
+  font-family: var(--font-family-ui);
+}
+
+::placeholder,
+::file-selector-button {
+  font-family: var(--font-family-ui);
+}
+
+/* Keep time and changing metrics aligned without a separate typeface. */
+time,
+.numeric,
+.stat-card__value,
+.stat-card__gauge,
+.stat-card__metric,
+.history-summary__card strong,
+.history-metrics strong,
+.admin-stats strong,
+.queue-meta,
+.incident-meta,
+.overview b,
+.queue-panel__count,
+.report-summary__stat strong,
+.eta-panel > strong {
+  font-variant-numeric: tabular-nums;
+}

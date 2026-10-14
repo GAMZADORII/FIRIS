@@ -13,7 +13,7 @@ body,
 body {
 	background: #121316;
 	color: #e3e2e6;
-	font-family: Inter, 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+	font-family: var(--font-family-ui);
 }
 
 .dashboard-error {
@@ -45,8 +45,8 @@ body {
 
 .dashboard__eyebrow {
 	color: #ffb300;
-	font-family: 'JetBrains Mono', Consolas, monospace;
-	font-size: 10px;
+	font-family: var(--font-family-ui);
+	font-size: 11px;
 	font-weight: 700;
 	line-height: 14px;
 	margin: 0 0 4px;
@@ -92,8 +92,8 @@ body {
 	align-items: center;
 	color: #ffd799;
 	display: flex;
-	font-family: 'JetBrains Mono', Consolas, monospace;
-	font-size: 9px;
+	font-family: var(--font-family-ui);
+	font-size: 10px;
 	gap: 9px;
 	margin-bottom: 3px;
 }
@@ -116,7 +116,7 @@ body {
 
 .dashboard-hero__copy > p {
 	color: #c4c7ca;
-	font-size: 10px;
+	font-size: 11px;
 	line-height: 14px;
 	margin: 1px 0 0;
 }
@@ -126,14 +126,14 @@ body {
 	color: #c4c7ca;
 	display: flex;
 	flex-direction: column;
-	font-family: 'JetBrains Mono', Consolas, monospace;
+	font-family: var(--font-family-ui);
 	gap: 3px;
 	margin-left: auto;
 }
 
 .dashboard-hero__clock span {
 	color: #ab8985;
-	font-size: 9px;
+	font-size: 10px;
 }
 
 .dashboard-hero__clock strong {
@@ -172,7 +172,7 @@ body {
 }
 
 .dashboard-statistics__heading .dashboard__eyebrow {
-	font-size: 10px;
+	font-size: 11px;
 	margin: 0 0 4px;
 }
 
@@ -187,8 +187,8 @@ body {
 .dashboard-statistics__heading > span {
 	border: 1px solid #5b403d;
 	color: #e4beba;
-	font-family: 'JetBrains Mono', Consolas, monospace;
-	font-size: 8px;
+	font-family: var(--font-family-ui);
+	font-size: 10px;
 	padding: 4px 5px;
 }
 
@@ -230,10 +230,10 @@ body {
 
 .stat-card__heading h3 {
 	color: #f4f5f7;
-	font-family: 'JetBrains Mono', Consolas, monospace;
-	font-size: 9px;
+	font-family: var(--font-family-ui);
+	font-size: 10px;
 	font-weight: 700;
-	line-height: 13px;
+	line-height: 15px;
 	margin: 0;
 }
 
@@ -261,7 +261,7 @@ body {
 
 .stat-card__value strong {
 	color: #fff;
-	font-family: 'JetBrains Mono', Consolas, monospace;
+	font-family: var(--font-family-ui);
 	font-size: 23px;
 	font-weight: 700;
 	line-height: 30px;
@@ -269,8 +269,8 @@ body {
 
 .stat-card__value small {
 	color: #c4c7ca;
-	font-family: 'JetBrains Mono', Consolas, monospace;
-	font-size: 10px;
+	font-family: var(--font-family-ui);
+	font-size: 11px;
 }
 
 .stat-card--red .stat-card__value strong {
@@ -284,8 +284,8 @@ body {
 .stat-card__detail {
 	border-top: 1px solid #343538;
 	color: #c4c7ca;
-	font-size: 8px;
-	line-height: 11px;
+	font-size: 10px;
+	line-height: 14px;
 	margin: 3px 0 0;
 	padding-top: 4px;
 }
@@ -337,12 +337,12 @@ body {
 .stat-card__gauge span,
 .stat-card__gauge small {
 	color: #c4c7ca;
-	font-size: 8px;
+	font-size: 9px;
 }
 
 .stat-card__gauge strong {
 	color: #f4f5f7;
-	font-family: 'JetBrains Mono', Consolas, monospace;
+	font-family: var(--font-family-ui);
 	font-size: 23px;
 	line-height: 27px;
 }
@@ -361,7 +361,7 @@ body {
 	color: #f4f5f7;
 	display: flex;
 	flex-direction: column;
-	font-size: 9px;
+	font-size: 10px;
 	gap: 3px;
 }
 
@@ -373,8 +373,8 @@ body {
 
 .stat-card__metric strong {
 	color: #ffd799;
-	font-family: 'JetBrains Mono', Consolas, monospace;
-	font-size: 9px;
+	font-family: var(--font-family-ui);
+	font-size: 10px;
 }
 
 .stat-card__metric--red strong {
@@ -406,8 +406,8 @@ body {
 .stat-card__footnote {
 	background: #121316;
 	color: #ffd799;
-	font-family: 'JetBrains Mono', Consolas, monospace;
-	font-size: 8px;
+	font-family: var(--font-family-ui);
+	font-size: 10px;
 	font-weight: 700;
 	margin: 3px 0 0;
 	padding: 4px 6px;
@@ -415,7 +415,7 @@ body {
 
 .stat-card:nth-child(4) .stat-card__value strong,
 .stat-card:nth-child(5) .stat-card__value strong {
-	font-family: Inter, 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+	font-family: var(--font-family-ui);
 	font-size: 16px;
 }
 
@@ -435,7 +435,7 @@ body {
 }
 
 .dashboard-cctv__heading .dashboard__eyebrow {
-	font-size: 9px;
+	font-size: 10px;
 	line-height: 12px;
 	margin-bottom: 2px;
 }
@@ -452,8 +452,8 @@ body {
 	align-items: center;
 	color: #c4c7ca;
 	display: flex;
-	font-family: 'JetBrains Mono', Consolas, monospace;
-	font-size: 9px;
+	font-family: var(--font-family-ui);
+	font-size: 10px;
 	gap: 14px;
 }
 
@@ -534,8 +534,8 @@ body {
 
 .camera-feed__name h3 {
 	color: #f4f5f7;
-	font-family: 'JetBrains Mono', Consolas, monospace;
-	font-size: 10px;
+	font-family: var(--font-family-ui);
+	font-size: 11px;
 	font-weight: 700;
 	margin: 0;
 }
@@ -543,8 +543,8 @@ body {
 .camera-feed__location,
 .camera-feed__format {
 	color: #c4c7ca;
-	font-family: 'JetBrains Mono', Consolas, monospace;
-	font-size: 9px;
+	font-family: var(--font-family-ui);
+	font-size: 10px;
 	white-space: nowrap;
 }
 
@@ -586,8 +586,8 @@ body {
 	color: #e3e2e6;
 	display: flex;
 	flex-direction: column;
-	font-family: 'JetBrains Mono', Consolas, monospace;
-	font-size: 8px;
+	font-family: var(--font-family-ui);
+	font-size: 10px;
 	gap: 3px;
 	left: 10px;
 	position: absolute;
@@ -604,8 +604,8 @@ body {
 .camera-feed__timestamp {
 	bottom: 7px;
 	color: #e3e2e6;
-	font-family: 'JetBrains Mono', Consolas, monospace;
-	font-size: 9px;
+	font-family: var(--font-family-ui);
+	font-size: 10px;
 	position: absolute;
 	right: 9px;
 	text-shadow: 0 1px 3px #000;
@@ -624,7 +624,7 @@ body {
 	border-radius: 3px 3px 0 0;
 	bottom: 100%;
 	color: var(--detection-label-color);
-	font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+	font-family: var(--font-family-ui);
 	font-size: 12px;
 	font-weight: 700;
 	line-height: 16px;
@@ -652,8 +652,8 @@ body {
 	color: #c4c7ca;
 	display: flex;
 	flex: 0 0 24px;
-	font-family: 'JetBrains Mono', Consolas, monospace;
-	font-size: 8px;
+	font-family: var(--font-family-ui);
+	font-size: 10px;
 	justify-content: space-between;
 	padding: 0 9px;
 }
@@ -718,7 +718,7 @@ body {
 	}
 
 	.dashboard-hero__meta {
-		font-size: 7px;
+		font-size: 9px;
 		gap: 5px;
 	}
 
@@ -728,7 +728,7 @@ body {
 	}
 
 	.dashboard-hero__copy > p {
-		font-size: 8px;
+		font-size: 10px;
 	}
 
 	.dashboard-hero__clock {
@@ -766,7 +766,7 @@ body {
 	}
 
 	.stat-card__heading h3 {
-		font-size: 8px;
+		font-size: 10px;
 	}
 
 	.stat-card__value strong {
@@ -784,7 +784,7 @@ body {
 	}
 
 	.dashboard-cctv__legend {
-		font-size: 8px;
+		font-size: 10px;
 		gap: 8px;
 	}
 
@@ -806,7 +806,7 @@ body {
 	.camera-feed__name h3,
 	.camera-feed__location,
 	.camera-feed__format {
-		font-size: 7px;
+		font-size: 9px;
 	}
 
 	.camera-feed__status-dot {
@@ -815,7 +815,7 @@ body {
 	}
 
 	.camera-feed__footer {
-		font-size: 6px;
+		font-size: 8px;
 		padding: 0 5px;
 	}
 
@@ -840,7 +840,7 @@ body {
 .stat-card__today span {
   margin-left: auto;
   color: #c4c7ca;
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .latest-event__summary {
@@ -888,3 +888,24 @@ body {
 .camera-expanded-view .camera-feed { height: min(65dvh, 720px); min-height: 220px; }
 .camera-expanded-view .camera-feed__image { object-fit: contain; }
 .camera-expanded-view .camera-feed__viewport { background: #050608; }
+/* Keep small-label growth inside the existing dashboard and camera geometry. */
+.dashboard-hero__clock { flex-shrink: 0; white-space: nowrap; }
+.dashboard-hero__meta,
+.dashboard-hero__copy > p,
+.stat-card__heading h3,
+.stat-card__detail,
+.stat-card__footnote {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dashboard-hero__meta > span { flex-shrink: 0; }
+.stat-card__metric > div { gap: 4px; min-width: 0; }
+.stat-card__metric > div > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stat-card__metric strong { flex-shrink: 0; white-space: nowrap; }
+.camera-feed__name h3 { flex-shrink: 0; white-space: nowrap; line-height: 16px; }
+.camera-feed__location { min-width: 0; }
+.camera-feed__footer { gap: 8px; line-height: 14px; }
+.camera-feed__footer > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dashboard-cctv__legend { flex-shrink: 0; white-space: nowrap; }
