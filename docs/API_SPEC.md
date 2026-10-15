@@ -500,3 +500,10 @@ Backend 발신 JSON:
 
 ## 권한별 계정 분포
 `GET /api/admin/accounts/role-counts`: ADMIN/SUPER_ADMIN만 허용한다. 응답은 `{ "superAdmins": 2, "admins": 1, "workers": 0 }` 형식이며 실제 DB의 역할별 계정 수를 반환한다. 활성·비활성 계정을 모두 포함하고 개인 정보는 반환하지 않는다.
+
+## 최고 관리자의 관리자·작업자 제어
+- `GET /api/admin/workers`: ADMIN은 WORKER만, SUPER_ADMIN은 ADMIN과 WORKER를 반환한다. 응답 항목에 role을 포함하며 SUPER_ADMIN 계정은 제외한다.
+- `PATCH /api/admin/workers/{accountId}/role`: SUPER_ADMIN 전용. 요청은 `{ "role": "ADMIN", "expectedRole": "WORKER" }` 형식이며 ADMIN/WORKER 간에만 변경한다. 현재 역할이 expectedRole과 다르면 409 ACCOUNT_ROLE_CONFLICT, 최고 관리자 계정 제어는 403이다. 응답은 변경된 계정이다.
+- 기존 status/password-reset API에서도 SUPER_ADMIN은 ADMIN·WORKER를, ADMIN은 WORKER만 제어한다. 최고 관리자 계정은 제어할 수 없다.
+- 비밀번호가 초기화된 ADMIN은 변경 전까지 일반 API가 차단되며 PATCH /api/auth/password로 변경할 수 있다. 변경 의무가 남은 WORKER를 승격해도 의무는 사라지지 않는다.
+- 권한 변경 후 기존 JWT도 DB의 최신 역할로 검사한다. 작업자 아이디 발급은 승격된 Wxxxxxx 계정을 포함하여 중복을 피한다.

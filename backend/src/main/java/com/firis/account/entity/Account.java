@@ -122,6 +122,15 @@ public class Account {
         this.contactOnboardingRequired = false;
     }
 
+    public void changeRole(Role role) {
+        if (this.role == Role.SUPER_ADMIN || role == null || role == Role.SUPER_ADMIN) {
+            throw new IllegalArgumentException("작업자와 관리자 사이에서만 권한을 변경할 수 있습니다.");
+        }
+        if (this.role == role) return;
+        this.role = role;
+        this.contactOnboardingRequired = role == Role.WORKER && contactConsentedAt == null;
+    }
+
     public void changeStatus(AccountStatus status) {
         this.status = status;
     }

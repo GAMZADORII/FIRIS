@@ -2,6 +2,7 @@ package com.firis.account.dto;
 
 import com.firis.account.entity.Account;
 import com.firis.account.entity.AccountStatus;
+import com.firis.account.entity.Role;
 
 import java.time.LocalDateTime;
 
@@ -12,7 +13,8 @@ public record WorkerResponse(
         AccountStatus status,
         boolean mustChangePassword,
         LocalDateTime createdAt,
-        String contactPhone
+        String contactPhone,
+        Role role
 ) {
     public static WorkerResponse from(Account account) {
         return new WorkerResponse(
@@ -22,7 +24,8 @@ public record WorkerResponse(
                 account.getStatus(),
                 account.isMustChangePassword(),
                 account.getCreatedAt().withNano(0),
-                account.getContactPhone()
+                account.getContactPhone(),
+                account.getRole()
         );
     }
 }

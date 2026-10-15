@@ -44,9 +44,8 @@ public class AdminAccountInitializer implements ApplicationRunner {
         }
 
         if (accountRepository.existsByLoginId(adminLoginId)) {
-            throw new IllegalStateException(
-                    "초기 관리자 로그인 ID '" + adminLoginId + "'가 이미 다른 계정에서 사용 중입니다."
-            );
+            log.info("초기 관리자 ID가 이미 존재하여 현재 권한과 상태를 유지합니다. loginId={}", adminLoginId);
+            return;
         }
         if (adminPassword == null || adminPassword.isBlank()) {
             log.warn("ADMIN_PASSWORD가 설정되지 않아 초기 관리자 자동 생성을 건너뜁니다.");
