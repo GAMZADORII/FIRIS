@@ -145,3 +145,6 @@ AI/Backend/Frontend Dockerfile과 Jenkins Pipeline이 있으며, docker-compose.
 
 ## CCTV 관리
 관리자 화면은 기존 POST /api/cameras와 신규 DELETE /api/cameras/{cameraId}를 호출한다. CAMERA.deleted로 논리 삭제하여 이전 이력의 참조를 보존한다. 목록·관제 선택·새 AI 이벤트·최신 프레임에서는 삭제된 CCTV를 제외한다. 초기 등록기는 삭제된 행을 기존 ID로 인식하므로 재시작 후 복원하지 않는다. 관제 선택은 고정 9개 제한 대신 API의 전체 등록 목록을 사용하며 기존 채널 표시 순서는 유지한다.
+
+## 기본 데이터 초기화
+Hibernate 스키마 반영 후 ApplicationRunner가 기본 데이터를 확인한다. 최고 관리자는 login_id 단위로 추가하고 기존 값은 보존한다. 기존 초기 관리자는 ADMIN 역할 존재 여부와 환경변수로, CCTV는 ID 존재 여부로 생성한다. 데이터베이스 볼륨이 서로 달라도 같은 초기화 코드로 필수 데이터를 준비한다. 이벤트·검수·신고 이력은 초기화 대상이 아니다.

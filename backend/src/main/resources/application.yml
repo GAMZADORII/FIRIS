@@ -34,6 +34,9 @@ app:
     login-id: ${ADMIN_LOGIN_ID:admin}
     password: ${ADMIN_PASSWORD:}
     name: ${ADMIN_NAME:김진우}
+  super-admin:
+    enabled: ${SUPER_ADMIN_ENABLED:true}
+    password: ${SUPER_ADMIN_PASSWORD:1234}
   worker:
     default-password: ${WORKER_DEFAULT_PASSWORD:}
   contact-consent:
@@ -46,4 +49,4 @@ app:
     ws-url: ${MOCK_119_WS_URL:}
     api-key: ${MOCK_119_API_KEY:}
     site-address: ${MOCK_119_SITE_ADDRESS:}
-    control-room-phone: ${MOCK_119_CONTROL_ROOM_PHONE:}
+    control-room-phone: ${MOCK_119_CONTROL_ROOM_PHONE:041-123-4567}
