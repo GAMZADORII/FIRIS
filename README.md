@@ -63,6 +63,10 @@ http://localhost:5173 에서 `/login`, `/dashboard`, `/history`, `/admin` 확인
 VITE_ 환경변수에 비밀 값을 넣지 않는다.
 AI 모델 가중치와 `storage/videos/CAM001`~`CAM004`의 시연 입력 영상은 Git LFS로 관리한다. 팀원은 `git lfs install` 후 저장소를 받아 실제 파일을 내려받아야 한다. 이벤트 결과 영상/이미지와 최신 관제 프레임은 Git에서 제외한다.
 
+## 기본 데이터 자동 생성
+Backend 실행 시 최고 관리자 `superadmin1`(박상현), `superadmin2`(차나래)를 누락된 계정만 자동 생성한다. 초기 비밀번호는 `1234`이며 `SUPER_ADMIN_PASSWORD`로 새 계정의 비밀번호를 지정할 수 있다. 기존 비밀번호·이름·계정 상태는 변경하지 않는다. `SUPER_ADMIN_ENABLED=false`로 자동 생성을 끌 수 있다.
+초기 ADMIN은 기존 ADMIN_PASSWORD 설정에 따라, 기본 CCTV 9개는 누락된 ID만 자동 등록한다. 삭제된 CCTV는 복원하지 않는다. 이벤트·검수·신고 등 사용 기록은 자동 생성하지 않는다. 팀원마다 수동 SQL을 실행할 필요가 없다. 자세한 설정은 [Docker 실행 안내](docs/DOCKER_LOCAL.md)를 참고한다.
+
 ## 개발 기준 문서
 - [AI_EVENT_IMPLEMENTATION](docs/AI_EVENT_IMPLEMENTATION.md): 이번 AI 수신 API 구현·통합·검증 범위
 - [AI_INTEGRATION](docs/AI_INTEGRATION.md): AI 영상 판정·Backend 호출 및 현장 검증 항목
