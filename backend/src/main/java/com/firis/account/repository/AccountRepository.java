@@ -16,9 +16,11 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     Optional<Account> findByLoginId(String loginId);
     boolean existsByLoginId(String loginId);
     boolean existsByRole(Role role);
-    long countByRole(Role role);
+    @Query("select count(a) from Account a where a.role = :role and a.deletedAt is null")
+    long countByRole(@Param("role") Role role);
     List<Account> findAllByRoleOrderByAccountIdAsc(Role role);
-    List<Account> findAllByRoleInOrderByAccountIdAsc(Collection<Role> roles);
+    @Query("select a from Account a where a.role in :roles and a.deletedAt is null order by a.accountId")
+    List<Account> findAllByRoleInOrderByAccountIdAsc(@Param("roles") Collection<Role> roles);
 
     @Query("select a.loginId from Account a where a.loginId like 'W%'")
     List<String> findWorkerLoginIds();

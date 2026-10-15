@@ -123,6 +123,36 @@ class AccountManagementTest {
         assertThat(json(result).path("loginId").asText()).isEqualTo("W999991");
     }
 
+    @Test void deletingAccountPreservesIdentityButBlocksAccessAndFurtherManagement() throws Exception {
+        var worker = worker("delete-worker", false);
+        var token = tokens.generateToken(worker);
+        var highest = highestToken();
+        long before = accounts.countByRole(Role.WORKER);
+        assertThat(call("DELETE", base(worker), highest, null).statusCode()).isEqualTo(204);
+        var deleted = accounts.findById(worker.getAccountId()).orElseThrow();
+        assertThat(deleted.isDeleted()).isTrue();
+        assertThat(deleted.isActive()).isFalse();
+        assertThat(accounts.existsByLoginId(worker.getLoginId())).isTrue();
+        assertThat(accounts.countByRole(Role.WORKER)).isEqualTo(before - 1);
+        assertThat(call("GET", "/api/admin/workers", highest, null).body()).doesNotContain("delete-worker");
+        assertThat(call("GET", "/api/cameras", token, null).statusCode()).isEqualTo(403);
+        assertThat(call("PATCH", base(worker) + "/status", highest, "{\"status\":\"ACTIVE\"}").statusCode()).isEqualTo(404);
+        assertThat(call("DELETE", base(worker), highest, null).statusCode()).isEqualTo(404);
+    }
+
+    @Test void deletingAccountsRespectsManagementPermissions() throws Exception {
+        var admin = accounts.saveAndFlush(Account.createAdmin("delete-admin", "hash", "관리자"));
+        var peer = accounts.saveAndFlush(Account.createAdmin("delete-peer", "hash", "관리자"));
+        var worker = worker("delete-permission-worker", false);
+        var adminToken = tokens.generateToken(admin);
+        assertThat(call("DELETE", base(peer), adminToken, null).statusCode()).isEqualTo(403);
+        assertThat(call("DELETE", base(admin), tokens.generateToken(worker), null).statusCode()).isEqualTo(403);
+        assertThat(call("DELETE", base(worker), null, null).statusCode()).isEqualTo(401);
+        assertThat(call("DELETE", base(accounts.findByLoginId("superadmin1").orElseThrow()), highestToken(), null).statusCode()).isEqualTo(403);
+        assertThat(call("DELETE", base(worker), adminToken, null).statusCode()).isEqualTo(204);
+        assertThat(call("DELETE", base(peer), highestToken(), null).statusCode()).isEqualTo(204);
+    }
+
     private Account worker(String id, boolean temporary) {
         var account = Account.createWorker(id, passwords.encode("initial-password"), "작업자");
         if (!temporary) {

@@ -61,6 +61,9 @@ public class Account {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     protected Account() {
     }
 
@@ -136,7 +139,14 @@ public class Account {
     }
 
     public boolean isActive() {
-        return status == AccountStatus.ACTIVE;
+        return deletedAt == null && status == AccountStatus.ACTIVE;
+    }
+
+    public boolean isDeleted() { return deletedAt != null; }
+
+    public void delete() {
+        deletedAt = LocalDateTime.now();
+        status = AccountStatus.INACTIVE;
     }
 
     @PrePersist

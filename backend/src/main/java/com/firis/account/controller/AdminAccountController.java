@@ -12,6 +12,7 @@ import org.springframework.security.core.Authentication;
 import com.firis.account.dto.UpdateAccountRoleRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -41,6 +42,12 @@ public class AdminAccountController {
     @ResponseStatus(HttpStatus.CREATED)
     public CreateWorkerResponse createWorker(@Valid @RequestBody CreateWorkerRequest request) {
         return accountService.createWorker(request);
+    }
+
+    @DeleteMapping("/{workerId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteAccount(@PathVariable Long workerId, Authentication authentication) {
+        accountService.deleteAccount(workerId, authentication.getName());
     }
 
     @PatchMapping("/{workerId}/status")
