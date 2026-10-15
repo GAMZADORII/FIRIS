@@ -106,6 +106,15 @@ public class Account {
         this.mustChangePassword = true;
     }
 
+    public boolean fillMissingContactPhone(String phone) {
+        if (contactPhone != null && !contactPhone.isBlank()) return false;
+        if (phone == null || !phone.trim().matches("^0\\d{1,2}-?\\d{3,4}-?\\d{4}$")) {
+            throw new IllegalArgumentException("기본 연락처 형식을 확인해주세요.");
+        }
+        contactPhone = phone.trim().replace("-", "");
+        return true;
+    }
+
     public void completeContactOnboarding(String phone, String consentVersion, LocalDateTime consentedAt) {
         this.contactPhone = phone;
         this.contactConsentVersion = consentVersion;

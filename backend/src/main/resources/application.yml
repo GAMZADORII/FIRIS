@@ -37,6 +37,7 @@ app:
   super-admin:
     enabled: ${SUPER_ADMIN_ENABLED:true}
     password: ${SUPER_ADMIN_PASSWORD:1234}
+    contact-phone: ${SUPER_ADMIN_CONTACT_PHONE:010-1234-5678}
   worker:
     default-password: ${WORKER_DEFAULT_PASSWORD:}
   contact-consent:

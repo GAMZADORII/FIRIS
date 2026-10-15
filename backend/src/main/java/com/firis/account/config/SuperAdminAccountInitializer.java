@@ -20,12 +20,15 @@ public class SuperAdminAccountInitializer implements ApplicationRunner {
     private final AccountRepository accounts;
     private final PasswordEncoder passwords;
     private final String initialPassword;
+    private final String initialContactPhone;
 
     public SuperAdminAccountInitializer(AccountRepository accounts, PasswordEncoder passwords,
-            @Value("${app.super-admin.password:1234}") String initialPassword) {
+            @Value("${app.super-admin.password:1234}") String initialPassword,
+            @Value("${app.super-admin.contact-phone:010-1234-5678}") String initialContactPhone) {
         this.accounts = accounts;
         this.passwords = passwords;
         this.initialPassword = initialPassword;
+        this.initialContactPhone = initialContactPhone;
     }
 
     @Override
@@ -38,6 +41,9 @@ public class SuperAdminAccountInitializer implements ApplicationRunner {
         var existing = accounts.findByLoginId(loginId);
         if (existing.isPresent()) {
             requireSuperAdmin(existing.get());
+            if (existing.get().fillMissingContactPhone(initialContactPhone)) {
+                accounts.saveAndFlush(existing.get());
+            }
             return;
         }
         if (initialPassword == null || initialPassword.isBlank()) {
@@ -45,7 +51,9 @@ public class SuperAdminAccountInitializer implements ApplicationRunner {
         }
         try {
             // Each repository call has its own transaction: a duplicate insert may be retried safely.
-            accounts.saveAndFlush(Account.createSuperAdmin(loginId, passwords.encode(initialPassword), name));
+            var account = Account.createSuperAdmin(loginId, passwords.encode(initialPassword), name);
+            account.fillMissingContactPhone(initialContactPhone);
+            accounts.saveAndFlush(account);
         } catch (DataIntegrityViolationException exception) {
             var concurrent = accounts.findByLoginId(loginId);
             if (concurrent.isEmpty()) throw exception;
