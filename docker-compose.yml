@@ -80,8 +80,6 @@ services:
     restart: unless-stopped
 
   ai-worker:
-    build:
-      context: ./ai
     image: firis-ai:local
     command: ["python", "-m", "app.services.multi_camera_service", "--model", "yolo", "--sample-fps", "1", "--loop"]
     environment:

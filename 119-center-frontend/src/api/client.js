@@ -1,3 +1,5 @@
+import { cameraChannelSlots } from '../utils/cameraChannels.js';
+
 const configured = import.meta.env.VITE_API_BASE_URL;
 export const API_BASE = (configured || `${window.location.protocol}//${window.location.hostname}:8080`).replace(/\/$/, '');
 
@@ -18,12 +20,18 @@ export async function request(path, options = {}) {
 export const epoch = value => value ? Date.parse(/[Zz]|[+-]\d\d:\d\d$/.test(value) ? value : `${value}+09:00`) : null;
 
 export function normalizeReport(r) {
+  // Older reports may predate the site address setting; preserve any saved address.
+  const siteAddress = r.siteAddress?.trim() || import.meta.env.VITE_SITE_ADDRESS?.trim() || '';
+  const facility = siteAddress.includes(',') ? siteAddress.slice(siteAddress.lastIndexOf(',') + 1).trim() || '사업장' : '사업장';
+  const detailLocation = cameraChannelSlots.find(([id]) => id === r.cameraId)?.[1] || r.detailLocation || '구역 미등록';
   const labels = { PENDING: '신규 신고', DISPATCHED: '출동 중', ARRIVED: '현장 도착', CLOSED: '대응 완료' };
   return { ...r,
-    facility: r.siteAddress || '사업장',
+    siteAddress,
+    facility,
+    detailLocation,
     confidence: Number((r.confidence * 100).toFixed(1)),
     accidentType: { FIRE: '화재', SMOKE: '연기', FIRE_SMOKE: '화재·연기' }[r.eventType] || r.eventType,
-    note: r.specialNotes || '특이사항 없음',
+    note: r.specialNotes?.trim() || '등록된 내용 없음',
     dispatchAt: epoch(r.dispatchAt), arrivalAt: epoch(r.arrivalAt),
     history: r.history.map(h => ({ status: h.status, label: labels[h.status],
       time: h.occurredAt.replace('T', ' '), actor: h.status === 'ARRIVED' ? '자동 도착' : '119 모의 접수센터' })),
