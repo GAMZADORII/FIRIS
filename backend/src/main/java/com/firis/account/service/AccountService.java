@@ -101,6 +101,11 @@ public class AccountService {
         );
     }
 
+    @Transactional
+    public void deleteAccount(Long accountId, String actorLoginId) {
+        findManageableAccount(accountId, requireManager(actorLoginId)).delete();
+    }
+
     private void requireDefaultWorkerPassword() {
         if (defaultWorkerPassword == null || defaultWorkerPassword.isBlank()) {
             throw new IllegalStateException("WORKER_DEFAULT_PASSWORD 환경변수를 설정해야 합니다.");
@@ -134,6 +139,7 @@ public class AccountService {
     private Account findManageableAccount(Long accountId, Account actor) {
         var target = accountRepository.findForManagement(accountId)
                 .orElseThrow(() -> new ApiException(ErrorCode.ACCOUNT_NOT_FOUND));
+        if (target.isDeleted()) throw new ApiException(ErrorCode.ACCOUNT_NOT_FOUND);
         if (target.getRole() == Role.SUPER_ADMIN
                 || (target.getRole() == Role.ADMIN && actor.getRole() != Role.SUPER_ADMIN)) {
             throw new ApiException(ErrorCode.FORBIDDEN);

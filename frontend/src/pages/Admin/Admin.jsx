@@ -21,6 +21,9 @@ const tabs = [
 export default function Admin() {
   const [tab, setTab] = useState('members');
   const isSuperAdmin = getSession()?.account?.role === 'SUPER_ADMIN';
+  const [accountEditor, setAccountEditor] = useState(null);
+  const [accountDeleteTarget, setAccountDeleteTarget] = useState(null);
+  const [accountError, setAccountError] = useState('');
   const [roleTarget, setRoleTarget] = useState(null);
   const [roleError, setRoleError] = useState('');
   const [accountBusy, setAccountBusy] = useState(false);
@@ -171,13 +174,29 @@ export default function Admin() {
     await runAccountAction(async () => {
       await apiClient.patch(`/api/admin/workers/${worker.accountId}/status`, { status: worker.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE' });
       setNotice(`${worker.loginId} 상태가 변경되었습니다.`);
-    });
+      setAccountEditor(null);
+    }, setAccountError);
   }
   async function resetPassword(worker) {
     await runAccountAction(async () => {
       const { data } = await apiClient.patch(`/api/admin/workers/${worker.accountId}/password-reset`);
       setNotice(`${data.loginId} 임시 비밀번호: ${data.temporaryPassword} — 지금 전달해 주세요.`);
-    });
+      setAccountEditor(null);
+    }, setAccountError);
+  }
+  const closeAccountModal = () => {
+    if (accountLock.current) return;
+    setAccountEditor(null); setAccountDeleteTarget(null); setAccountError('');
+  };
+  async function deleteAccount() {
+    if (!accountDeleteTarget) return;
+    setAccountError('');
+    await runAccountAction(async () => {
+      await apiClient.delete('/api/admin/workers/' + accountDeleteTarget.accountId);
+      setWorkers((items) => items.filter((item) => item.accountId !== accountDeleteTarget.accountId));
+      setNotice(accountDeleteTarget.name + ' 계정을 삭제했습니다.');
+      setAccountDeleteTarget(null);
+    }, setAccountError);
   }
   const closeRoleModal = () => { if (!accountLock.current) { setRoleTarget(null); setRoleError(''); } };
   async function changeRole() {
@@ -211,7 +230,7 @@ export default function Admin() {
     {notice && <div className="console-notice" role="status">{notice}</div>}
     {tab === 'members' && <>
       <section className="console-toolbar"><div><h2>관제 요원 및 시스템 관리자 계정 목록</h2></div><div className="console-actions"><input className="console-search" aria-label="관제관 검색" placeholder="⌕  성명, 사번, 직책 검색…" value={query} onChange={(event) => { setQuery(event.target.value); setMembersPage(1); }} /><button className="console-primary" onClick={() => { setName(''); setEditor(true); }}>♙ 신규 관제관 등록</button></div></section>
-      <div className="console-table-wrap"><table className="console-table admin-table"><colgroup>{[13,16,14,11,14,16,16].map((width, index) => <col key={index} style={{ width: `${width}%` }} />)}</colgroup><thead><tr>{['사번 / UID', '성명', '권한 등급', '세션 상태', '비상 연락처', '최근 접속 기록', '계정 제어'].map((label) => <th key={label}>{label}</th>)}</tr></thead><tbody>{visibleUsers.map((worker) => <tr key={worker.accountId}><td className="console-mono admin-user-id" title={worker.loginId}>{worker.loginId}</td><td><div className="admin-person"><span className="admin-avatar">{worker.name?.[0]}</span><div><strong title={worker.name}>{worker.name}</strong><small title={worker.loginId}>{worker.loginId}</small></div></div></td><td>{isSuperAdmin ? <select className="admin-role-select" aria-label={`${worker.name} 권한 등급`} value={worker.role} disabled={accountBusy} onChange={(event) => { if (event.target.value !== worker.role) { setRoleError(''); setRoleTarget({ account: worker, role: event.target.value }); } }}><option value="WORKER">작업자</option><option value="ADMIN">관리자</option></select> : <Badge tone="amber">{roleLabel(worker.role)}</Badge>}</td><td><span className={`admin-session admin-session--${worker.status.toLowerCase()}`}>● <b>{worker.status}</b></span></td><td className="console-mono">{formatPhone(worker.contactPhone)}</td><td className="console-mono">{worker.createdAt?.replace('T', ' ') || '—'}<small>계정 생성일</small></td><td><div className="admin-row-actions"><button disabled={accountBusy} onClick={() => changeStatus(worker)}>{worker.status === 'ACTIVE' ? '비활성화' : '활성화'}</button> <button disabled={accountBusy} onClick={() => resetPassword(worker)}>비밀번호 초기화</button></div></td></tr>)}{!filtered.length && <tr><td colSpan="7" className="console-empty">검색 조건에 맞는 관제관이 없습니다.</td></tr>}</tbody></table></div>
+      <div className="console-table-wrap"><table className="console-table admin-table"><colgroup>{[13,16,14,11,14,16,16].map((width, index) => <col key={index} style={{ width: `${width}%` }} />)}</colgroup><thead><tr>{['사번 / UID', '성명', '권한 등급', '세션 상태', '비상 연락처', '계정 생성일', '계정 제어'].map((label) => <th key={label}>{label}</th>)}</tr></thead><tbody>{visibleUsers.map((worker) => <tr key={worker.accountId}><td className="console-mono admin-user-id" title={worker.loginId}>{worker.loginId}</td><td><div className="admin-person"><span className="admin-avatar">{worker.name?.[0]}</span><div><strong title={worker.name}>{worker.name}</strong><small title={worker.loginId}>{worker.loginId}</small></div></div></td><td><Badge tone="amber">{roleLabel(worker.role)}</Badge></td><td><span className={`admin-session admin-session--${worker.status.toLowerCase()}`}>● <b>{worker.status}</b></span></td><td className="console-mono">{formatPhone(worker.contactPhone)}</td><td className="console-mono">{worker.createdAt?.replace('T', ' ') || '—'}</td><td><div className="admin-row-actions"><button disabled={accountBusy} aria-label={`${worker.name} 계정 수정`} onClick={() => { setAccountError(''); setAccountEditor(worker); }}>수정</button><button disabled={accountBusy} aria-label={`${worker.name} 계정 삭제`} onClick={() => { setAccountError(''); setAccountDeleteTarget(worker); }}>삭제</button></div></td></tr>)}{!filtered.length && <tr><td colSpan="7" className="console-empty">검색 조건에 맞는 관제관이 없습니다.</td></tr>}</tbody></table></div>
       <div className="admin-pagination"><span className="console-muted" aria-live="polite">총 {filtered.length}명 중 {filtered.length ? membersPageStart + 1 : 0}–{Math.min(membersPageStart + MEMBERS_PAGE_SIZE, filtered.length)}명 표시</span><nav aria-label="작업자 목록 페이지"><button disabled={currentMembersPage === 1} onClick={() => setMembersPage(currentMembersPage - 1)}>‹ 이전</button>{Array.from({ length: membersPageCount }, (_, index) => index + 1).map((number) => <button key={number} aria-label={`${number}페이지`} aria-current={currentMembersPage === number ? 'page' : undefined} disabled={!filtered.length} onClick={() => setMembersPage(number)}>{number}</button>)}<button disabled={currentMembersPage === membersPageCount} onClick={() => setMembersPage(currentMembersPage + 1)}>다음 ›</button></nav><span className="console-muted admin-pagination__signature">FIRIS / ACCESS CONTROL SYSTEM</span></div>
     </>}
     {tab === 'cameras' && <><section className="console-toolbar"><div><h2>CCTV 채널 및 관제 구역 관리</h2></div><div className="console-actions"><Badge tone="amber">{cameras.filter((camera) => camera.status === 'ONLINE').length} / {cameras.length} 활성</Badge><button className="console-primary" onClick={() => { setCameraDraft({ cameraId: '', cameraName: '', location: '', streamUrl: '', status: 'ONLINE', reportNote: '' }); setCameraError(''); setCameraEditor(true); }}>+ CCTV 추가</button></div></section><div className="console-table-wrap"><table className="console-table admin-table"><colgroup>{[20,35,12,16,17].map((width, index) => <col key={index} style={{ width: `${width}%` }} />)}</colgroup><thead><tr>{['표시 채널', '설치 위치', '해상도', '감지 설정', 'CCTV 삭제'].map((label) => <th key={label}>{label}</th>)}</tr></thead><tbody>{visibleCameras.map((camera) => <tr key={camera.cameraId}><td className="console-mono">{cameraDisplayName(camera.cameraId, camera.cameraName)}<small>{camera.cameraId} · {camera.cameraName}</small></td><td title={camera.location}>{camera.location}</td><td>미등록</td><td><Badge tone={camera.status === 'ONLINE' ? 'green' : ''}>{camera.status}</Badge></td><td><button aria-label={`${cameraDisplayName(camera.cameraId, camera.cameraName)} CCTV 삭제`} onClick={() => { setCameraError(''); setDeleteTarget(camera); }}>CCTV 삭제</button></td></tr>)}{!cameras.length && <tr><td colSpan="5" className="console-empty">등록된 CCTV가 없습니다.</td></tr>}</tbody></table></div></>}
@@ -224,7 +243,19 @@ export default function Admin() {
     </>}
     {tab === 'stats' && <><section className="console-toolbar"><div><h2>관제 운영 통계</h2></div></section><div className="admin-stats">{[['등록 작업자', workers.filter((worker) => worker.role === 'WORKER').length, '명'], ['활성 작업자', workers.filter((worker) => worker.role === 'WORKER' && worker.status === 'ACTIVE').length, '명'], ['활성 CCTV', cameras.filter((camera) => camera.status === 'ONLINE').length, '채널'], ['전체 오탐', falseEventTotal, '건']].map(([label, value, unit]) => <article className="console-panel" key={label}><span>{label}</span><strong>{value}<small>{unit}</small></strong></article>)}</div><section className="console-panel admin-role-stats"><h3>권한별 계정 분포</h3>{roleCountsError ? <p role="alert" className="console-notice">{roleCountsError}</p> : !roleCounts ? <p role="status" className="console-muted">계정 분포를 불러오는 중입니다.</p> : [['최고 관리자', roleCounts.superAdmins], ['관리자', roleCounts.admins], ['작업자', roleCounts.workers]].map(([label, count]) => <div key={label}><span>{label}</span><meter aria-label={`${label} 계정 비율`} min="0" max={Math.max(roleCounts.superAdmins + roleCounts.admins + roleCounts.workers, 1)} value={count} /><b>{count}명</b></div>)}</section></>}
     {tab === 'stats' && <footer className="console-foot admin-footer"><span>FIRIS / ACCESS CONTROL SYSTEM</span></footer>}
-    {roleTarget && <Modal title="권한 등급 변경" subtitle="ACCOUNT ROLE MANAGEMENT" onClose={closeRoleModal}><div className="console-modal__body"><p><strong>{roleTarget.account.name} ({roleTarget.account.loginId})</strong> 계정의 권한을 변경하시겠습니까?</p><p>{roleLabel(roleTarget.account.role)} → <strong>{roleLabel(roleTarget.role)}</strong></p><p>로그인 아이디와 기존 기록은 유지됩니다. 변경한 권한은 다음 서버 요청부터 적용됩니다.</p>{roleError && <p role="alert" className="admin-error">{roleError}</p>}</div><footer className="console-modal__footer"><button disabled={accountBusy} onClick={closeRoleModal}>취소</button><button className="console-primary" disabled={accountBusy} onClick={changeRole}>{accountBusy ? '변경 중…' : '권한 변경'}</button></footer></Modal>}
+    {accountEditor && <Modal title="계정 수정" subtitle={accountEditor.name + ' · ' + accountEditor.loginId} onClose={closeAccountModal}>
+      <div className="console-modal__body"><p>권한: {roleLabel(accountEditor.role)} · 상태: {accountEditor.status}</p><div className="admin-account-actions">
+        <button disabled={accountBusy} onClick={() => { setAccountError(''); changeStatus(accountEditor); }}>{accountEditor.status === 'ACTIVE' ? '비활성화' : '활성화'}</button>
+        <button disabled={accountBusy} onClick={() => { setAccountError(''); resetPassword(accountEditor); }}>비밀번호 초기화</button>
+        {isSuperAdmin && <button disabled={accountBusy} onClick={() => { setRoleError(''); setRoleTarget({ account: accountEditor, role: accountEditor.role }); setAccountEditor(null); }}>권한 등급 수정</button>}
+      </div>{accountError && <p role="alert" className="admin-error">{accountError}</p>}</div>
+      <footer className="console-modal__footer"><button disabled={accountBusy} onClick={closeAccountModal}>닫기</button></footer>
+    </Modal>}
+    {accountDeleteTarget && <Modal title="계정 삭제" subtitle="ACCOUNT MANAGEMENT" onClose={closeAccountModal}>
+      <div className="console-modal__body"><p><strong>{accountDeleteTarget.name} ({accountDeleteTarget.loginId})</strong> 계정을 삭제하시겠습니까?</p><p>목록에서 제거되고 로그인할 수 없습니다. 기존 검수·신고 이력은 유지되며 이 화면에서 복구할 수 없습니다.</p>{accountError && <p role="alert" className="admin-error">{accountError}</p>}</div>
+      <footer className="console-modal__footer"><button disabled={accountBusy} onClick={closeAccountModal}>취소</button><button className="console-primary" disabled={accountBusy} onClick={deleteAccount}>{accountBusy ? '삭제 중…' : '계정 삭제'}</button></footer>
+    </Modal>}
+    {roleTarget && <Modal title="권한 등급 변경" subtitle="ACCOUNT ROLE MANAGEMENT" onClose={closeRoleModal}><div className="console-modal__body"><p><strong>{roleTarget.account.name} ({roleTarget.account.loginId})</strong> 계정의 권한을 변경하시겠습니까?</p><label className="admin-role-field">권한 등급<select disabled={accountBusy} value={roleTarget.role} onChange={(event) => setRoleTarget((target) => ({ ...target, role: event.target.value }))}><option value="WORKER">작업자</option><option value="ADMIN">관리자</option></select></label><p>로그인 아이디와 기존 기록은 유지됩니다. 변경한 권한은 다음 서버 요청부터 적용됩니다.</p>{roleError && <p role="alert" className="admin-error">{roleError}</p>}</div><footer className="console-modal__footer"><button disabled={accountBusy} onClick={closeRoleModal}>취소</button><button className="console-primary" disabled={accountBusy || roleTarget.role === roleTarget.account.role} onClick={changeRole}>{accountBusy ? '변경 중…' : '권한 변경'}</button></footer></Modal>}
     {cameraEditor && <Modal title="CCTV 추가" subtitle="CAMERA MANAGEMENT" className="camera-management-modal" onClose={closeCameraModal}><form onSubmit={createCamera}><fieldset disabled={cameraBusy} className="console-modal__body console-form">
       <label>CCTV ID<input required maxLength={30} pattern="[A-Za-z0-9_\-]{1,30}" placeholder="예: CAM010" value={cameraDraft.cameraId} onChange={changeCameraField('cameraId')} /><small>영문, 숫자, 밑줄, 하이픈을 사용할 수 있습니다. 삭제된 ID는 재사용할 수 없습니다.</small></label>
       <label>CCTV 이름<input required maxLength={50} value={cameraDraft.cameraName} onChange={changeCameraField('cameraName')} /></label>

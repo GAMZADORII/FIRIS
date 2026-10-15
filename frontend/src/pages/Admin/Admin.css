@@ -112,7 +112,7 @@
   text-overflow: ellipsis;
   vertical-align: middle;
 }
-.admin-row-actions { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.admin-row-actions { display: flex; justify-content: center; align-items: center; gap: 8px; }
 .admin-table.console-table button {
   max-width: 100%;
   height: 28px;
@@ -325,4 +325,5 @@
   overflow-wrap: anywhere;
 }
 
-.admin-table .admin-role-select { width: 100%; min-width: 0; padding: 5px; font-size: 12px; }
+.admin-account-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0; }
+.admin-role-field { display: flex; align-items: center; gap: 12px; margin: 16px 0; }

@@ -507,3 +507,12 @@ Backend 발신 JSON:
 - 기존 status/password-reset API에서도 SUPER_ADMIN은 ADMIN·WORKER를, ADMIN은 WORKER만 제어한다. 최고 관리자 계정은 제어할 수 없다.
 - 비밀번호가 초기화된 ADMIN은 변경 전까지 일반 API가 차단되며 PATCH /api/auth/password로 변경할 수 있다. 변경 의무가 남은 WORKER를 승격해도 의무는 사라지지 않는다.
 - 권한 변경 후 기존 JWT도 DB의 최신 역할로 검사한다. 작업자 아이디 발급은 승격된 Wxxxxxx 계정을 포함하여 중복을 피한다.
+
+## 계정 삭제
+
+`DELETE /api/admin/workers/{workerId}`는 성공 시 `204 No Content`를 반환한다.
+일반 관리자는 작업자만, 최고관리자는 작업자와 일반 관리자를 삭제할 수 있다.
+최고관리자 계정은 삭제할 수 없다. 삭제한 계정은 목록·권한별 통계에서 제외되며
+로그인 및 기존 토큰 사용이 차단된다. 삭제 시 `account.deleted_at`을 기록하고
+비활성화하며, 기존 검수·신고 참조와 로그인 ID는 보존한다. 삭제한 계정의
+상태·권한 변경 및 비밀번호 초기화는 `404`를 반환한다.

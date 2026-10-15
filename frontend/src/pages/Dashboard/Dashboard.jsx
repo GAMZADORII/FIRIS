@@ -133,7 +133,13 @@ export default function Dashboard() {
       <section className="dashboard-hero" aria-labelledby="dashboard-title">
         <div className="dashboard-hero__mark" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" focusable="false"><path d="M12 2.5 20 6v5.5c0 4.5-3.3 8-8 10-4-2-8-5-8-10V6l8-3.5Z" /><path d="M12.5 7.5c.5 3-3.5 3.5-3.5 6a3 3 0 0 0 6 0c0-1.2-.5-2.3-1.5-3-.1 1-.6 1.5-1 1.7.5-1.7.5-3.2 0-4.7Z" /></svg></div>
         <div className="dashboard-hero__copy"><div className="dashboard-hero__meta"><span className="dashboard-hero__status">SYSTEM LIVE</span><span>AI · Backend 관제 연동</span></div><h1 id="dashboard-title">종합 화재 관제 모니터링 콘솔</h1><p>CCTV 영상 기반 화재·연기 탐지 · 통합 상황 모니터링</p></div>
-        <div className="dashboard-hero__clock" aria-label="현재 한국 시간"><span>LOCAL TIME</span><strong>{now.toLocaleTimeString('ko-KR', { timeZone: 'Asia/Seoul', hour12: false })}</strong></div>
+        <div className="dashboard-hero__info">
+          <div className="dashboard-hero__contact" aria-label="비상연락처: 최고관리자 차나래">
+            <span className="dashboard-hero__contact-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.1-8.7A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.8 2.1Z" /></svg></span>
+            <div><p><span>비상연락처</span><strong>최고관리자 차나래</strong></p><a href="tel:01012345678">010-1234-5678</a></div>
+          </div>
+          <div className="dashboard-hero__clock" aria-label="현재 한국 시간"><span>LOCAL TIME</span><strong>{now.toLocaleTimeString('ko-KR', { timeZone: 'Asia/Seoul', hour12: false })}</strong></div>
+        </div>
       </section>
       {error && <p role="alert" className="dashboard-error">{error}</p>}
       <div className="dashboard-layout">
