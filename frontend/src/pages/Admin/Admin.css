@@ -324,3 +324,5 @@
   color: #9498a4;
   overflow-wrap: anywhere;
 }
+
+.admin-table .admin-role-select { width: 100%; min-width: 0; padding: 5px; font-size: 12px; }

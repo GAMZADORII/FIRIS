@@ -80,7 +80,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             writeError(response, ErrorCode.ACCOUNT_INACTIVE, ErrorCode.ACCOUNT_INACTIVE.getMessage());
             return;
         }
-        if (account.getRole() == Role.WORKER
+        if ((account.getRole() == Role.WORKER || account.getRole() == Role.ADMIN)
                 && account.isMustChangePassword()
                 && !isPasswordChangeRequest(request)
                 && !isContactConsentRead(request)) {

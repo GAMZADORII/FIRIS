@@ -61,7 +61,7 @@ public class AuthService {
         Account account = accountRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new ApiException(ErrorCode.UNAUTHORIZED));
 
-        if (account.getRole() != Role.WORKER) {
+        if (account.getRole() != Role.WORKER && account.getRole() != Role.ADMIN) {
             throw new ApiException(ErrorCode.FORBIDDEN);
         }
         if (!passwordEncoder.matches(request.currentPassword(), account.getPasswordHash())) {

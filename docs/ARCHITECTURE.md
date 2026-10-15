@@ -148,3 +148,6 @@ AI/Backend/Frontend Dockerfile과 Jenkins Pipeline이 있으며, docker-compose.
 
 ## 기본 데이터 초기화
 Hibernate 스키마 반영 후 ApplicationRunner가 기본 데이터를 확인한다. 최고 관리자는 login_id 단위로 추가하고 기존 값은 보존한다. 기존 초기 관리자는 ADMIN 역할 존재 여부와 환경변수로, CCTV는 ID 존재 여부로 생성한다. 데이터베이스 볼륨이 서로 달라도 같은 초기화 코드로 필수 데이터를 준비한다. 이벤트·검수·신고 이력은 초기화 대상이 아니다.
+
+## 관리자 계정 제어
+기존 작업자 관리 API는 요청자의 DB 역할에 따라 조회·제어 범위를 결정한다. 최고 관리자는 ADMIN/WORKER, 일반 관리자는 WORKER만 대상으로 한다. 권한 변경은 전용 SUPER_ADMIN API에서 대상 행을 잠그고 expectedRole을 비교한다. JWT 요청은 기존대로 DB의 현재 역할을 재조회한다. 관리자 비밀번호 초기화에 따라 ADMIN도 강제 변경 절차를 지원한다. 작업자 번호 발급은 역할과 무관하게 기존 Wxxxxxx 아이디를 확인한다.

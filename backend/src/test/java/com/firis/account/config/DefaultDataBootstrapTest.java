@@ -39,6 +39,9 @@ class DefaultDataBootstrapTest {
         assertThat(first.getRole()).isEqualTo(Role.SUPER_ADMIN);
         assertThat(first.getName()).isEqualTo("박상현");
         assertThat(second.getName()).isEqualTo("차나래");
+        assertThat(first.getContactPhone()).isEqualTo("01012345678");
+        assertThat(second.getContactPhone()).isEqualTo("01012345678");
+        assertThat(first.getContactConsentedAt()).isNull();
         assertThat(passwords.matches("1234", first.getPasswordHash())).isTrue();
         assertThat(passwords.matches("1234", second.getPasswordHash())).isTrue();
         assertThat(accounts.countByRole(Role.SUPER_ADMIN)).isEqualTo(2);

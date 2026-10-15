@@ -106,11 +106,29 @@ public class Account {
         this.mustChangePassword = true;
     }
 
+    public boolean fillMissingContactPhone(String phone) {
+        if (contactPhone != null && !contactPhone.isBlank()) return false;
+        if (phone == null || !phone.trim().matches("^0\\d{1,2}-?\\d{3,4}-?\\d{4}$")) {
+            throw new IllegalArgumentException("기본 연락처 형식을 확인해주세요.");
+        }
+        contactPhone = phone.trim().replace("-", "");
+        return true;
+    }
+
     public void completeContactOnboarding(String phone, String consentVersion, LocalDateTime consentedAt) {
         this.contactPhone = phone;
         this.contactConsentVersion = consentVersion;
         this.contactConsentedAt = consentedAt;
         this.contactOnboardingRequired = false;
+    }
+
+    public void changeRole(Role role) {
+        if (this.role == Role.SUPER_ADMIN || role == null || role == Role.SUPER_ADMIN) {
+            throw new IllegalArgumentException("작업자와 관리자 사이에서만 권한을 변경할 수 있습니다.");
+        }
+        if (this.role == role) return;
+        this.role = role;
+        this.contactOnboardingRequired = role == Role.WORKER && contactConsentedAt == null;
     }
 
     public void changeStatus(AccountStatus status) {

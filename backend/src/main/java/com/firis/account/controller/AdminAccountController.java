@@ -8,6 +8,8 @@ import com.firis.account.dto.WorkerResponse;
 import com.firis.account.dto.WorkerStatusResponse;
 import com.firis.account.service.AccountService;
 import jakarta.validation.Valid;
+import org.springframework.security.core.Authentication;
+import com.firis.account.dto.UpdateAccountRoleRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -31,8 +33,8 @@ public class AdminAccountController {
     }
 
     @GetMapping
-    public List<WorkerResponse> getWorkers() {
-        return accountService.getWorkers();
+    public List<WorkerResponse> getWorkers(Authentication authentication) {
+        return accountService.getWorkers(authentication.getName());
     }
 
     @PostMapping
@@ -44,13 +46,20 @@ public class AdminAccountController {
     @PatchMapping("/{workerId}/status")
     public WorkerStatusResponse changeWorkerStatus(
             @PathVariable Long workerId,
-            @Valid @RequestBody UpdateWorkerStatusRequest request
+            @Valid @RequestBody UpdateWorkerStatusRequest request,
+            Authentication authentication
     ) {
-        return accountService.changeWorkerStatus(workerId, request);
+        return accountService.changeWorkerStatus(workerId, request, authentication.getName());
+    }
+
+    @PatchMapping("/{workerId}/role")
+    public WorkerResponse changeRole(@PathVariable Long workerId,
+            @Valid @RequestBody UpdateAccountRoleRequest request, Authentication authentication) {
+        return accountService.changeAccountRole(workerId, request, authentication.getName());
     }
 
     @PatchMapping("/{workerId}/password-reset")
-    public ResetPasswordResponse resetWorkerPassword(@PathVariable Long workerId) {
-        return accountService.resetWorkerPassword(workerId);
+    public ResetPasswordResponse resetWorkerPassword(@PathVariable Long workerId, Authentication authentication) {
+        return accountService.resetWorkerPassword(workerId, authentication.getName());
     }
 }
