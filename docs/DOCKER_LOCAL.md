@@ -58,3 +58,5 @@ Backend와 Frontend를 함께 재빌드한다. 기본 `DDL_AUTO=update`에서는
 ## 최고 관리자의 계정 제어
 
 최고 관리자로 로그인하면 작업자 관리에 관리자도 표시한다. 권한 등급에서 관리자/작업자를 선택하고 확인 창에서 적용한다. 최고 관리자는 일반 관리자도 활성화·비활성화하고 비밀번호를 초기화할 수 있다. 초기 비밀번호는 WORKER_DEFAULT_PASSWORD를 사용하며 대상 관리자는 비밀번호 변경 후 정상 이용한다. 최고 관리자 계정은 제어 대상에서 제외한다. 일반 관리자는 작업자만 조회·제어한다. 기본 관리자 ID가 작업자로 변경돼도 재시작 시 자동 재승격하지 않는다. Backend와 Frontend를 함께 재빌드해야 한다.
+
+CCTV 추가 시 영상 주소는 자동 등록한다. ID가 CAM010이고 CAMERA_BASE_URL=http://localhost:8080이면 http://localhost:8080/videos/CAM010/001.mp4로 저장한다. 영상 파일은 storage/videos/CAM010/001.mp4에 준비한다. CAMERA_BASE_URL은 루트 .env에서 설정하며 Docker가 Backend에 전달한다. 기존 등록 CCTV 주소는 변경하지 않는다.

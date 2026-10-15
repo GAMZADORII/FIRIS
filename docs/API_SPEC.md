@@ -516,3 +516,5 @@ Backend 발신 JSON:
 로그인 및 기존 토큰 사용이 차단된다. 삭제 시 `account.deleted_at`을 기록하고
 비활성화하며, 기존 검수·신고 참조와 로그인 ID는 보존한다. 삭제한 계정의
 상태·권한 변경 및 비밀번호 초기화는 `404`를 반환한다.
+
+CCTV 등록의 streamUrl은 선택 항목이다. null/생략/빈 문자열이면 app.camera.base-url(CAMERA_BASE_URL)의 후행 슬래시를 제거하고 /videos/{cameraId}/001.mp4를 붙여 저장한다. 명시적으로 주소를 보내면 기존 HTTP/HTTPS 검증을 적용한다. 파일 업로드나 AI worker 설정 변경은 수행하지 않는다.
