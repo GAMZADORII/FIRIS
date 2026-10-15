@@ -1,3 +1,4 @@
+import { formatDateTime as dateTime } from '../../utils/dateTime.js';
 import Modal from '../Modal/Modal.jsx';
 import EventVideo from '../EventVideo.jsx';
 import StatusBadge from '../StatusBadge/StatusBadge.jsx';
@@ -5,7 +6,6 @@ import './ReportDetailModal.css';
 import { formatPhone } from '../../utils/phone.js';
 
 const eventLabels = { FIRE: '화재', SMOKE: '연기', FIRE_SMOKE: '화재·연기' };
-const dateTime = (value) => value?.replace('T', ' ') || '—';
 const shortId = (report) => `119-${String(report.reportId).padStart(3, '0')}`;
 
 export default function ReportDetailModal({ report, onClose, onAdvance, busy, error }) {
@@ -45,21 +45,20 @@ export default function ReportDetailModal({ report, onClose, onAdvance, busy, er
           </section>
         </div>
         <div className="history-modal-notes">
-          <div><h4>신고 내용</h4><p>{report.note || '내용 없음'}</p></div>
-          <div><h4>특이사항</h4><p>{report.specialNotes || '없음'}</p></div>
+          <div><h4>신고 내용</h4><p>{report.note || report.specialNotes || '등록된 내용 없음'}</p></div>
         </div>
         <section className="history-modal-timeline" aria-label="처리 기록">
           <h4>처리 기록</h4>
           <ul>
             {report.history.map((item, index) => <li key={`${item.status}-${index}`}>
-              <time>{item.time}</time><strong>{item.label}</strong><span>{item.actor}</span>
+              <time>{dateTime(item.time)}</time><strong>{item.label}</strong><span>{item.actor}</span>
             </li>)}
           </ul>
         </section>
         {error && <p className="history-modal-error" role="alert">{error}</p>}
         <footer className="history-modal-actions">
           <button className="small-button" onClick={onClose}>닫기</button>
-          {report.responseStatus === 'PENDING' && <button className="primary-button" disabled={busy} onClick={() => onAdvance('DISPATCHED', report.reportId)}>{busy ? '처리 중…' : '접수 완료 →'}</button>}
+          {report.responseStatus === 'PENDING' && <button className="primary-button" disabled={busy} onClick={() => onAdvance('DISPATCHED', report.reportId)}>{busy ? '처리 중…' : '출동 지시 →'}</button>}
           {report.responseStatus === 'DISPATCHED' && <span className="subtle">출동 중입니다. 도착 시 자동으로 상태가 변경됩니다.</span>}
           {report.responseStatus === 'ARRIVED' && <button className="primary-button" disabled={busy} onClick={() => onAdvance('CLOSED', report.reportId)}>{busy ? '처리 중…' : '대응 완료 ✓'}</button>}
           {report.responseStatus === 'CLOSED' && <span className="closed-note">✓ 대응 완료</span>}

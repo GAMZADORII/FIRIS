@@ -4,7 +4,7 @@ const RADIUS = 18;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 /** Current report counts, calculated from the same data as the reception list. */
-export default function ReportSummary({ waiting, active, closed, onReset }) {
+export default function ReportSummary({ waiting, active, closed }) {
   const total = waiting + active + closed;
   const segments = [
     { key: 'waiting', label: '접수 대기', count: waiting },
@@ -40,7 +40,6 @@ export default function ReportSummary({ waiting, active, closed, onReset }) {
           </div>
         ))}
       </div>
-      <button type="button" className="report-summary__reset" onClick={onReset} title="서버에서 신고 목록을 다시 불러옵니다">새로고침</button>
     </div>
   );
 }
