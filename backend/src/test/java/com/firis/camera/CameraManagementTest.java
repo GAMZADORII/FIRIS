@@ -23,7 +23,8 @@ import static org.assertj.core.api.Assertions.assertThat;
     "spring.datasource.driver-class-name=org.h2.Driver", "spring.datasource.username=sa",
     "spring.datasource.password=", "spring.jpa.hibernate.ddl-auto=create-drop",
     "spring.config.import=", "security.jwt.secret=unit-test-only-secret-0123456789-abcdef",
-    "app.admin.password=", "AI_API_KEY=test-only-ai-key"
+    "app.admin.password=", "AI_API_KEY=test-only-ai-key",
+    "app.camera.base-url=https://firis.test:8443///"
 })
 class CameraManagementTest {
     @LocalServerPort int port;
@@ -79,6 +80,19 @@ class CameraManagementTest {
         assertThat(call("POST", "/api/cameras", adminToken, body).statusCode()).isEqualTo(201);
         assertThat(call("DELETE", "/api/cameras/CUSTOM", adminToken, null).statusCode()).isEqualTo(204);
         assertThat(call("POST", "/api/cameras", adminToken, body.replace("https://", "rtsp://")).statusCode()).isEqualTo(400);
+    }
+
+    @Test void omittedOrBlankVideoUrlIsGeneratedFromCameraIdAndConfiguredBase() throws Exception {
+        var token = tokens.generateToken(accounts.findByLoginId("superadmin1").orElseThrow());
+        var omitted = "{\"cameraId\":\"AUTO_VIDEO\",\"cameraName\":\"자동 영상\",\"status\":\"ONLINE\"}";
+        var result = call("POST", "/api/cameras", token, omitted);
+        assertThat(result.statusCode()).isEqualTo(201);
+        assertThat(mapper.readTree(result.body()).path("streamUrl").asText())
+                .isEqualTo("https://firis.test:8443/videos/AUTO_VIDEO/001.mp4");
+        var blank = "{\"cameraId\":\"EMPTY_VIDEO\",\"cameraName\":\"자동 영상\",\"streamUrl\":\"\",\"status\":\"OFFLINE\"}";
+        assertThat(call("POST", "/api/cameras", token, blank).statusCode()).isEqualTo(201);
+        assertThat(cameras.findById("EMPTY_VIDEO").orElseThrow().getStreamUrl())
+                .isEqualTo("https://firis.test:8443/videos/EMPTY_VIDEO/001.mp4");
     }
 
     private HttpResponse<String> call(String method, String path, String token, String body) throws Exception {

@@ -11,6 +11,7 @@ import jakarta.persistence.EntityManager;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -21,10 +22,13 @@ public class CameraService {
 
     private final CameraRepository cameraRepository;
     private final EntityManager entityManager;
+    private final String cameraBaseUrl;
 
-    public CameraService(CameraRepository cameraRepository, EntityManager entityManager) {
+    public CameraService(CameraRepository cameraRepository, EntityManager entityManager,
+            @Value("${app.camera.base-url:http://localhost:8080}") String cameraBaseUrl) {
         this.cameraRepository = cameraRepository;
         this.entityManager = entityManager;
+        this.cameraBaseUrl = cameraBaseUrl.replaceAll("/+$", "");
     }
 
     @Transactional(readOnly = true)
@@ -36,12 +40,15 @@ public class CameraService {
 
     @Transactional
     public CameraResponse createCamera(CreateCameraRequest request) {
-        validateStreamUrl(request.streamUrl());
+        String streamUrl = request.streamUrl() == null || request.streamUrl().isBlank()
+                ? cameraBaseUrl + "/videos/" + request.cameraId() + "/001.mp4"
+                : request.streamUrl();
+        validateStreamUrl(streamUrl);
         if (cameraRepository.existsById(request.cameraId())) {
             throw new ApiException(ErrorCode.CAMERA_ALREADY_EXISTS);
         }
         Camera camera = Camera.create(request.cameraId(), request.cameraName(),
-                request.location(), request.streamUrl(), request.status(), request.reportNote());
+                request.location(), streamUrl, request.status(), request.reportNote());
         try {
             // Persist rather than merge: concurrent registration must never replace an existing camera.
             entityManager.persist(camera);
