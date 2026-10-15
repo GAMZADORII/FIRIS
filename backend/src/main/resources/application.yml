@@ -49,5 +49,5 @@ app:
     allowed-origins: ${MOCK_119_ALLOWED_ORIGINS:http://localhost:5174,http://127.0.0.1:5174,http://localhost:5173,http://127.0.0.1:5173}
     ws-url: ${MOCK_119_WS_URL:}
     api-key: ${MOCK_119_API_KEY:}
-    site-address: ${MOCK_119_SITE_ADDRESS:}
+    site-address: "${MOCK_119_SITE_ADDRESS:충청남도 가온시 새빛구 안전산단로 119, FIRIS 스마트공장}"
     control-room-phone: ${MOCK_119_CONTROL_ROOM_PHONE:041-123-4567}
