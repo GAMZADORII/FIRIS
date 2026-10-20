@@ -1,0 +1,45 @@
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, .78);
+}
+.dialog-panel {
+  width: min(920px, 100%);
+  max-height: calc(100dvh - 40px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #454850;
+  border-radius: 8px;
+  background: #1b1b1f;
+  color: #e3e2e6;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .6);
+}
+.dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #353740;
+}
+.dialog-header h2 {font-size: 17px; line-height: 1.5; margin: 0;}
+.dialog-close {font-size: 22px; width: 35px; height: 35px; padding: 0; flex-shrink: 0;}
+.dialog-body {overflow-y: auto; padding: 18px 20px 20px;}
+.modal-description {margin: 0 0 14px; color: #b4b5bd; font-size: 12px;}
+.video-modal {width: min(1100px, 100%);}
+.video-modal .mock-video {border: 1px solid #353740; border-radius: 4px; overflow: hidden;}
+.video-modal .video-controls {height: 38px; font-size: 11px; padding: 0 15px;}
+.video-modal .video-controls button {font-size: 15px;}
+@media(max-width: 560px) {
+  .dialog-backdrop {padding: 10px;}
+  .dialog-panel {max-height: calc(100dvh - 20px);}
+  .dialog-header {padding: 12px 14px;}
+  .dialog-header h2 {font-size: 14px;}
+  .dialog-body {padding: 14px;}
+}

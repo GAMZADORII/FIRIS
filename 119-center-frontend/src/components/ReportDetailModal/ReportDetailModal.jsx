@@ -1,0 +1,69 @@
+import { formatDateTime as dateTime } from '../../utils/dateTime.js';
+import Modal from '../Modal/Modal.jsx';
+import EventVideo from '../EventVideo.jsx';
+import StatusBadge from '../StatusBadge/StatusBadge.jsx';
+import './ReportDetailModal.css';
+import { formatPhone } from '../../utils/phone.js';
+
+const eventLabels = { FIRE: '화재', SMOKE: '연기', FIRE_SMOKE: '화재·연기' };
+const shortId = (report) => `119-${String(report.reportId).padStart(3, '0')}`;
+
+export default function ReportDetailModal({ report, onClose, onAdvance, busy, error }) {
+  return (
+    <Modal
+      open={Boolean(report)}
+      onClose={onClose}
+      title={report ? `${shortId(report)} · 신고 상세` : '신고 상세'}
+      className="history-detail-modal"
+    >
+      {report && <>
+        <div className="history-modal-heading">
+          <div>
+            <h3>{report.facility}</h3>
+            <p>{report.siteAddress} · {report.detailLocation}</p>
+          </div>
+          <StatusBadge status={report.responseStatus} />
+        </div>
+        <div className="history-modal-content">
+          <section className="history-modal-video" aria-label="신고 당시 영상">
+            <h4>탐지 당시 영상</h4>
+            <EventVideo report={report} />
+            <p>{report.cameraId} · {report.detailLocation}</p>
+          </section>
+          <section className="history-modal-information" aria-label="신고 정보">
+            <h4>신고 정보</h4>
+            <dl>
+              <div><dt>신고 번호</dt><dd>{shortId(report)}</dd></div>
+              <div><dt>이벤트 ID</dt><dd>EVT-{report.eventId}</dd></div>
+              <div><dt>감지 유형</dt><dd>{eventLabels[report.eventType] || report.eventType}</dd></div>
+              <div><dt>CCTV</dt><dd>{report.cameraId}</dd></div>
+              <div><dt>탐지 시각</dt><dd>{dateTime(report.detectedAt)}</dd></div>
+              <div><dt>신고 시각</dt><dd>{dateTime(report.reportedAt)}</dd></div>
+              <div><dt>신고자</dt><dd>{report.reporterName}</dd></div>
+              <div><dt>신고자 연락처</dt><dd>{formatPhone(report.reporterPhone, '연락처 미등록')}</dd></div>
+            </dl>
+          </section>
+        </div>
+        <div className="history-modal-notes">
+          <div><h4>신고 내용</h4><p>{report.note || report.specialNotes || '등록된 내용 없음'}</p></div>
+        </div>
+        <section className="history-modal-timeline" aria-label="처리 기록">
+          <h4>처리 기록</h4>
+          <ul>
+            {report.history.map((item, index) => <li key={`${item.status}-${index}`}>
+              <time>{dateTime(item.time)}</time><strong>{item.label}</strong><span>{item.actor}</span>
+            </li>)}
+          </ul>
+        </section>
+        {error && <p className="history-modal-error" role="alert">{error}</p>}
+        <footer className="history-modal-actions">
+          <button className="small-button" onClick={onClose}>닫기</button>
+          {report.responseStatus === 'PENDING' && <button className="primary-button" disabled={busy} onClick={() => onAdvance('DISPATCHED', report.reportId)}>{busy ? '처리 중…' : '출동 지시 →'}</button>}
+          {report.responseStatus === 'DISPATCHED' && <span className="subtle">출동 중입니다. 도착 시 자동으로 상태가 변경됩니다.</span>}
+          {report.responseStatus === 'ARRIVED' && <button className="primary-button" disabled={busy} onClick={() => onAdvance('CLOSED', report.reportId)}>{busy ? '처리 중…' : '대응 완료 ✓'}</button>}
+          {report.responseStatus === 'CLOSED' && <span className="closed-note">✓ 대응 완료</span>}
+        </footer>
+      </>}
+    </Modal>
+  );
+}

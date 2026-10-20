@@ -1,0 +1,368 @@
+/* FIRIS shared Noto Sans KR, dark panels, red actions and readable information hierarchy.
+   Loaded after responsive.css so compact desktop rules cannot shrink essential text. */
+:root {
+  --center-text-muted: #adb3c0;
+  --center-text-secondary: #c5cad4;
+  --center-panel-border: #343740;
+  font-size: 14px;
+  line-height: 1.6;
+}
+button, input, select { font-size: 14px; min-height: 38px; }
+button { border-radius: 5px; }
+button:disabled { cursor: not-allowed; }
+.panel { border-color: var(--center-panel-border); border-radius: 6px; }
+.page-heading h1 { font-size: 26px; line-height: 1.4; letter-spacing: -.6px; }
+.eyebrow { font-size: 11px; letter-spacing: 1.2px; }
+.page-subtitle, .subtle { font-size: 13px; line-height: 1.6; color: var(--center-text-muted); }
+.brand small, .demo-tag, .connection { font-size: 12px; }
+.tabs button { font-size: 15px; padding-inline: 20px; }
+.tabs span { font-size: 12px; min-width: 22px; height: 22px; }
+.report-summary { gap: 12px; }
+.report-summary__label { font-size: 12px; color: var(--center-text-secondary); line-height: 1.5; }
+.report-summary__stat { min-width: 108px; padding-inline: 12px; }
+.report-summary__stat strong { font-size: 22px; }
+.report-summary__stat small { font-size: 12px; color: var(--center-text-muted); }
+.report-summary__reset { font-size: 13px; padding: 8px 12px; }
+.action-feedback { font-size: 12px; line-height: 24px; height: 28px; }
+.workspace { grid-template-columns: clamp(240px, 20vw, 290px) minmax(0, 1fr); gap: 18px; }
+.queue-panel .panel-title { padding: 16px; }
+.queue-panel__heading h2 { font-size: 16px; }
+.queue-panel__count { font-size: 18px; padding: 4px 9px; }
+.queue-panel__count small { font-size: 12px; }
+.queue-item { padding: 17px 15px; }
+.queue-meta { font-size: 12px; gap: 10px; color: var(--center-text-muted); }
+.queue-item h3 { font-size: 17px; margin: 10px 0 6px; line-height: 1.5; }
+.queue-item p { font-size: 14px; line-height: 1.55; color: var(--center-text-secondary); overflow-wrap: anywhere; }
+.queue-bottom { gap: 8px; margin-top: 12px; }
+.queue-bottom > span:last-child { font-size: 12px; }
+.queue-footer { font-size: 12px; color: var(--center-text-muted); padding: 14px; }
+.queue-footer button { font-size: 13px; }
+.status-badge { font-size: 12px; padding: 6px 10px; line-height: 1.4; }
+.status-badge i { width: 5px; height: 5px; }
+.detail-panel { padding-inline: 20px; }
+.incident-heading { padding-block: 16px; margin-bottom: 16px; }
+.incident-meta { font-size: 13px; color: var(--center-text-muted); }
+.incident-heading h2 { font-size: 24px; line-height: 1.45; margin: 6px 0; }
+.incident-heading p { font-size: 14px; line-height: 1.6; }
+.incident-heading p > span { color: var(--center-text-muted); }
+.card-heading { min-height: 44px; padding: 10px 13px; flex-wrap: wrap; }
+.card-heading h3, .information-heading h3 { font-size: 16px; line-height: 1.5; }
+.information-heading { padding: 14px 0 10px; }
+.media-heading-actions { flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.media-heading-actions .small-button, .small-button { font-size: 13px; min-height: 36px; padding: 7px 11px; }
+.sub-badge { font-size: 11px; padding: 4px 7px; }
+.media-footer { font-size: 12px; line-height: 1.55; padding: 10px 12px; color: var(--center-text-muted); }
+.operations-grid { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); margin-top: 18px; gap: 20px; }
+.information-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px; padding-top: 14px; }
+.information-row > div { min-width: 0; }
+.information-row label { font-size: 13px; margin-bottom: 5px; color: var(--center-text-muted); }
+.information-row strong { display: block; font-size: 15px; font-weight: 600; line-height: 1.6; }
+.information-row strong > span { font-size: 14px; color: var(--center-text-secondary); }
+.information-row .note { grid-column: 1 / -1; padding: 12px 14px; border-radius: 5px; }
+.information-row .note p { font-size: 14px; line-height: 1.75; color: var(--center-text-secondary); }
+.information-row .special-note p { color: #ffd799; }
+.response-section > .card-heading { padding: 14px 0 12px; }
+.progress-steps { margin-bottom: 18px; }
+.progress-steps li > span { width: 30px; height: 30px; font-size: 13px; }
+.progress-steps li::before { top: 15px; }
+.progress-steps strong { font-size: 13px; margin-top: 8px; }
+.progress-steps small { font-size: 11px; margin-top: 4px; }
+.eta-panel > span, .eta-panel p { font-size: 13px; line-height: 1.6; }
+.eta-panel small { font-size: 12px; color: var(--center-text-muted); }
+.eta-panel > strong { font-size: 26px; }
+.detail-bottom { position: sticky; bottom: 0; z-index: 5; background: #1b1b1ff5; border-top: 1px solid #454851; padding: 14px 0; margin-top: 20px; gap: 16px; }
+.history { font-size: 14px; }
+.history summary { padding: 8px 0; }
+.history summary span { font-size: 12px; }
+.history ul { max-height: 180px; overflow: auto; }
+.history li { flex-wrap: wrap; font-size: 13px; line-height: 1.6; }
+.history li > span { font-size: 12px; }
+.primary-button { font-size: 15px; min-height: 44px; padding: 10px 18px; }
+.waiting-message, .closed-note, .action-area p { font-size: 13px; line-height: 1.7; }
+.page-footer { font-size: 12px; color: var(--center-text-muted); }
+.archive .panel-title { gap: 16px; flex-wrap: wrap; padding-block: 18px; }
+.archive h2 { font-size: 18px; }
+.archive h2 > span { font-size: 13px; }
+.list-toolbar { gap: 12px; }
+.list-toolbar input, .list-toolbar select { font-size: 14px; min-height: 42px; }
+.archive table { min-width: 900px; }
+.archive th { font-size: 13px; color: var(--center-text-secondary); padding: 14px 16px; }
+.archive td { font-size: 15px; line-height: 1.6; padding: 18px 16px; }
+.archive td small { font-size: 13px; color: var(--center-text-muted); margin-top: 5px; }
+.archive thead th { position: sticky; top: 0; z-index: 1; }
+.empty { font-size: 14px; line-height: 1.7; }
+.history-pagination { padding-top: 4px; margin-top: 18px; }
+.history-pagination nav { gap: 6px; }
+.history-pagination button { min-width: 36px; border-radius: 6px; }
+.history-pagination button[aria-current="page"] { background: #d72e35; border-color: #d72e35; }
+.dialog-header { padding: 18px 22px; }
+.dialog-header h2 { font-size: 20px; }
+.dialog-close { width: 38px; height: 38px; }
+.dialog-body { padding: 20px 22px; }
+.modal-description { font-size: 14px; line-height: 1.6; }
+.history-modal-heading h3 { font-size: 22px; }
+.history-modal-heading p { font-size: 14px; line-height: 1.7; }
+.history-detail-modal h4 { font-size: 16px; }
+.history-modal-video > p { font-size: 13px; }
+.history-modal-information dl { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 14px; }
+.history-modal-information dt { font-size: 13px; color: var(--center-text-muted); }
+.history-modal-information dd { font-size: 15px; line-height: 1.65; }
+.history-modal-notes p { font-size: 14px; line-height: 1.75; }
+.history-modal-timeline li { font-size: 14px; padding-block: 14px; }
+.history-modal-timeline li time, .history-modal-timeline li span { color: var(--center-text-muted); }
+.history-modal-error { font-size: 14px; }
+@media (max-width: 1370px) and (min-width: 1100px) {
+  .workspace { grid-template-columns: 240px minmax(0, 1fr); }
+  .operations-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .response-section { padding-bottom: 8px; }
+  .report-summary__stat { min-width: 96px; padding-inline: 9px; }
+  .report-summary__chart { width: 44px; height: 44px; flex-basis: 44px; }
+}
+@media (max-width: 1099px) {
+  .workspace { grid-template-columns: minmax(0, 1fr); }
+  .queue-item { flex-basis: 235px; min-height: 155px; }
+  .report-summary__stat { min-width: 100px; }
+  .operations-grid { gap: 18px; }
+}
+@media (max-width: 800px) {
+  .operations-grid, .history-modal-content, .history-modal-notes { grid-template-columns: minmax(0, 1fr); }
+  .report-summary { grid-template-columns: 42px repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .report-summary__stat { min-width: 0; padding: 0; }
+  .report-summary__reset { grid-column: 1 / -1; width: 100%; }
+  .report-summary__label { font-size: 12px; white-space: normal; }
+  .report-summary__stat strong { font-size: 21px; }
+  .page-heading h1 { font-size: 24px; }
+}
+@media (max-width: 600px) {
+  main { padding: 14px 12px; }
+  .topbar { height: auto; min-height: 64px; flex-wrap: wrap; gap: 8px 16px; padding: 10px 12px 0; }
+  .brand strong { font-size: 17px; }
+  .brand small { font-size: 11px; display: block; }
+  .tabs { margin-left: 0; width: 100%; min-height: 42px; }
+  .tabs button { flex: 1; font-size: 14px; padding: 8px 12px; }
+  .page-heading h1 { font-size: 23px; }
+  .page-subtitle { font-size: 13px; }
+  .incident-heading { flex-wrap: wrap; gap: 10px; padding-block: 14px; }
+  .incident-heading h2 { font-size: 22px; }
+  .incident-heading p { font-size: 14px; }
+  .incident-heading > .status-badge { margin-left: auto; font-size: 12px; }
+  .media-heading-actions .small-button { font-size: 13px; }
+  .detail-panel { padding-inline: 14px; }
+  .information-row .note { padding: 12px; }
+  .history-modal-information dl { grid-template-columns: minmax(0, 1fr); }
+  .dialog-header { padding: 16px; }
+  .dialog-header h2 { font-size: 18px; }
+  .dialog-body { padding: 16px; }
+  .history-modal-heading { flex-wrap: wrap; }
+  .history-modal-heading h3 { font-size: 21px; }
+  .history-modal-actions { align-items: stretch; gap: 10px; }
+  .history-modal-actions button { flex: 1 1 auto; }
+  .detail-bottom { gap: 12px; padding-block: 12px; }
+  .action-feedback { font-size: 12px; }
+}
+
+/* Desktop overview: keep video, report information and response visible together.
+   Overflow stays available for unusually long reports and expanded history. */
+@media (min-width: 1100px) {
+  .workspace { grid-template-columns: clamp(205px, 17vw, 250px) minmax(0, 1fr); gap: 14px; }
+  .detail-panel { padding-inline: 16px; }
+  .page-heading h1 { font-size: 24px; }
+  .queue-panel .panel-title { padding: 12px; }
+  .queue-item { padding: 11px 12px; }
+  .queue-item h3 { font-size: 15px; margin: 6px 0 4px; }
+  .queue-item p { font-size: 12px; }
+  .queue-meta, .queue-bottom > span:last-child { font-size: 11px; }
+  .queue-bottom { margin-top: 8px; }
+  .queue-bottom .status-badge { font-size: 11px; padding: 4px 8px; }
+  .queue-footer { padding: 10px 12px; }
+  .incident-heading { padding-block: 9px; margin-bottom: 10px; }
+  .incident-heading h2 { font-size: 22px; margin-block: 4px; }
+  .incident-heading p { font-size: 13px; }
+  .incident-meta { font-size: 12px; }
+  .media-card .card-heading { min-height: 36px; padding: 6px 10px; }
+  .card-heading h3, .information-heading h3 { font-size: 14px; }
+  .small-button, .media-heading-actions .small-button { min-height: 30px; padding: 4px 9px; font-size: 12px; }
+  .media-grid .event-video, .media-grid .event-video-waiting,
+  .media-grid .floor-drawing { height: clamp(110px, 20vh, 220px); aspect-ratio: auto; }
+  .media-footer { padding: 6px 10px; font-size: 12px; }
+  .operations-grid { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 16px; margin-top: 12px; }
+  .information-heading, .response-section > .card-heading { padding: 8px 0; }
+  .information-row { gap: 8px 12px; padding-top: 10px; }
+  .information-row label { font-size: 12px; margin-bottom: 3px; }
+  .information-row strong, .information-row strong > span { font-size: 13px; line-height: 1.45; }
+  .information-row .note { grid-column: auto; padding: 8px 10px; }
+  .information-row .note p { font-size: 12px; line-height: 1.5; }
+  .progress-steps { margin-bottom: 10px; }
+  .progress-steps li > span { width: 26px; height: 26px; }
+  .progress-steps li::before { top: 13px; }
+  .progress-steps strong { font-size: 12px; margin-top: 5px; }
+  .route-card > .card-heading { padding: 7px 10px; }
+  .route-map svg { height: clamp(95px, 14vh, 150px); }
+  .eta-panel { padding-block: 8px; }
+  .eta-panel > span, .eta-panel p { font-size: 12px; }
+  .eta-panel small { font-size: 11px; }
+  .detail-bottom { margin-top: auto; padding-block: 10px; }
+  .archive .panel-title { padding-block: 14px; }
+  .list-toolbar { margin-bottom: 12px; }
+  .archive table { min-width: 0; table-layout: fixed; white-space: normal; }
+  .archive th { padding: 10px 12px; }
+  .archive td { font-size: 14px; padding: 13px 12px; overflow-wrap: anywhere; }
+  .archive td small { font-size: 12px; margin-top: 3px; }
+  .archive th:nth-child(1) { width: 10%; }
+  .archive th:nth-child(2) { width: 33%; }
+  .archive th:nth-child(3) { width: 16%; }
+  .archive th:nth-child(4) { width: 13%; }
+  .archive th:nth-child(5) { width: 14%; }
+  .archive th:nth-child(6) { width: 14%; }
+  .history-pagination { margin-top: 12px; }
+}
+@media (min-width: 1100px) and (max-height: 780px) {
+  .media-grid .event-video, .media-grid .event-video-waiting,
+  .media-grid .floor-drawing { height: 110px; }
+  .incident-heading { padding-block: 7px; margin-bottom: 7px; }
+  .operations-grid { margin-top: 7px; }
+  .information-row { gap: 6px 10px; padding-top: 7px; }
+  .information-row .note { padding: 6px 8px; }
+  .route-map svg { height: 95px; }
+  .detail-bottom { padding-block: 7px; }
+}
+@media (min-width: 1100px) {
+  .queue-item { line-height: 1.35; padding-block: 9px; }
+  .queue-item h3 { line-height: 1.35; }
+  .queue-footer { font-size: 11px; }
+  .incident-heading { padding-block: 7px; }
+  .incident-meta { line-height: 1.35; }
+  .incident-heading h2 { line-height: 1.3; }
+  .incident-heading p { line-height: 1.4; }
+  .information-row .address-field { grid-column: auto; }
+  .response-section { padding-bottom: 0; }
+  .progress-steps strong { line-height: 1.4; }
+  .progress-steps small { line-height: 1.35; }
+  .response-section > .card-heading { min-height: 34px; }
+  .route-card > .card-heading { min-height: 34px; padding-block: 5px; }
+  .eta-panel > strong { font-size: 22px; margin-block: 5px; }
+  .eta-panel p { margin: 2px 0 6px; line-height: 1.4; }
+  .eta-panel small { margin-top: 5px; line-height: 1.35; }
+}
+@media (min-width: 1100px) and (max-height: 780px) {
+  .media-grid .event-video, .media-grid .event-video-waiting,
+  .media-grid .floor-drawing { height: 90px; }
+  .queue-item { padding-block: 7px; }
+}
+@media (min-width: 1100px) and (max-height: 780px) {
+  .incident-heading { padding-block: 5px; margin-bottom: 6px; }
+  .incident-heading h2 { font-size: 20px; }
+  .media-card .card-heading { min-height: 32px; padding-block: 3px; }
+  .media-footer { padding-block: 4px; }
+  .information-row { gap: 5px 10px; }
+  .information-row label { margin-bottom: 2px; }
+  .response-section > .card-heading { min-height: 30px; padding-block: 5px; }
+  .progress-steps { margin-bottom: 7px; }
+  .eta-panel { padding-block: 5px; }
+  .eta-panel > strong { margin-block: 3px; }
+  .eta-panel small { margin-top: 3px; }
+  .archive td { padding-block: 11px; }
+  .queue-item { padding-block: 3px; }
+  .queue-item h3 { font-size: 14px; margin-block: 4px 2px; }
+  .queue-item p { font-size: 11px; line-height: 1.35; }
+  .queue-bottom { margin-top: 5px; }
+  .queue-bottom .status-badge { padding-block: 3px; }
+  .queue-panel .panel-title { padding-block: 9px; }
+  .queue-footer { padding-block: 7px; }
+  .queue-footer button { margin-top: 6px; min-height: 32px; }
+}
+
+/* Desktop history: eight compact rows and a three-column incident summary. */
+@media (min-width: 1100px) {
+  .archive .panel-title { padding-block: 10px; }
+  .archive th { padding-block: 8px; }
+  .archive td { padding-block: 8px; line-height: 1.35; }
+  .archive td small { line-height: 1.35; margin-top: 2px; }
+  .archive .status-badge { padding-block: 4px; }
+  .archive .history-pagination { margin-top: 10px; }
+  .history-detail-modal { width: min(1240px, 100%); }
+  .history-detail-modal .dialog-header { padding: 12px 18px; }
+  .history-detail-modal .dialog-header h2 { font-size: 18px; }
+  .history-detail-modal .dialog-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) minmax(230px, .9fr);
+    gap: 16px 20px;
+    padding: 16px 18px;
+    align-items: start;
+  }
+  .history-detail-modal .history-modal-heading { grid-column: 1 / -1; margin: 0; padding-bottom: 12px; border-bottom: 1px solid #353740; }
+  .history-detail-modal .history-modal-heading h3 { font-size: 20px; margin-bottom: 4px; }
+  .history-detail-modal .history-modal-heading p { font-size: 13px; line-height: 1.5; }
+  .history-detail-modal .history-modal-content { display: contents; }
+  .history-detail-modal .history-modal-video { grid-column: 1; grid-row: 2; min-width: 0; }
+  .history-detail-modal .history-modal-information { grid-column: 2; grid-row: 2 / span 2; min-width: 0; }
+  .history-detail-modal h4 { font-size: 14px; margin-bottom: 10px; }
+  .history-detail-modal .event-video,
+  .history-detail-modal .event-video-waiting { height: clamp(150px, 25vh, 220px); min-height: 0; aspect-ratio: auto; }
+  .history-detail-modal .history-modal-video > p { font-size: 12px; margin-top: 6px; }
+  .history-detail-modal .history-modal-information dl { gap: 14px 12px; }
+  .history-detail-modal .history-modal-information dt { font-size: 12px; margin-bottom: 4px; }
+  .history-detail-modal .history-modal-information dd { font-size: 14px; line-height: 1.45; }
+  .history-detail-modal .history-modal-notes { grid-column: 1; grid-row: 3; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0; }
+  .history-detail-modal .history-modal-notes > div { padding: 9px 10px; min-width: 0; }
+  .history-detail-modal .history-modal-notes h4 { font-size: 12px; margin-bottom: 5px; }
+  .history-detail-modal .history-modal-notes p { font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+  .history-detail-modal .history-modal-timeline { grid-column: 3; grid-row: 2 / span 2; border-top: 0; border-left: 1px solid #353740; padding: 0 0 0 16px; min-width: 0; }
+  .history-detail-modal .history-modal-timeline li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 10px; padding: 10px 0; font-size: 13px; }
+  .history-detail-modal .history-modal-timeline li time { grid-column: 1 / -1; font-size: 12px; min-width: 0; }
+  .history-detail-modal .history-modal-timeline li strong { min-width: 0; }
+  .history-detail-modal .history-modal-timeline li span { font-size: 12px; overflow-wrap: anywhere; }
+  .history-detail-modal .history-modal-error { grid-column: 1 / -1; margin: 0; }
+  .history-detail-modal .history-modal-actions { grid-column: 1 / -1; margin-top: 0; padding-top: 12px; }
+}
+@media (min-width: 1100px) and (max-height: 780px) {
+  .archive { padding-bottom: 12px; }
+  .archive td { padding-block: 4px; font-size: 13px; }
+  .archive .panel-title { padding-block: 8px; }
+  .archive .list-toolbar { margin-bottom: 8px; }
+  .archive .list-toolbar input, .archive .list-toolbar select { min-height: 36px; }
+  .history-detail-modal .dialog-body { gap: 12px 16px; }
+  .history-detail-modal .event-video,
+  .history-detail-modal .event-video-waiting { height: 160px; }
+  .history-detail-modal .history-modal-information dl { gap: 10px 12px; }
+}
+.history-modal-notes > div:only-child { grid-column: 1 / -1; }
+
+/* Prioritize incident location and time over repeating the same facility name. */
+.archive .archive-site-name { color: #b7bdc8; font-size: 14px; font-weight: 400; padding-left: 0; }
+.archive .archive-total { margin-left: 10px; color: #ffcb70; font-size: 13px; }
+.archive .archive-row { transition: background-color .15s ease; }
+.archive .archive-row--pending { background: #e6a94b0b; }
+.archive .archive-row--dispatched, .archive .archive-row--arrived { background: #58ad8a07; }
+.archive .archive-row--pending td:first-child { box-shadow: inset 3px 0 #d6a04a; }
+.archive .archive-row--dispatched td:first-child, .archive .archive-row--arrived td:first-child { box-shadow: inset 3px 0 #518d88; }
+.archive .archive-row:hover { background: #ffffff06; }
+.archive .archive-report-id { font-variant-numeric: tabular-nums; color: #b7bdc8; font-size: 13px; }
+.archive .archive-location strong { font-size: 15px; font-weight: 600; color: #eef0f4; }
+.archive .archive-location small { color: #a0a9b8; letter-spacing: .3px; }
+.archive .archive-reported-at { font-variant-numeric: tabular-nums; }
+.archive .archive-reported-at time { display: block; }
+.archive .archive-reported-at strong { font-size: 14px; color: #e3e7ee; }
+.archive .archive-reported-at small { color: #a0a9b8; }
+.archive .archive-detail-button { min-width: 72px; background: transparent; border-color: #41454f; color: #d5dae3; }
+.archive .archive-detail-button:hover { background: #30333b; border-color: #626977; }
+.archive .archive-detail-button span { margin-left: 7px; color: #aeb6c5; }
+@media (min-width: 1100px) {
+  .archive th:nth-child(1) { width: 12%; }
+  .archive th:nth-child(2) { width: 26%; }
+  .archive th:nth-child(3) { width: 20%; }
+  .archive th:nth-child(4) { width: 14%; }
+  .archive th:nth-child(5) { width: 16%; }
+  .archive th:nth-child(6) { width: 12%; }
+}
+@media (prefers-reduced-motion: reduce) { .archive .archive-row { transition: none; } }
+/* Align report notes with the complete information grid. */
+.information-row > .note { grid-column: 1 / -1; margin-top: 2px; }
+
+.queue-pagination { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.queue-footer .queue-pagination button { width: auto; min-width: 50px; min-height: 30px; margin: 0; padding: 4px 8px; font-size: 12px; }
+.queue-pagination span { color: #d1d6e0; font-size: 12px; font-variant-numeric: tabular-nums; }
+@media (max-width: 1099px) {
+  .queue-panel .queue-footer { display: block; }
+  .queue-pagination { justify-content: center; gap: 18px; }
+}

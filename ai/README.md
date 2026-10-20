@@ -1,20 +1,64 @@
-# FIRIS AI
-FastAPI health check 초기 프로젝트. Python 3.11 이상을 사용한다.
-OpenCV는 서버용 headless 패키지를 사용한다. PyTorch/TensorFlow와 MobileNet 추론은 향후 도입한다.
 
-프로젝트 루트에서:
-```bash
+## 로컬 실행
+
+`ai/.env.example`을 `ai/.env`로 복사하고 Backend와 동일한 AI_API_KEY를 입력합니다. 실제 키는 커밋하지 않습니다. 모델은 Git LFS 실제 파일이어야 합니다.
+
+```powershell
 cd ai
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt
-python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
-Windows PowerShell에서는 가상환경 활성화에 `.venv\Scripts\Activate.ps1`을 사용한다.
-`curl http://localhost:8000/health` → `{"status":"ok"}`.
 
-`.env.example`은 BACKEND_URL, AI_API_KEY, MODEL_PATH 예약 항목이다.
-현재 health check는 환경변수를 읽지 않으며 `.env` 없이 실행된다.
-`model/`은 모델 weight, `storage/events/`는 이벤트 파일 저장용이며 `.gitkeep` 외 데이터는 Git에서 제외된다.
-`app/api`, `services`, `models`, `utils`는 향후 역할별 구현 위치이다.
-개발 전 [요구사항](../docs/REQUIREMENTS.md)과 다른 설계 문서를 확인하고 설계를 먼저 갱신한다.
+별도 터미널에서 카메라 폴더 분석을 시작합니다.
+
+```powershell
+cd ai
+python -m app.services.multi_camera_service --model yolo --sample-fps 1
+```
+
+FastAPI 실행만으로 영상 분석은 시작되지 않습니다. Backend·AI API·분석 worker를 함께 실행해야 합니다.
+
+## 입력·저장 경로
+
+- 입력 우선순위: `--root` → `VIDEO_STORAGE_DIR` → 프로젝트 최상위 `storage/videos`
+- `--root` 상대경로는 현재 작업 디렉터리 기준입니다.
+- `VIDEO_STORAGE_DIR`, `EVENT_STORAGE_DIR`, `LIVE_FRAME_DIR`의 상대경로는 `ai` 디렉터리 기준입니다.
+- events/live 환경변수를 비우면 프로젝트 최상위 `storage/events`, `storage/live`를 사용합니다.
+- `AI_MODELS_DIR=./model`은 기존 모델 코드대로 작업 디렉터리 기준이므로 로컬 명령은 `ai`에서 실행합니다.
+- Backend의 EVENT_STORAGE_DIR도 AI와 같은 실제 저장소를 가리켜야 합니다. Docker에서는 양쪽 컨테이너 경로도 동일하게 맞춥니다.
+
+원본 영상은 직접 `storage/videos/CAM001/001.mp4` 등에 넣습니다. 폴더명이 Backend에 등록된 cameraId입니다. 현재 worker는 시작할 때 존재하는 폴더 최대 9개를 맡고, 각 폴더에서 파일명 순서로 영상을 분석합니다. 실행 중 기존 폴더에 새 파일을 넣으면 다음 탐색에서 읽지만, 새 카메라 폴더는 worker 재시작 후 인식합니다. CAM005~CAM009는 영상 파일이 없는 입력 대기 폴더입니다. 처리 완료 중복 방지와 SharedDetector를 유지하며 추론 호출은 공유 Lock으로 직렬화됩니다.
+
+## 이벤트 저장
+
+```text
+storage/events/{UUID}/
+├─ snapshot.jpg          원본 스냅샷
+├─ event.mp4             원본 프레임 이벤트 영상
+├─ event_annotated.mp4   박스·라벨·confidence 이벤트 영상
+└─ event.json            snapshot/video/annotated_video 및 탐지 정보
+```
+
+시간 기반 판정은 클래스별 첫 탐지 후 실제 영상 시간 2초 이상, 최근 샘플의 70% 이상 탐지, 현재 샘플 탐지를 요구합니다. 초당 1회 추론할 때는 최소 0·1·2초 세 샘플이 필요합니다. 판정이 확정되면 스냅샷 저장 → Backend POST → 후속 프레임 수집 → 두 MP4 저장 → 기존 PATCH 순서로 동작합니다. 기본 전 약 5초 + 후 약 5초이며 영상 시작·끝 또는 정상 종료 시 짧아질 수 있습니다. 디코딩된 프레임을 JPEG 버퍼 후 MP4로 재인코딩하므로 원본 파일의 무손실 복사나 오디오 보존은 아닙니다.
+
+두 MP4의 프레임 수·FPS는 같습니다. FFmpeg의 H.264/yuv420p로 저장해 브라우저에서 재생할 수 있게 한다. 로컬 실행에도 FFmpeg가 필요하다. 기존 mp4v 클립은 `cd ai && .venv/bin/python scripts/transcode_event_videos.py`로 변환한다. 변환 전 원본은 같은 폴더의 `.mp4v.bak` 파일로 보존한다. 추론 사이 프레임은 마지막 추론의 박스를 재사용하고, 다음 추론에서 박스가 없으면 지웁니다. 추가 추론은 없습니다. 두 JPEG 버퍼와 MP4 인코딩으로 CPU·메모리·디스크 사용량은 늘어납니다.
+
+Backend에는 기존 `event.mp4` 경로만 PATCH합니다. `annotated_video`는 event.json에 기록하며, 박스 영상용 DB/API/Frontend 조회 연결은 후속 작업입니다. 이벤트별 UUID는 Backend 숫자 eventId와 다릅니다.
+
+## 라이브 화면과 단일 영상
+
+`storage/live/CAM001.jpg`는 최신 박스 JPEG 한 장을 덮어씁니다. AI API와 분석 worker가 같은 LIVE_FRAME_DIR을 사용해야 합니다. Backend는 AI HTTP API를 프록시하므로 live 파일 마운트가 필요하지 않습니다. 이벤트 원본 조회는 사용자 JWT가 필요한 Backend snapshot/video API를 사용합니다.
+
+```powershell
+python -m app.services.video_service --source ../storage/videos/CAM001/001.mp4 --camera-id CAM001 --realtime
+python -m app.services.video_service --source rtsp://camera/stream --camera-id CAM001
+```
+
+FastAPI `/predict`는 단일 이미지 추론, `/events/confirm`은 수동 스냅샷 저장입니다. `/health`는 실제 영상 성능이나 전체 연동 성공을 보장하지 않습니다.
+
+## 검증과 남은 제약
+
+```powershell
+python -m unittest tests.test_event_storage tests.test_video_service tests.test_multi_camera_service -v
+```
+
+정상 재시작하면 같은 원본을 다시 분석합니다. 영상 경계에서 버퍼·시간 판정 상태는 초기화됩니다. Backend POST/PATCH 실패 복구, 처리 이력 영속화, 저장 기간·디스크 정리, mp4v 브라우저 재생 검증은 별도 작업입니다.

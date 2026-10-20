@@ -1,53 +1,134 @@
 # FIRIS 요구사항
 
-## 문서 우선 개발
-기능 개발 전 REQUIREMENTS, ARCHITECTURE, ERD, API_SPEC을 먼저 확인한다.
-설계 변경은 코드보다 먼저 관련 문서에 반영한다. 미정 사항은 임의로 구현하지 않고 문서에서 확정한다.
+> 현재 실행 범위와 남은 현장 검증은 [AI 연동 안내](AI_INTEGRATION.md)를 함께 확인한다.
 
-## 현재 구현 범위
-AI `GET /health`, Backend `GET /api/health`, Frontend 네 페이지의 placeholder와 라우팅만 구현한다.
-아래 항목은 향후 개발 요구사항이며 현재 구현 완료를 의미하지 않는다.
-AI 학습/추론, Entity, 테이블/시드 생성, JWT 인증, 작업자/관리자 기능, Dashboard UI, Docker 배포는 구현하지 않는다.
 
-## 계정 및 인증
-- ADMIN은 DB에 1개 사전 등록할 예정이다. 관리자 회원가입·추가·비밀번호 변경·찾기 기능은 없고 비밀번호는 고정한다.
-- ADMIN만 작업자를 관리한다. 관리자 초기 데이터도 현재 생성하지 않는다.
-- WORKER는 관리자가 생성하며 loginId는 `W000001` 형식으로 자동 발급한다.
-- 최초 임시 비밀번호를 사용하고 최초 로그인 후 변경을 강제한다. `must_change_password`로 관리한다.
-- 비밀번호 분실 시 사용자 초기화 요청 없이 관리자가 작업자 관리 화면에서 직접 초기화한다. 이후 다시 변경을 강제한다.
-- 작업자는 `ACTIVE` / `INACTIVE` 상태를 사용하며 삭제하지 않고 비활성화한다.
+기준: [PROJECT_CONTEXT](PROJECT_CONTEXT.md). 설계 변경은 팀 합의 → 문서 → 코드 순서로 진행한다.
+
+## 문서 상태 구분
+
+- **현재 실행 상태**: AI 영상 분석·이벤트 생성/미디어 갱신, Backend 로그인·카메라·이벤트·검수·미디어 API, Frontend의 JWT 로그인·관제·이력·관리자 연결이 있다. 로컬 영상 1개로 AI→Backend→미디어 조회를 확인했다. Docker와 4개 영상 브라우저 시연은 아직 검증하지 않았다.
+- **최종 합의**: 앞으로 구현할 요구사항이다. 현재 구현 여부와 구분한다.
+- **예시**: JSON의 비밀번호·ID·파일명, 탐지 수치 등 설명용 값이다. 실제 설정으로 확정하지 않는다.
+- **확인 필요**: 담당자와 합의 후 문서에 반영할 사항이다. 임의 구현하지 않는다.
+- **DB 현재 상태**: backend 기본 연결은 MySQL이다. 이벤트 API DB 통합 테스트는 별도 MySQL 테스트 DB에서 선택적으로 실행한다. MySQL 버전은 8.4.11로 확정했으며, 운영 스키마 관리 정책은 별도 확인이 필요하다.
+
+
+## 구현 단계와 최종 범위
+
+초기 뼈대 이후 AI 영상 판정·멀티카메라 worker, Backend 이벤트/계정/카메라 API, Frontend 네 주요 화면의 API 연결을 구현했다. CAM001~CAM009는 Backend 시작 시 없으면 등록하며 현재 입력 영상은 CAM001~CAM004에 있다. Docker의 4채널 실영상·브라우저 전체 시연과 모델 정확도 검증은 남아 있다.
+
+## 목적 및 일정
+
+공장·창고·산업시설의 기존 CCTV를 분석하여 FIRE/SMOKE 위험 지속 여부를 확인하고 사람이 검수하도록 돕는다.
+법정 화재 감지기와 소방 설비를 대체하지 않는 관제 보조 시스템이다. 최종 발표 예정일: **2026-10-16**.
+
+## 계정과 인증
+
+- 사용자 유형은 ADMIN, WORKER이다. Frontend 사용자는 JWT Bearer 인증을 사용한다.
+- ADMIN 계정은 DB에 1개 사전 등록한다. 로그인 및 작업자 생성·조회·상태 변경·비밀번호 초기화를 담당한다.
+- 관리자 회원가입·추가·비밀번호 찾기·변경·초기화 요청 기능은 없다. 비밀번호는 BCrypt hash로 저장한다.
+- WORKER는 ADMIN이 생성하며 Backend가 W000001 형식의 loginId를 자동 발급한다.
+- 생성 시 role=WORKER, status=ACTIVE, must_change_password=true이다.
+- MVP 공통 임시 비밀번호를 사용할 수 있지만 실제 값은 예시와 구분하며 DB에는 BCrypt hash만 저장한다.
+- 최초 로그인 및 관리자 초기화 후 비밀번호 변경을 강제한다. 성공하면 must_change_password=false이다.
+- 새 WORKER는 최초 로그인에서 비밀번호를 변경한 다음 본인 연락처를 입력하고 개인정보 수집·이용에 동의해야 관제 API를 이용할 수 있다. 이메일은 수집하지 않는다. 관리자 등록은 이름만 받고 loginId를 자동 발급한다.
+- 연락처 동의는 문안 버전과 서버가 기록한 동의 시각을 보관한다. 비밀번호 초기화는 완료된 연락처 동의를 다시 요구하지 않는다. 기존 WORKER는 명시적인 이관 전까지 최초 연락처 등록을 강제하지 않는다.
+- 연락처는 향후 119 **모의서버** 신고의 신고자 회신번호에 사용한다. 관제실 번호는 별도 신고 정보로 다루며 작업자 계정 연락처와 구분한다. 실제 119 접수로 표시하지 않는다.
+- 개인정보 수집·이용 문안의 목적·항목·보유 기간·거부 시 불이익과 문안 버전은 프론트와 백엔드가 동일하게 관리하고, 시연 전 팀에서 최종 확정한다.
+- 신고 버튼은 사용자가 직접 누른다. Backend는 신고자의 계정 연락처와 서버에 설정된 관제실 번호를 확인 창에 표시하고 119 **모의서버**에 WebSocket으로 전송한다. 모의서버의 접수 확인 전에는 접수 완료로 표시하지 않고, 한 이벤트의 중복 신고를 막는다.
+- 신고 확인 창에는 사고유형, 사업장 주소, 관제실 번호, 카메라 상세위치, 탐지시각, 담당자 연락처, 카메라별 특이사항을 표시한다. Backend가 같은 값으로 모의서버에 전송한다. 주소·관제실 번호가 미설정이면 신고를 막으며 임의의 주소를 생성하지 않는다. 특이사항은 선택 항목이다.
+- Backend 최초 연락처 등록 API는 구현한다. Frontend의 최초 연락처·동의 화면은 별도 연결 작업이 필요하다. 화면·동의 문안이 준비되기 전에는 `CONTACT_ONBOARDING_ENFORCED=false`로 관제 접근 차단을 보류하고, 함께 배포할 때 `true`로 전환한다. 모의 신고에는 설정과 관계없이 연락처·동의 기록이 필요하다.
+- 로그인 화면에는 “비밀번호를 분실한 경우 관리자에게 문의해주세요.”를 표시한다. 사용자 초기화 요청 API/UI는 없다.
+- 관리자가 비밀번호를 초기화하고 임시 비밀번호를 시스템 외부에서 직접 전달한다.
+- ACTIVE는 로그인 가능, INACTIVE는 로그인 불가이다. 작업자는 삭제하지 않고 비활성화하여 검수 이력을 보존한다.
 
 ## Camera
-- CCTV는 프로젝트 시작 시 미리 등록된 고정 데이터이다. 추가·수정·삭제 기능은 없다.
-- cameraId는 `camera-1`, `camera-2` 등이며 상태는 `ONLINE` / `OFFLINE`이다.
+
+CCTV는 CAM001~CAM009를 기본 ID로 사용하며 Backend 시작 시 없으면 등록한다. 이름, 위치, 스트림 URL과 ONLINE/OFFLINE 상태를 보관한다. Dashboard는 삭제되지 않은 등록 CCTV 중 표시할 채널을 선택하고 기본값은 CAM001~CAM004 네 화면이다. CAM005~CAM009의 입력 영상은 현재 빈 폴더이므로 영상을 넣기 전에는 관제 프레임이 나오지 않는다. DB의 ONLINE 값은 실제 영상 수신 성공 여부를 검증한 값이 아니다. 관리자 화면에서 CCTV를 추가·삭제하며 관제 화면 선택에도 등록 목록을 반영한다.
+
+관제 화면의 채널 번호는 기존 구역 순서(공장 A·B·C / 공장 D·E·창고 A / 창고 B·C·D)에 맞춰 01~09를 표시한다. 실제 `cameraId`와 영상 폴더·기존 이벤트 참조는 변경하지 않는다. 예를 들어 공장 C구역은 내부적으로 CAM005를 유지하지만 화면에는 CCTV 03으로 표시한다.
 
 ## AI 및 이벤트
-- MobileNet 계열 모델을 사용할 예정이며 PyTorch 또는 TensorFlow는 추후 선택한다.
-- Bounding Box가 필요한 객체 탐지가 될 수 있으므로 일반 classification 구조에 종속하지 않는다.
-- AI 주요 클래스는 `FIRE`, `SMOKE`이다. 필요 시 Backend에서 `FIRE_SMOKE`를 표현한다.
-- CCTV → 탐지 → 일정 시간 지속 확인 → 위험 확정 → Backend 이벤트 생성 → Snapshot 저장 → 이벤트 전후 Frame Buffer → mp4 생성 → Backend 영상 경로 업데이트 순서이다.
-- 위험 확정 즉시 `POST /api/ai/events`를 호출하고 Backend는 FIRE_EVENT를 생성하여 eventId를 반환한다.
-- AI는 eventId를 보관하고 이후 영상 수집과 mp4 생성을 마치면 `PATCH /api/ai/events/{eventId}/media`를 호출한다.
-- Backend는 영상 생성을 기다렸다가 이벤트를 생성하면 안 된다.
-- 지속 시간, 임계값, 버퍼 길이, 중복 이벤트 정책은 추후 결정한다.
 
-## Media 및 검수
-- 이미지·영상 Binary를 DB에 저장하지 않는다. DB에는 `snapshot_path`, `video_path` 등 경로만 저장한다.
-- 실제 파일은 `ai/storage/events/` 등 파일 저장소에 둔다.
-- 검수 결과는 `TRUE_FIRE` / `FALSE_POSITIVE`이다.
-- 오탐 사유는 `STEAM`, `LIGHT`, `REFLECTION`, `DUST`, `WELDING`, `ETC` 등이다.
-- 한 이벤트에 최종 검수 정보는 하나만 존재한다.
+- MobileNet Family 사용은 확정이며 정확한 Detection Head/Bounding Box 방식은 AI 담당자가 결정한다.
+- PyTorch 또는 TensorFlow를 사용할 수 있다. 일반 Classification에 종속하지 않고 모델 인터페이스를 추상화한다.
+- AI 클래스는 FIRE/SMOKE이고 Backend Event Type은 FIRE/SMOKE/FIRE_SMOKE이다.
+- 한 프레임만으로 이벤트를 만들지 않고 Temporal Validation을 적용한다. 클래스별 첫 탐지 후 실제 영상 시간 최소 2초와 최근 샘플의 70% 이상 탐지를 현재 실험 시작값으로 사용한다.
+- 시연 영상은 `storage/videos/{cameraId}/`에 카메라별로 둔다. 각 폴더의 파일을 이름순으로 분석하고 실행 중 그 폴더에 추가한 영상도 다음 탐색에서 읽는다. 현재 worker는 시작할 때 존재하는 최대 9개 폴더만 처리한다. 한 폴더에 영상만 모아두면 파일과 cameraId를 연결할 규칙이 없으므로 자동 배정하지 않는다.
+- Frame Buffer는 AI에 둔다. 이벤트 전후 약 5초는 조정 가능한 예시이다.
+- 위험 확정 → Snapshot 확보 → POST /api/ai/events → FIRE_EVENT 및 EVENT_MEDIA 생성 → eventId 반환 → 이후 프레임 수집/영상 저장 → PATCH /api/ai/events/{eventId}/media 순서를 따른다.
+- 영상이 완성되기 전에 이벤트를 조회할 수 있어야 한다. 생성 직후 video_path는 NULL일 수 있다.
+- 파일은 storage/events/ 등 저장소에 두고 DB에는 snapshot_path/video_path만 저장한다.
+
+## 검수 및 통계
+
+- ADMIN/WORKER는 TRUE_FIRE 또는 FALSE_POSITIVE로 검수한다.
+- EVENT_REVIEW 행이 없으면 UNREVIEWED로 판단한다. UNREVIEWED를 result에 저장하지 않는다.
+- 이벤트당 최종 검수 행은 최대 하나이다. UI에서 검수 완료 이벤트는 읽기 전용으로 표시한다.
+- 대응 완료 버튼은 이벤트에 완료 시각을 기록하고, 미검수 이벤트라면 해당 JWT 사용자로 TRUE_FIRE 최종 검수를 생성한다. 이미 오탐으로 검수된 이벤트에는 사용할 수 없다. 119 모의 신고를 자동 전송하지 않는다.
+- 신규 이벤트 알림은 화면에서 10초간 조작이 없으면 무응답 시각을 기록하고 닫는다. 무응답은 119 신고·최종 검수와 다르며, 이후 오탐 검수 또는 대응 완료가 가능하다.
+- 오탐 사유는 STEAM/LIGHT/REFLECTION/DUST/WELDING/ETC이며 note를 입력할 수 있다.
+- reviewerId를 요청으로 받지 않고 JWT의 로그인 accountId로 저장한다.
+- 별도 Statistics Table 없이 FIRE_EVENT/EVENT_REVIEW를 집계한다.
 
 ## Frontend
-- `/login`: Login. 향후 로그인 및 최초/초기화 후 비밀번호 변경 흐름을 제공한다.
-- `/dashboard`: 별도 실시간 관제 페이지로 분리하지 않는 통합 관제 화면이다. 전체 페이지의 세로 스크롤이 발생하지 않도록 설계한다.
-- Dashboard에 실시간 CCTV, FIRE/SMOKE Bounding Box 또는 Detection Overlay, 오늘 발생 이벤트, 미검수 이벤트, 실제 화재, 오탐, ONLINE CCTV, 최근 위험 이벤트를 표시한다.
-- `/history`: 날짜, CCTV, 이벤트 타입, 검수 상태 필터와 이벤트 이력을 제공한다.
-- 이벤트 상세에는 Snapshot, Event Video, Confidence, 발생 시각, 검수 결과를 표시한다. 상세 표시 방식은 미정이다.
-- `/admin`: 작업자 목록, 추가, 비밀번호 초기화, ACTIVE/INACTIVE 변경을 제공한다.
-- WORKER에게 Admin 메뉴를 노출하지 않는다. Backend에서도 ADMIN 권한을 검증하도록 향후 설계한다.
-- 현재는 인증 및 메뉴가 없으므로 네 placeholder URL에 직접 접근할 수 있다.
 
-## 제외 기능
-회원가입, 사용자 비밀번호 찾기/초기화 요청, 관리자 비밀번호 변경/추가,
-CCTV 추가/수정/삭제, 시설 관리, 자동 AI 재학습, 이메일/SMS 알림은 프로젝트 범위에서 제외한다.
+주요 페이지는 정확히 Login, Dashboard, History, Admin 네 개이다.
+별도 Live Monitoring/Statistics/Event Detail 페이지는 만들지 않고 상세는 Drawer/Modal/Side Panel로 처리한다.
+
+| 페이지 | 요구사항 |
+| --- | --- |
+| Login /login | FIRIS, ID/사번, 비밀번호, 로그인, 관리자 문의 문구. mustChangePassword=true이면 비밀번호 변경 Modal |
+| Dashboard /dashboard | 로그인 후 이동하는 통합 관제 화면. 페이지 전체 세로 스크롤 없음, CCTV 항상 노출 |
+| History /history | 기간/CCTV/Event Type/Review Status 필터, 페이지네이션, 이벤트 상세 Drawer/Modal |
+| Admin /admin | ADMIN 전용 작업자 목록/추가/초기화/활성·비활성. WORKER에게 메뉴 숨김, 삭제 기능 없음 |
+
+Dashboard는 CCTV 65~70%, 현황 30~35%를 목표로 하고 기본 2x2 CCTV Grid를 사용한다. 등록된 채널 중 표시할 화면을 선택하고 선택 내용은 브라우저 로컬 저장소에 보관한다.
+카드에는 Camera Name, Location, ONLINE/OFFLINE, LIVE, 영상, FIRE/SMOKE, Confidence, Overlay/Bounding Box를 표시한다.
+위험 시 Red Border/Warning Badge를 표시한다. 우측에는 오늘 이벤트/미검수/실제 화재/오탐/ONLINE CCTV 및 유형별 현황을 둔다.
+최근 위험 이벤트 3~5개와 신규 이벤트 Red Alert Toast 및 이벤트 확인 동작을 제공한다.
+History Table에는 ID, Snapshot Thumbnail, 발생 시간, CCTV, 위치, 유형, Confidence, 검수 상태, 상세보기를 표시한다.
+상세에는 Snapshot, 영상, Event ID, CCTV/위치, 유형, Confidence, 발생 시각, 모델 버전, 전후 영상 길이, 검수 상태/결과를 표시한다.
+영상 준비 중에는 “이벤트 영상을 생성하고 있습니다.”를 표시한다. 전후 길이 설명은 실제 preSeconds/postSeconds와 맞춘다.
+검수 UI에는 실제 화재/오탐 선택과 사유·Note 입력을 둔다.
+White 약 80%, Gray 약 15%, Red 약 5%의 산업용 안전 관제 디자인을 지향한다.
+Red는 경고/Primary Button/유형 강조/선택 메뉴/위험 Border/중요 Badge에 사용한다.
+현재 1차 연동 화면에는 JWT 인증·권한, AI JPEG 4분할, 이벤트 목록·상세·검수, 작업자 관리가 연결되어 있다. 위험 알림 Toast, 유형별 상세 통계, 학습 후보 지정 API/화면은 아직 구현되지 않았다.
+
+## 최종 제외 기능
+
+회원가입, 작업자 비밀번호 찾기·초기화 요청, 관리자 비밀번호 찾기·변경·추가·초기화 요청,
+CCTV 추가·수정·삭제 화면과 운영 관리 흐름(확장용 등록 API는 존재), 건물/시설 등록 관리, 자동 AI 재학습, 이메일/SMS 알림, 복잡한 Multi Admin 구조.
+
+## 담당 및 개발 원칙
+
+| 담당자 | 책임 |
+| --- | --- |
+| 박상현 | 이벤트 생성/미디어/상세/검수, AI 연동, Backend·Git·전체 통합, ERD/API, E2E |
+| 오금빈 | 계정/JWT/작업자 관리, 이벤트 목록·검색, Dashboard 통계, Notion |
+| 김형준 | 데이터/학습/모델 평가·튜닝, 추론/Temporal Validation/Frame Buffer/미디어, FastAPI/Backend 연동 |
+| 차나래 | 네 페이지 및 상세/검수 UI, CCTV/Overlay/알림, API 연동, PPT/발표 |
+| 신종건 | Docker/Compose/Jenkins, 파트별 Container, 환경변수 및 Build/Test/Deploy 자동화 |
+
+문서·ERD/API 확인 → 담당 기능 단위 구현 → 단위 실행 → 파트 연동 → E2E 순서를 따른다.
+API 이름, DB 컬럼, 테이블, 페이지, 역할, 모델 구조를 임의로 변경하지 않는다.
+
+## 이벤트 이력 PDF 내보내기
+이력 조회의 내보내기는 CSV 대신 PDF 파일을 직접 다운로드한다. 현재 검색 조건에 맞는 전체 이력(화면 페이지와 무관)을 포함하고, 검색 조건이 없으면 전체 이력을 포함한다. 한글 글꼴을 포함하고 긴 위치는 줄바꿈하며 여러 페이지에 표 제목과 페이지 번호를 표시한다. 일반 PDF는 전자서명이나 수정 방지를 보장하지 않는다.
+
+## 최고 관리자 권한
+`SUPER_ADMIN`은 `ADMIN` 위의 역할로 기존 관리자 기능과 관제·이력·모의 신고 기능에 접근한다. 작업자 전용 비밀번호 변경·연락처 등록은 기존 정책을 유지한다. 최고 관리자 기본 두 계정은 서버 시작 시 login_id가 없을 때만 자동 생성한다. 기존 계정의 비밀번호·이름·상태는 보존하며 작업자 생성 API는 최고 관리자를 생성하거나 변경하지 않는다.
+
+## CCTV 추가·삭제
+ADMIN과 SUPER_ADMIN은 CCTV 관리에서 ID·이름·위치·HTTP(S) 영상 주소·상태·특이사항을 등록하고 삭제 확인 후 제거할 수 있다. 삭제는 CAMERA.deleted=TRUE 및 OFFLINE으로 표시하며 기존 이벤트·검수·미디어를 보존한다. 삭제된 ID는 재사용하지 않고, 자동 초기 등록이 복원하지 않는다. 관리·관제 목록은 삭제되지 않은 모든 카메라를 표시한다. 영상 입력·AI 분석 설정은 등록과 별도로 준비한다.
+
+## 기본 데이터 초기화
+서버 시작 시 기본 최고 관리자 두 명, 설정된 초기 관리자 한 명, 기본 CCTV 9개 중 누락된 항목을 등록한다. 기존 계정과 논리 삭제된 CCTV는 그대로 유지한다. 작업자·화재 이벤트·검수·신고 기록은 실제 기능 실행 시 생성한다. 관제실 번호 기본값은 서버 환경 설정으로 공유하며 사업장 주소는 개발용 가상 주소를 기본 사용하며 환경변수로 변경할 수 있다.
+
+최고 관리자 기본 계정에는 예시 연락처 `010-1234-5678`을 등록한다. 기존 계정의 연락처가 NULL 또는 공백인 경우에만 보충하고 이미 등록된 연락처는 보존한다. 개인정보 동의 버전·시각은 실제 동의가 없으면 NULL을 유지한다.
+
+## 최고 관리자의 계정 관리
+작업자 관리에서 SUPER_ADMIN은 ADMIN과 WORKER를 함께 조회하고 두 역할 사이의 변경, 계정 활성화·비활성화, 비밀번호 초기화를 할 수 있다. ADMIN은 기존대로 WORKER만 조회·제어한다. SUPER_ADMIN은 목록 및 변경 대상에서 제외하고 상위 권한 승격도 허용하지 않는다. 권한 변경은 아이디·이름·연락처·이력을 보존하며 기존 비밀번호 변경 의무를 유지한다. 초기화된 ADMIN도 비밀번호를 변경해야 한다. 서버는 모든 제어 요청에서 현재 역할을 확인하며, 기본 계정 초기화가 변경된 역할을 복원하지 않는다.
+
+저장 영상 시연 모드의 CCTV 등록 화면에서는 영상 주소를 입력하지 않는다. Backend는 주소가 생략되거나 빈 문자열이면 CAMERA_BASE_URL/videos/{cameraId}/001.mp4를 생성한다. 기존 API의 명시적 HTTP/HTTPS 주소 등록은 호환성을 유지한다.

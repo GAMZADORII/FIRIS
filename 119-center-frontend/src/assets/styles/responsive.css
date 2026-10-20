@@ -1,0 +1,369 @@
+/* Responsive layout: desktop control room -> tablet cards -> mobile readable stack.
+   Never hide all scrollbars: panels scroll only when their content truly overflows. */
+html { min-width: 320px; }
+body { overflow-x: hidden; }
+.app-shell { min-height: 100dvh; }
+main { width: 100%; max-width: 1920px; margin: 0 auto; padding: clamp(12px, 1.5vw, 26px); }
+.page-heading { min-width: 0; }
+.page-heading > div:first-child { min-width: 0; }
+.overview { flex-wrap: wrap; justify-content: flex-end; gap: 10px clamp(10px, 1.3vw, 20px); }
+.workspace { min-width: 0; grid-template-columns: clamp(215px, 18vw, 265px) minmax(0, 1fr); gap: clamp(10px, 1.1vw, 18px); }
+.queue-panel, .detail-panel, .media-card, .information-section, .response-section { min-width: 0; }
+.queue-list { scrollbar-width: thin; scrollbar-color: #555963 transparent; }
+.detail-panel { padding-inline: clamp(12px, 1.5vw, 23px); }
+.incident-heading { min-width: 0; }
+.incident-heading > div:first-child { min-width: 0; }
+.incident-heading p, .information-row strong, .information-row p, .media-footer { overflow-wrap: anywhere; }
+.media-grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: clamp(8px, 1vw, 15px); }
+.media-card .floor-drawing { width: 100%; }
+.information-heading { display: flex; align-items: center; padding: 10px 0 8px; border-bottom: 1px solid #34363d; }
+.information-heading h3 { margin: 0; font-size: 12px; }
+.operations-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: clamp(12px, 1.2vw, 20px); min-width: 0; margin-top: 12px; }
+.information-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 12px 0; border-bottom: 0; }
+.information-row > div { min-width: 0; }
+.information-row label { margin-bottom: 4px; }
+.information-row .address-field { grid-column: 1 / -1; }
+.information-row .note { grid-column: auto; padding: 9px 10px; align-self: stretch; }
+.information-row .note p { font-size: 10px; line-height: 1.5; }
+.information-row .special-note { background: #ffb30008; border-color: #ffb30025; }
+.special-note label, .special-note p { color: #ffd799; }
+.response-section > .card-heading { padding: 10px 0 9px; }
+.progress-steps { margin-bottom: 12px; }
+.route-layout { grid-template-columns: minmax(0, 1fr) clamp(105px, 10vw, 160px); }
+.route-map { min-width: 0; }
+.route-map svg { min-height: 0; height: clamp(124px, 16vh, 230px); }
+.eta-panel { min-width: 0; padding: 10px clamp(8px, 1vw, 18px); }
+.eta-panel > strong { font-size: clamp(21px, 2vw, 30px); }
+.eta-panel p { overflow-wrap: anywhere; }
+.detail-bottom { margin-top: 12px; padding: 11px 0; gap: 12px; align-items: center; }
+.detail-bottom .history { min-width: 0; }
+.action-area { min-width: 0; }
+.action-area .waiting-message { max-width: 100%; }
+.page-footer { padding-block: 12px 4px; }
+
+/* Full-height control room on desktops with enough vertical space.
+   A short window always falls back to natural page scrolling. */
+@media (min-width: 1100px) and (min-height: 700px) {
+  .app-shell { height: 100dvh; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+  .topbar { flex: 0 0 clamp(54px, 6.5vh, 68px); }
+  .app-shell > main { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; padding-block: clamp(10px, 1.2vh, 18px) 8px; }
+  .page-heading { flex: 0 0 auto; margin-bottom: clamp(9px, 1.3vh, 17px); }
+  .page-heading h1 { font-size: clamp(19px, 1.4vw, 24px); margin-bottom: 5px; }
+  .workspace { flex: 1 1 auto; min-height: 0; align-items: stretch; }
+  .queue-panel { height: 100%; min-height: 0; display: flex; flex-direction: column; }
+  .queue-panel .panel-title { flex: 0 0 auto; padding: 13px; }
+  .queue-list { flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; }
+  .queue-item { padding: clamp(10px, 1.2vh, 16px) 12px; }
+  .queue-item h3 { margin: 7px 0 4px; }
+  .queue-bottom { margin-top: 9px; }
+  .queue-footer { flex: 0 0 auto; padding: 10px 12px; }
+  .detail-panel { height: 100%; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #555963 transparent; }
+  .incident-heading { flex: 0 0 auto; padding: 10px 0; margin-bottom: 10px; }
+  .incident-heading h2 { font-size: clamp(17px, 1.45vw, 22px); margin: 4px 0; }
+  .media-grid { flex: 0 0 auto; }
+  .media-card .camera-scene { height: clamp(126px, 21vh, 285px); aspect-ratio: auto; }
+  .media-grid .floor-drawing { height: clamp(126px, 21vh, 285px); aspect-ratio: auto; }
+  .media-card .card-heading { padding: 8px 10px; min-height: 34px; }
+  .media-footer { padding: 6px 10px; }
+  .media-card .video-controls { height: 23px; }
+  .operations-grid { flex: 0 0 auto; }
+  .information-row { gap: clamp(7px, 1vh, 13px) 12px; padding: 10px 0 0; }
+  .information-row strong { font-size: 11px; line-height: 1.35; }
+  .information-row label { font-size: 10px; }
+  .response-section > .card-heading { padding-top: 8px; }
+  .progress-steps { margin-bottom: 8px; }
+  .progress-steps li > span { width: 23px; height: 23px; }
+  .progress-steps li::before { top: 11px; }
+  .progress-steps strong { margin-top: 4px; }
+  .route-map svg { height: clamp(105px, 14vh, 195px); }
+  .eta-panel small { margin-top: 5px; }
+  .detail-bottom { flex: 0 0 auto; margin-top: auto; grid-template-columns: minmax(0, 1fr) minmax(0, auto); }
+  .page-footer { display: none; }
+  .archive { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  .archive .table-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; }
+}
+
+/* Typical laptops: slightly denser panels, still responsive to browser resize. */
+@media (min-width: 1100px) and (max-width: 1370px) {
+  .workspace { grid-template-columns: 210px minmax(0, 1fr); }
+  .operations-grid { grid-template-columns: minmax(0, 1fr) minmax(0, .97fr); gap: 12px; }
+  .media-heading-actions .subtle { display: none; }
+  .information-row { gap: 9px 10px; }
+  .information-row .note { padding: 7px 8px; }
+}
+
+/* Tablets and narrow laptop windows: horizontal queue then full-width details. */
+@media (max-width: 1099px) {
+  .topbar { padding-inline: 18px; gap: 20px; }
+  main { padding: 18px 15px; }
+  .page-heading { gap: 12px; margin-bottom: 16px; }
+  .page-heading h1 { font-size: 21px; }
+  .workspace { grid-template-columns: minmax(0, 1fr); }
+  .queue-panel { display: grid; grid-template-columns: 1fr; }
+  .queue-panel .panel-title { padding: 10px 13px; }
+  .queue-list { display: flex; width: 100%; max-height: none; overflow-x: auto; overflow-y: hidden; }
+  .queue-item { flex: 0 0 clamp(165px, 24vw, 210px); min-height: 112px; padding: 11px 12px; border-left: 0; border-bottom: 3px solid transparent; border-right: 1px solid #2a2d34; }
+  .queue-item.selected { border-bottom-color: #ef454d; }
+  .queue-item h3 { margin: 7px 0 4px; }
+  .queue-bottom { margin-top: 7px; }
+  .queue-footer { display: none; }
+  .detail-panel { padding-inline: 15px; }
+  .incident-heading { padding: 13px 0; margin-bottom: 12px; }
+  .operations-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .media-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .route-map svg { height: clamp(115px, 18vw, 190px); }
+  .eta-panel { padding: 10px; }
+  .page-footer { padding-top: 14px; }
+}
+
+@media (max-width: 800px) {
+  .topbar { gap: 12px; }
+  .header-right { display: none; }
+  .overview > span { display: none; }
+  .tabs { margin-left: auto; }
+  .tabs button { padding-inline: 12px; font-size: 12px; }
+  .operations-grid { grid-template-columns: 1fr; }
+  .information-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .information-row .address-field { grid-column: span 2; }
+  .information-row .note { grid-column: span 3; }
+  .route-layout { grid-template-columns: minmax(0, 1fr) minmax(124px, 170px); }
+  .detail-bottom { grid-template-columns: 1fr auto; }
+}
+
+/* Prevent header counts and reset button from competing for the same space.
+   This also handles tablet windows and browser zoom, not just phone widths. */
+@media (max-width: 1099px) {
+  .page-heading { flex-wrap: wrap; }
+  .overview { min-width: 0; margin-left: auto; }
+  .overview > span { white-space: nowrap; }
+}
+
+@media (max-width: 800px) {
+  .page-heading { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .page-heading > div:first-child { width: 100%; }
+  .overview {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+    margin: 0;
+    gap: 8px;
+  }
+  .overview > span {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .overview b { margin-left: 0; font-size: 17px; }
+  .overview .outline-button {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+    white-space: nowrap;
+    padding: 9px 10px;
+  }
+}
+
+@media (max-width: 360px) {
+  .overview { gap: 4px; }
+  .overview > span { font-size: 10px; gap: 3px; }
+  .overview b { font-size: 15px; }
+}
+
+/* Phones: video and floorplan stay readable; only the page itself scrolls. */
+@media (max-width: 600px) {
+  main { padding: 12px 10px; }
+  .topbar { height: 59px; padding: 0 10px; gap: 8px; }
+  .brand { gap: 7px; }
+  .brand-mark { width: 34px; height: 34px; font-size: 13px; }
+  .brand strong { font-size: 13px; letter-spacing: .2px; }
+  .brand small { font-size: 8px; }
+  .tabs button { padding: 0 7px; font-size: 11px; }
+  .tabs span { margin-left: 3px; }
+  .page-heading { align-items: flex-start; padding-left: 9px; border-left-width: 3px; }
+  .page-heading h1 { font-size: 19px; margin-bottom: 5px; }
+  .page-subtitle { font-size: 10px; line-height: 1.5; }
+  .overview { align-self: flex-start; }
+  .outline-button { font-size: 9px; padding: 6px 8px; }
+  .queue-panel .panel-title { padding: 9px 11px; }
+  .queue-item { flex-basis: 170px; min-height: 110px; }
+  .detail-panel { padding-inline: 11px; }
+  .incident-heading { align-items: flex-start; gap: 8px; }
+  .incident-heading h2 { font-size: 17px; margin: 5px 0; }
+  .incident-heading p { font-size: 10px; line-height: 1.45; }
+  .incident-heading p > span { display: block; }
+  .media-grid { grid-template-columns: 1fr; }
+  .media-card .camera-scene { min-height: 0; }
+  .media-card .floor-drawing { height: auto; }
+  .card-heading { padding: 10px; }
+  .media-heading-actions .subtle { display: none; }
+  .information-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 8px; }
+  .information-row .address-field { grid-column: 1 / -1; }
+  .information-row .note { grid-column: 1 / -1; }
+  .route-layout { grid-template-columns: 1fr; }
+  .route-map svg { height: auto; min-height: 130px; }
+  .eta-panel { border-left: 0; border-top: 1px solid #2a2d34; padding: 12px; }
+  .eta-panel > strong { font-size: 26px; margin: 4px 0; }
+  .detail-bottom { grid-template-columns: 1fr; }
+  .action-area { justify-content: stretch; }
+  .action-area > * { width: 100%; }
+  .archive { padding: 0 10px 15px; }
+  .archive .panel-title { padding: 14px 0; }
+  .list-toolbar { flex-wrap: wrap; margin-bottom: 12px; }
+  .list-toolbar select { width: 118px; }
+  .table-scroll { overflow-x: auto; }
+  .page-footer { padding: 10px 0; }
+}
+
+@media (max-width: 390px) {
+  .brand small { display: none; }
+  .page-heading { flex-wrap: wrap; }
+  .overview { width: 100%; justify-content: flex-end; }
+  .incident-heading > .status-badge { font-size: 9px; padding: 4px 5px; }
+  .media-heading-actions .small-button { font-size: 9px; }
+}
+
+/* Smaller desktop monitors: fit the decision controls above the fold. */
+@media (min-width: 1100px) and (min-height: 700px) and (max-height: 820px) {
+  .incident-heading { padding-block: 7px; margin-bottom: 7px; }
+  .media-card .camera-scene,
+  .media-grid .floor-drawing { height: clamp(105px, 15vh, 125px); }
+  .media-card .card-heading { min-height: 30px; padding-block: 6px; }
+  .media-card .video-controls { height: 20px; }
+  .media-footer { padding-block: 5px; }
+  .operations-grid { margin-top: 7px; }
+  .information-heading { padding-block: 6px; }
+  .information-row { gap: 6px 10px; padding-top: 7px; }
+  .information-row label { margin-bottom: 2px; }
+  .information-row .note { padding: 5px 8px; }
+  .information-row .note p { line-height: 1.35; }
+  .response-section > .card-heading { padding: 6px 0; }
+  .route-card > .card-heading { padding: 6px 9px; }
+  .route-map svg { height: clamp(95px, 13vh, 110px); }
+  .eta-panel { padding-block: 7px; }
+  .eta-panel > strong { margin-block: 5px; }
+  .eta-panel p { margin-bottom: 7px; }
+  .detail-bottom { margin-top: 7px; padding-block: 7px; }
+}
+
+@media (min-width: 601px) and (max-width: 1099px) {
+  .media-card .camera-scene,
+  .media-grid .floor-drawing { height: clamp(140px, 20vw, 215px); aspect-ratio: auto; }
+}
+
+@media (max-width: 600px) {
+  /* The completion action remains reachable without scrolling to the very bottom. */
+  .detail-bottom { position: sticky; bottom: 0; z-index: 5; background: #1b1b1ff2; border-top: 1px solid #3c3f47; padding: 10px 0; }
+}
+
+
+/* Route panel: the arrival message must remain legible in narrow dashboard columns.
+   The route card, not only the viewport, decides when to stack its contents. */
+.route-card { container-type: inline-size; }
+.route-layout { grid-template-columns: minmax(0, 1fr) minmax(160px, 32%); }
+.eta-panel { min-width: 0; }
+.eta-panel > strong {
+  font-family: var(--font-family-ui);
+  font-size: clamp(20px, 1.7vw, 28px);
+  letter-spacing: -0.5px;
+  line-height: 1.3;
+  white-space: nowrap;
+  word-break: keep-all;
+  overflow-wrap: normal;
+}
+.eta-panel > span, .eta-panel p, .eta-panel small {
+  word-break: keep-all;
+  overflow-wrap: normal;
+}
+@container (max-width: 460px) {
+  .route-layout { grid-template-columns: minmax(0, 1fr); }
+  .route-map svg { width: 100%; height: clamp(95px, 14vh, 150px); min-height: 0; }
+  .eta-panel {
+    border-left: 0;
+    border-top: 1px solid #2a2d34;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 12px;
+    row-gap: 5px;
+    align-items: center;
+    padding: 9px 12px;
+  }
+  .eta-panel > strong { margin: 0; text-align: right; font-size: 22px; }
+  .eta-panel > p { margin: 0; }
+  .eta-track, .eta-panel > small { grid-column: 1 / -1; }
+  .eta-panel > small { margin-top: 0; }
+}
+@container (max-width: 300px) {
+  .eta-panel { grid-template-columns: minmax(0, 1fr); }
+  .eta-panel > strong { text-align: left; font-size: 20px; }
+}
+
+/* Action feedback shares the title line: it never adds a row or changes
+   the height of the dashboard when a status button is clicked. */
+.page-heading__title { min-width: 0; flex: 1 1 auto; }
+.page-heading__headline { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.page-heading__headline h1 { flex: 0 0 auto; margin: 0; }
+.action-feedback {
+  display: block;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #89c4a5;
+  background: #3d815a18;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  font-size: 10px;
+  line-height: 20px;
+  height: 22px;
+  padding-inline: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.action-feedback--visible {
+  border-color: #3d815a50;
+  padding-inline: 8px;
+  opacity: 1;
+}
+.page-heading__title .page-subtitle { margin-top: 5px; }
+@media (max-width: 600px) {
+  .page-heading__headline { gap: 7px; }
+  .action-feedback { font-size: 9px; }
+  .action-feedback--visible { padding-inline: 5px; }
+}
+
+/* Reserve the same header rows whether action feedback is shown or hidden.
+   In narrower windows, the summary stays on its own permanent row. */
+@media (max-width: 1099px) {
+  .page-heading { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .page-heading__title, .report-summary { width: 100%; min-width: 0; }
+  .report-summary { justify-content: flex-start; }
+}
+@media (min-width: 1100px) {
+  .page-heading { flex-wrap: nowrap; }
+  .page-heading__title { overflow: hidden; }
+}
+
+
+/* Keep typography stable with the FIRIS narae3 font stack. */
+.queue-meta, .incident-meta, .history time,
+.overview b, .queue-panel__count, .report-summary__stat strong {
+  font-variant-numeric: tabular-nums;
+}
+.queue-item h3, .incident-heading h2 { overflow-wrap: anywhere; line-height: 1.35; }
+.incident-heading > .status-badge { flex-shrink: 0; }
+.media-heading-actions .small-button, .report-summary__reset,
+.primary-button, .queue-panel__count { white-space: nowrap; }
+.eta-panel > strong { font-family: var(--font-family-ui); }
+@media (max-width: 600px) {
+  .incident-heading { flex-wrap: wrap; }
+  .incident-heading > .status-badge { margin-left: auto; }
+}
+.event-video, .event-video-waiting { display: block; width: 100%; aspect-ratio: 16 / 9; background: #000; object-fit: contain; }
+.event-video-waiting { display: grid; place-items: center; margin: 0; box-sizing: border-box; }
+@media (min-width: 1100px) { .media-grid .event-video, .media-grid .event-video-waiting { height: clamp(126px, 21vh, 285px); aspect-ratio: auto; } }

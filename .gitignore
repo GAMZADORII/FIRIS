@@ -60,9 +60,24 @@ $RECYCLE.BIN/
 *.mov
 *.mkv
 ai/model/*
-!ai/model/.gitkeep
-ai/storage/events/*
-!ai/storage/events/.gitkeep
+!ai/model/*.pt
+!ai/model/*.joblib
+# CCTV demo inputs are shared through Git LFS; other local files stay ignored.
+/storage/videos/**
+!/storage/videos/*/
+!/storage/videos/*/.gitkeep
+!/storage/videos/*/*.mp4
+!/storage/videos/*/*.avi
+!/storage/videos/*/*.mov
+!/storage/videos/*/*.mkv
+
+# 이벤트 결과
+/storage/events/**
+!/storage/events/.gitkeep
+
+# 최신 CCTV 분석 이미지
+/storage/live/**
+!/storage/live/.gitkeep
 
 # Yarn generated files
 **/.yarn/cache/

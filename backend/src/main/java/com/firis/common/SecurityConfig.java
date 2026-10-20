@@ -1,23 +1,111 @@
 package com.firis.common;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.firis.auth.security.JwtAuthenticationFilter;
+import com.firis.common.dto.ErrorResponse;
+import com.firis.common.exception.ErrorCode;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
+import org.springframework.beans.factory.annotation.Value;
 
 @Configuration
 public class SecurityConfig {
+    @Value("${app.mock-119.center-enabled:false}")
+    private boolean centerEnabled;
+    @Value("${app.mock-119.allowed-origins:http://localhost:5174,http://127.0.0.1:5174,http://localhost:5173,http://127.0.0.1:5173}")
+    private List<String> centerOrigins;
+
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        // Only the health endpoint is available in the initial scaffold.
+    PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    SecurityFilterChain securityFilterChain(
+            HttpSecurity http,
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            ObjectMapper objectMapper
+    ) throws Exception {
         return http
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.GET, "/api/health").permitAll()
-                .anyRequest().denyAll())
-            .formLogin(AbstractHttpConfigurer::disable)
-            .httpBasic(AbstractHttpConfigurer::disable)
-            .build();
+                .csrf(csrf -> csrf.disable())
+                .cors(Customizer.withDefaults())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(ErrorCode.UNAUTHORIZED.getStatus().value());
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            response.setCharacterEncoding("UTF-8");
+                            objectMapper.writeValue(
+                                    response.getWriter(),
+                                    new ErrorResponse(ErrorCode.UNAUTHORIZED.name(), ErrorCode.UNAUTHORIZED.getMessage())
+                            );
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setStatus(ErrorCode.FORBIDDEN.getStatus().value());
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            response.setCharacterEncoding("UTF-8");
+                            objectMapper.writeValue(
+                                    response.getWriter(),
+                                    new ErrorResponse(ErrorCode.FORBIDDEN.name(), ErrorCode.FORBIDDEN.getMessage())
+                            );
+                        }))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(request -> centerEnabled && (
+                                request.getRequestURI().equals("/api/mock-119-center/reports")
+                                || request.getRequestURI().startsWith("/api/mock-119-center/reports/")
+                                || request.getRequestURI().equals("/ws/mock-119-center"))).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/health").permitAll()
+                        // Local demo MP4 files are directly playable by a browser video element.
+                        .requestMatchers(HttpMethod.GET, "/videos/**").permitAll()
+                        .requestMatchers(HttpMethod.HEAD, "/videos/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.PATCH, "/api/auth/password").hasAnyRole("ADMIN", "WORKER")
+                        .requestMatchers(HttpMethod.GET, "/api/auth/contact-consent").hasRole("WORKER")
+                        .requestMatchers(HttpMethod.GET, "/api/auth/contact").hasRole("WORKER")
+                        .requestMatchers(HttpMethod.PATCH, "/api/auth/contact").hasRole("WORKER")
+                        .requestMatchers(HttpMethod.PATCH, "/api/admin/workers/*/role").hasRole("SUPER_ADMIN")
+                        .requestMatchers("/api/admin/**").hasAnyRole("SUPER_ADMIN", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/cameras/*").hasAnyRole("SUPER_ADMIN", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/cameras", "/api/cameras/").hasAnyRole("SUPER_ADMIN", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/events/*/mock-119-reports").hasAnyRole("SUPER_ADMIN", "ADMIN", "WORKER")
+                        .requestMatchers(HttpMethod.GET, "/api/events/*/mock-119-preview").hasAnyRole("SUPER_ADMIN", "ADMIN", "WORKER")
+                        .requestMatchers(
+                                "/api/cameras/**",
+                                "/api/events/**",
+                                "/api/statistics/**"
+                        ).hasAnyRole("SUPER_ADMIN", "ADMIN", "WORKER")
+                        .anyRequest().denyAll())
+                .formLogin(form -> form.disable())
+                .httpBasic(basic -> basic.disable())
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .build();
+    }
+
+    @Bean
+    CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://127.0.0.1:5173"));
+        if (centerEnabled) centerOrigins.forEach(configuration::addAllowedOrigin);
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 }

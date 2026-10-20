@@ -1,7 +1,27 @@
 # FIRIS 아키텍처
 
+> 현재 Backend 구현 범위: health check, AI 이벤트 생성·미디어 갱신 및 CAMERA/FIRE_EVENT/EVENT_MEDIA 매핑. [구현·검증 안내](AI_EVENT_IMPLEMENTATION.md)를 함께 확인한다. 금빈님 계정/JWT 및 MySQL 설정이 dev에 병합되어 이 브랜치에도 포함된다.
+
+
+기준: [PROJECT_CONTEXT](PROJECT_CONTEXT.md). 팀 합의 → 문서 변경 → 코드 변경을 따른다.
+
+## 문서 상태 구분
+
+- **현재 실행 상태**: AI 이벤트 생성·미디어 갱신과 최신 박스 JPEG 조회, Backend 이벤트 이력·상세·검수·미디어 조회 API가 있다. Frontend는 JWT 로그인, 카메라 분석 JPEG, 이벤트 조회·검수, 작업자 관리를 호출한다. 실제 RTSP와 전체 Docker 시연은 아직 검증하지 않았다.
+- **최종 합의**: 앞으로 구현할 요구사항이다. 현재 구현 여부와 구분한다.
+- **예시**: JSON의 비밀번호·ID·파일명, 탐지 수치 등 설명용 값이다. 실제 설정으로 확정하지 않는다.
+- **확인 필요**: 담당자와 합의 후 문서에 반영할 사항이다. 임의 구현하지 않는다.
+- **DB 현재 상태**: backend 기본 연결은 MySQL이다. 이벤트 API DB 통합 테스트는 별도 MySQL 테스트 DB에서 선택적으로 실행한다. MySQL 버전은 8.4.11로 확정했으며, 운영 스키마 관리 정책은 별도 확인이 필요하다.
+
+
+## Monorepo 및 개발 환경
+
+루트 .git 하나를 공유하고 ai/backend/frontend/docs를 독립된 폴더로 유지한다. 하위 Git Repository는 만들지 않는다.
+WSL Ubuntu의 ~/projects/FIRIS를 권장하며 /mnt/c 아래 개발은 가급적 피한다.
+VS Code는 WSL: Ubuntu 연결을 권장한다. Frontend 담당자는 Windows도 사용할 수 있고 프로젝트는 OS 독립성을 유지한다.
+.gitattributes로 LF/CRLF를 정규화한다.
+
 ## 구성 및 책임
-한 Repository 안의 독립 프로젝트 세 개로 구성한다. 각자 의존성, 실행 명령, 환경 설정을 가진다.
 
 | 디렉터리 | 책임 |
 | --- | --- |
@@ -9,64 +29,125 @@
 | ai/app/services | 향후 탐지 지속 확인, 이벤트 전송, 버퍼/미디어 처리 |
 | ai/app/models | 향후 모델 로딩/추론 어댑터. Classification에 종속하지 않음 |
 | ai/app/utils | 향후 공통 유틸리티 |
-| ai/model | Git에서 제외되는 모델 weight |
-| ai/storage/events | Git에서 제외되는 이벤트 Snapshot/영상 |
+| ai/model | Git LFS로 공유하는 모델 weight |
+| storage/videos | 카메라 ID별 시연 입력 영상; CAM001~CAM004에는 영상이 있고 CAM005~CAM009는 입력 대기 폴더 |
+| storage/events | Git에서 제외되는 이벤트 Snapshot/영상 |
 | backend/.../common | health check 및 공통 설정 |
-| backend/.../auth | 향후 인증 및 비밀번호 변경 흐름 |
+| backend/.../auth | JWT 인증, 비밀번호 변경, 신규 WORKER 최초 연락처·동의 등록 및 완료 전 관제 API 차단 |
 | backend/.../account | 향후 ADMIN/WORKER 계정 관리 |
 | backend/.../camera | 향후 고정 CCTV 조회 및 상태 |
 | backend/.../event | 향후 위험 이벤트와 미디어 경로 |
 | backend/.../review | 향후 이벤트 최종 검수 |
 | backend/.../statistics | 향후 관제 집계 |
-| frontend/src/api | Axios 클라이언트 및 향후 API 호출 |
+| backend/.../report | 119 모의 신고 기록과 WebSocket 접수 확인 |
+| frontend/src/api | Axios 클라이언트, JWT·미디어 요청 |
 | frontend/src/components, layouts | 향후 공통 컴포넌트 및 화면 배치 |
-| frontend/src/pages | Login, Dashboard, History, Admin placeholder |
+| frontend/src/pages | Login, Dashboard, History, Admin 화면·API 연결 |
 | frontend/src/hooks, utils | 향후 공통 hooks 및 유틸리티 |
 | docs | 구현에 앞서 확인·변경하는 개발 기준 문서 |
 
-## 향후 데이터 흐름
+## 이벤트 흐름
+
 ```mermaid
 sequenceDiagram
     participant C as CCTV
-    participant A as AI
-    participant B as Backend
+    participant A as AI Server
     participant S as File Storage
+    participant B as Backend
+    participant F as Frontend
     C->>A: 영상 프레임
-    Note over A: FIRE / SMOKE 탐지 및 지속 시간 확인
-    A->>B: POST /api/ai/events
-    Note over B: FIRE_EVENT 즉시 생성
-    B-->>A: eventId
-    A->>S: Snapshot 저장
-    Note over A: 전후 Frame Buffer로 mp4 생성
+    Note over A: FIRE/SMOKE 탐지, Temporal Validation, Frame Buffer
+    A->>S: Snapshot 확보 및 저장
+    A->>B: POST /api/ai/events (snapshotPath 포함)
+    Note over B: FIRE_EVENT 및 EVENT_MEDIA 생성 (video_path NULL 가능)
+    B-->>A: eventId, reviewStatus
+    Note over F,B: 영상 완성 전 이벤트 조회 가능
+    Note over A: post-event Frame 수집, 전후 버퍼로 mp4 생성
     A->>S: Event Video 저장
     A->>B: PATCH /api/ai/events/{eventId}/media
-    Note over B: 파일 경로 갱신
+    Note over B: video_path, pre_seconds, post_seconds 갱신
+    F->>B: 상세 조회 및 검수 (JWT)
+    Note over B: JWT 사용자로 EVENT_REVIEW 기록, 통계 집계
 ```
-Snapshot 경로를 처음 전달하는 시점과 실패 재시도/중복 방지 방식은 API 구현 전에 확정한다.
-Frontend는 향후 Backend에서 이벤트·계정·검수 정보를 조회한다.
-CCTV 스트리밍 및 Overlay 전송 방식, 실시간 갱신 프로토콜, 공유 저장소/미디어 제공 방식은 미정이다.
-로컬 파일 경로가 곧 브라우저 URL인 것은 아니며, 미디어 접근 정책은 향후 결정한다.
+
+Dashboard의 현재 박스 영상 전달은 AI 영상 처리기 → 카메라별 최신 박스 JPEG → AI 인증 API → Backend JWT 프록시 → 프론트 주기적 조회 방식이다. `GET /api/cameras/{cameraId}/frame`을 프론트에서 Blob으로 받아 표시한다. 서버 푸시 방식으로 변경할지는 실제 CCTV 지연·부하 검증 후 결정한다. 이벤트 Snapshot/MP4는 원본을 보관하며 최신 프레임 API와 구분한다.
+Snapshot 파일명 예시 event_31.jpg는 계약상 eventId 기반 선행 파일 생성을 요구하는 것이 아니다.
+실제 파일명 생성과 eventId 매핑 방식은 구현 전에 확인한다.
+Backend는 미디어 Binary를 DB에 저장하지 않으며 영상 완성을 기다리지 않는다.
+
+## 모델 및 버퍼
+
+MobileNet Family는 확정이고 Detection Head는 미정이다. AI 담당자가 결정하기 전 일반 Classification에 종속하지 않는다.
+PyTorch/TensorFlow 선택과 모델 인터페이스 구현은 담당 기능 개발 시 진행한다.
+Temporal Validation의 최소 2초/70%, 버퍼 전후 5초는 실험·조정 가능한 시작값이다.
+Buffer와 Snapshot/Video 생성 책임은 AI에 있다.
+
+AI 영상 처리의 현재 연동 시작값은 멀티 카메라 worker 초당 1회 추론, FIRE/SMOKE별 최초 탐지 후 실제 영상 시간 최소 2초 경과, 최근 2초 수집 결과의 70% 이상 탐지이다. 최소 3개 샘플과 현재 프레임 탐지를 요구한다. 추론 주기를 바꿔도 2초 경과 조건은 유지한다. 이는 2026-10-01 발표자료의 추가 탐지 지연 3초 이내 목표를 시험하기 위한 값이며 최종 임계값이 아니다. FIRE/SMOKE는 따로 집계하고 Bounding Box가 있으면 같은 영역의 탐지로 묶는다. 확정 후 같은 위험이 지속되는 동안 중복 이벤트를 만들지 않는다. 영상 버퍼는 추론 샘플과 별도로 JPEG 압축 프레임을 보관한다. AI는 스냅샷 저장 직후 Backend에서 eventId를 받고 메타데이터에 기록한 다음, 이후 프레임을 수집해 영상을 저장하고 해당 eventId로 미디어를 갱신한다. 실제 CCTV 영상에서 지연·오탐/시간·누락률을 측정해 임계값을 조정한다.
+
+## 인증 및 도메인 경계
+
+사용자 인증은 Authorization: Bearer {accessToken} JWT, 비밀번호는 BCrypt hash를 사용한다.
+이번 이벤트 API는 X-AI-API-KEY를 AI_API_KEY와 비교한다. 미설정·누락·불일치는 401로 차단한다.
+ACCOUNT/CAMERA/FIRE_EVENT/EVENT_MEDIA/EVENT_REVIEW와 119 모의 신고용 MOCK_119_REPORT를 사용한다.
+Statistics Table 없이 집계하며, 검수 행이 없으면 UNREVIEWED이다.
+신규 WORKER는 비밀번호 변경 후 연락처·동의 등록 대상이다. 프론트의 최초 동의 화면과 확정 문안을 배포하기 전에는 `CONTACT_ONBOARDING_ENFORCED=false`로 관제 API 차단을 보류한다. 화면 배포 후 `true`로 전환하며, 기존 계정에는 소급 강제하지 않는다. 모의 신고는 플래그와 관계없이 등록된 연락처·동의를 요구한다.
+
+119 모의 신고는 WORKER가 화면에서 시작하고 Backend가 신고자 연락처를 DB에서 읽는다. 관제실 번호는 서버 설정에서 가져와 모의서버에 WebSocket 메시지를 보낸다. 같은 `requestId`의 ACK를 받은 경우에만 `ACCEPTED`로 저장한다. 실패 시 `FAILED`를 남기며 동일 이벤트는 동일 ID로만 재시도한다. 이는 실제 119 신고가 아니고, 모의서버 자체는 별도 구현 대상이다. [API 명세](API_SPEC.md)의 WebSocket 계약을 따른다.
+신고 확인 창은 이벤트·카메라·계정과 서버 설정을 조합한 preview API로 표시한다. 주소·관제실 번호는 서버 설정, 상세위치·특이사항은 카메라, 탐지시각·유형은 이벤트, 담당자 연락처는 계정에서 가져온다. 확인 후 POST는 화면 입력을 신뢰하지 않고 같은 서버 데이터를 다시 읽어 WebSocket으로 보낸다.
 
 ## 현재 실행 구성
-- AI: FastAPI/Uvicorn, 8000 포트. OpenCV 의존성만 준비하고 모델 추론은 없다.
+- AI: FastAPI/Uvicorn, 8000 포트. 모델 추론과 영상 시간 창 판정·Backend 호출, 박스 JPEG 발행 코드가 있다. 로컬 AVI에서 YOLO 추론과 Backend/MySQL 이벤트 저장을 확인했다. 실제 CCTV RTSP 검증은 아직 없다.
 - Backend: Java 17, Spring Boot, Gradle Wrapper, 8080 포트.
-- Spring Web/JPA/Security/Validation과 개발용 메모리 H2를 포함한다.
-- `ddl-auto: none`, SQL 초기화 비활성화. Entity, 테이블, 계정 시드는 없다.
-- Spring Security는 GET /api/health만 허용하고 나머지는 차단한다. 기본 사용자 자동 생성과 폼/Basic 로그인은 사용하지 않는다. JWT는 구현하지 않는다.
-- Frontend: React/Vite/JavaScript, React Router, Axios, Yarn, 5173 포트. API 연동과 CORS 정책은 아직 구현하지 않는다.
-- `docker-compose.yml`은 `services: {}` 예약 파일이며 배포 구성은 없다.
+- Spring Web/JPA/Security/Validation과 MySQL 런타임 드라이버를 포함한다. 이벤트 API DB 통합 테스트는 별도 MySQL 테스트 DB에서 선택적으로 실행한다.
+- `ddl-auto`는 dev 기본값 update이며 SQL 초기화는 비활성화되어 있다. ACCOUNT, CAMERA 및 FIRE_EVENT/EVENT_MEDIA/EVENT_REVIEW Entity가 있고 관리자 계정은 최초 시작 시 생성된다. CAMERA의 CAM001~CAM009는 없을 때 자동 등록된다. 기본 ONLINE 값은 실제 영상 수신 확인과 구분한다. MySQL 통합 테스트만 전용 firis_test DB에서 create-drop을 사용한다.
+- 공통 Spring Security 설정에는 사용자 JWT·역할 권한이 있다. 별도 우선순위 체인이 /api/ai/**의 API Key를 검증한다. GET /api/health는 공개된다.
+- Frontend: React/Vite/JavaScript, React Router, Axios, Yarn, 5173 포트. 로그인·카메라 프레임·이벤트 이력/검수·작업자 API를 호출한다. Backend CORS는 localhost:5173을 허용한다.
+- `docker-compose.yml`은 MySQL 8.4.11, Backend, AI API, AI worker, Frontend 서비스의 로컬 통합 실행 구성을 제공한다. Worker는 시연용 `--loop`로 영상 목록을 반복한다.
 
 ## 환경 및 저장소 원칙
-실제 `.env`와 모델 weight, 이벤트 데이터는 커밋하지 않는다. `.env.example`과 `.gitkeep`은 커밋한다.
+실제 `.env`와 이벤트 데이터는 커밋하지 않는다. 모델 weight와 시연 입력 영상은 Git LFS로 공유한다. `.env.example`과 필요한 `.gitkeep`은 커밋한다.
 Backend는 backend 작업 디렉터리의 `.env`를 Spring properties 형식으로 선택적으로 읽는다.
 Frontend는 Vite의 `.env` 로딩을 사용한다. `VITE_` 값은 브라우저에 공개되므로 비밀 값을 넣지 않는다.
-AI 환경변수는 향후 통합용 예약 항목으로 현재 health check에서는 사용하지 않는다.
+AI는 `.env`에서 BACKEND_URL/AI_API_KEY, AI_MODELS_DIR/EVENT_STORAGE_DIR을 읽는다. health check는 모델 경로의 파일 존재와 Git LFS 포인터 여부만 확인한다.
 루트 `.env.example`은 전체 항목 안내이며 세 파트가 자동으로 공유하지 않는다.
 
-## 변경 원칙
-기능 구현 전에 네 설계 문서를 확인한다. 설계 변경을 문서에 먼저 반영하고 이후 코드로 구현한다.
 
-## Frontend 파일 및 패키지 관리
-Yarn으로 의존성을 관리하며 yarn.lock을 커밋한다. Vite는 개발 서버와 빌드 도구로 유지한다.
-페이지는 Dashboard/History/Admin/Login 폴더에 같은 이름의 .jsx 및 .css 파일로 둔다.
-화면 컴포넌트는 JSX 문법을 사용하는 .jsx 파일로 작성한다. API 클라이언트, 일반 로직, Vite 설정은 .js를 사용한다.
+## Frontend 및 패키지 관리
+
+React + Vite + Yarn 4를 유지한다. yarn.lock과 .yarnrc.yml을 커밋한다.
+권한 없이 실행하려면 frontend에서 corepack yarn install --immutable / corepack yarn start를 사용한다.
+페이지와 화면 컴포넌트는 .jsx, 일반 로직/설정은 .js, 스타일은 .css이다.
+페이지는 /login, /dashboard, /history, /admin 네 개이고 이벤트 상세는 Drawer/Modal이다.
+Dashboard는 전체 세로 스크롤 없이 CCTV를 항상 노출하는 통합 관제 화면이다.
+현재 Dashboard는 9개 기본 채널 중 표시할 화면을 선택하며 기본 선택은 CAM001~CAM004이다. AI worker는 시작 당시 존재하는 최대 9개 `storage/videos/{cameraId}` 폴더를 각각 처리한다. 각 폴더의 영상은 이름순으로 재생하고 실행 중 같은 폴더에 추가된 파일도 다음 순회에 발견한다. 카메라 ID와 영상의 대응을 보장하기 위해 단일 공용 영상 폴더로 합치지 않는다. 새 폴더를 worker 실행 중 만드는 것은 현재 자동 인식 대상이 아니며, 9채널을 넘는 확장은 별도 작업이다.
+프론트는 구역 배치 순서에 따라 별도의 화면 채널 번호를 표시한다. 화면 번호 01~09에 대응하는 내부 cameraId는 CAM001, CAM002, CAM005, CAM006, CAM007, CAM003, CAM004, CAM008, CAM009 순서다. AI 분석, Backend 이벤트, 영상 폴더는 변경되지 않은 내부 ID를 사용한다.
+이벤트 대응 완료는 FIRE_EVENT.response_completed_at과 필요한 경우 EVENT_REVIEW의 TRUE_FIRE를 기록한다. 10초 무응답 알림은 FIRE_EVENT.report_timed_out_at만 기록하며 실제 119 모의 신고를 보내지 않는다. 실제 모의 신고는 별도 preview/POST API를 통해 사용자가 확인 후 요청한다.
+Frontend의 신규 이벤트 알림은 최초 접속 시 최대 eventId를 기준선으로 삼고 이후 5초마다 그보다 큰 ID의 이벤트만 오름차순으로 조회한다. 알림의 119 확인 창은 Backend preview API에서 서버 설정·카메라·계정 정보를 조회한다. 실제 신고 POST 버튼은 아직 연결되지 않았다.
+
+## Git 협업 및 CI/CD
+
+main은 안정 버전, dev는 통합, feature/*는 기능 개발 브랜치이다.
+dev 최신화 → feature 생성 → 담당 기능 개발 → commit/push → PR → dev 병합을 따른다.
+main/dev 직접 기능 개발은 피한다. 팀원 Write 권한 및 main/dev 보호 규칙을 사용할 수 있으며 feature/* 생성은 막지 않는다.
+CI/CD 담당은 신종건이며 Docker/Compose/Jenkins/GitHub로 Build/Test/Deploy를 자동화할 예정이다.
+AI/Backend/Frontend Dockerfile과 Jenkins Pipeline이 있으며, docker-compose.yml에는 MySQL 8.4.11, Backend, AI API, AI worker, Frontend 서비스 구성이 있다. Jenkins는 AI/Backend/Frontend Docker 이미지를 빌드하고 검증한다.
+전체 담당 분담과 담당 API는 PROJECT_CONTEXT 5절을 따른다.
+
+## 구현 전에 확인할 미정 사항
+
+- 실제 운영 DB 종류 및 마이그레이션 도구 (현재 기본 연결은 MySQL)
+- 모델 상세/추론 인터페이스, Confidence/지속 시간 임계값, 버퍼 길이
+- 스트리밍/Overlay/신규 이벤트 전달, 파일 저장소 공유 및 브라우저 미디어 접근
+- 이벤트 중복 방지, 재시도, 영상 생성 실패 처리, 파일명 및 eventId 매핑
+- JWT 저장/갱신, 비활성화·초기화 이후 기존 토큰 처리
+
+미정 사항을 임의로 구현하거나 기존 계약을 바꾸지 않는다. 관련 담당자 및 사용자 확인 후 문서를 먼저 수정한다.
+
+## CCTV 관리
+관리자 화면은 기존 POST /api/cameras와 신규 DELETE /api/cameras/{cameraId}를 호출한다. CAMERA.deleted로 논리 삭제하여 이전 이력의 참조를 보존한다. 목록·관제 선택·새 AI 이벤트·최신 프레임에서는 삭제된 CCTV를 제외한다. 초기 등록기는 삭제된 행을 기존 ID로 인식하므로 재시작 후 복원하지 않는다. 관제 선택은 고정 9개 제한 대신 API의 전체 등록 목록을 사용하며 기존 채널 표시 순서는 유지한다.
+
+## 기본 데이터 초기화
+Hibernate 스키마 반영 후 ApplicationRunner가 기본 데이터를 확인한다. 최고 관리자는 login_id 단위로 추가하고 기존 값은 보존한다. 기존 초기 관리자는 ADMIN 역할 존재 여부와 환경변수로, CCTV는 ID 존재 여부로 생성한다. 데이터베이스 볼륨이 서로 달라도 같은 초기화 코드로 필수 데이터를 준비한다. 이벤트·검수·신고 이력은 초기화 대상이 아니다.
+
+## 관리자 계정 제어
+기존 작업자 관리 API는 요청자의 DB 역할에 따라 조회·제어 범위를 결정한다. 최고 관리자는 ADMIN/WORKER, 일반 관리자는 WORKER만 대상으로 한다. 권한 변경은 전용 SUPER_ADMIN API에서 대상 행을 잠그고 expectedRole을 비교한다. JWT 요청은 기존대로 DB의 현재 역할을 재조회한다. 관리자 비밀번호 초기화에 따라 ADMIN도 강제 변경 절차를 지원한다. 작업자 번호 발급은 역할과 무관하게 기존 Wxxxxxx 아이디를 확인한다.

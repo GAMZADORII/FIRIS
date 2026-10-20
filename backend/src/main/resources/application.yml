@@ -8,17 +8,46 @@ spring:
   autoconfigure:
     exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
   datasource:
-    url: ${DB_URL:jdbc:h2:mem:firis}
-    username: ${DB_USERNAME:sa}
+    url: ${DB_URL:jdbc:mysql://localhost:3306/firis?serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
+    username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:}
-    driver-class-name: org.h2.Driver
+    driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: ${DDL_AUTO:update}
     open-in-view: false
   sql:
     init:
       mode: never
-  h2:
-    console:
-      enabled: false
+security:
+  jwt:
+    secret: ${JWT_SECRET:}
+    expiration-seconds: ${JWT_EXPIRATION_SECONDS:3600}
+
+app:
+  event:
+    storage-directory: ${EVENT_STORAGE_DIR:../storage/events}
+  camera:
+    base-url: ${CAMERA_BASE_URL:http://localhost:8080}
+    video-directory: ${CAMERA_VIDEO_DIRECTORY:../storage/videos}
+  admin:
+    login-id: ${ADMIN_LOGIN_ID:admin}
+    password: ${ADMIN_PASSWORD:}
+    name: ${ADMIN_NAME:김진우}
+  super-admin:
+    enabled: ${SUPER_ADMIN_ENABLED:true}
+    password: ${SUPER_ADMIN_PASSWORD:1234}
+    contact-phone: ${SUPER_ADMIN_CONTACT_PHONE:010-1234-5678}
+  worker:
+    default-password: ${WORKER_DEFAULT_PASSWORD:}
+  contact-consent:
+    version: ${CONTACT_CONSENT_VERSION:v1}
+    enforce-onboarding: ${CONTACT_ONBOARDING_ENFORCED:false}
+  mock-119:
+    delivery-mode: ${MOCK_119_DELIVERY_MODE:external}
+    center-enabled: ${MOCK_119_CENTER_ENABLED:false}
+    allowed-origins: ${MOCK_119_ALLOWED_ORIGINS:http://localhost:5174,http://127.0.0.1:5174,http://localhost:5173,http://127.0.0.1:5173}
+    ws-url: ${MOCK_119_WS_URL:}
+    api-key: ${MOCK_119_API_KEY:}
+    site-address: "${MOCK_119_SITE_ADDRESS:충청남도 가온시 새빛구 안전산단로 119, FIRIS 스마트공장}"
+    control-room-phone: ${MOCK_119_CONTROL_ROOM_PHONE:041-123-4567}

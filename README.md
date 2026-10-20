@@ -1,26 +1,27 @@
 # FIRIS
 AI 기반 화재·연기 조기 감지 관제 서비스. AI / Backend / Frontend를 하나의 Repository에서 독립적으로 개발한다.
-현재는 health check 두 개와 네 페이지 placeholder를 실행하는 초기 뼈대이다.
+현재 AI 탐지·Backend 이벤트 저장과 프론트엔드의 로그인·카메라 분석 화면·이벤트 이력/검수 연동이 있다. [AI 연동 검증](docs/AI_INTEGRATION.md)을 참고한다.
 
 ## 구조
 ```text
 FIRIS/
-├── ai/                 # FastAPI, 향후 탐지/버퍼/미디어 처리
-├── backend/            # Spring Boot, 향후 계정/이벤트/검수 관리
+├── ai/                 # FastAPI, 탐지/버퍼/미디어 처리
+├── backend/            # Spring Boot, 계정/이벤트/검수 관리
 ├── frontend/           # React 관제 화면
 ├── docs/               # 개발 기준 문서
+├── .gitattributes      # WSL/Windows 줄바꿈 규칙
 ├── .gitignore
 ├── .env.example        # 전체 환경변수 안내
-├── docker-compose.yml  # 예약 파일, 배포 서비스 없음
+├── docker-compose.yml  # MySQL 8.4.11 + Backend + AI + Frontend 로컬 통합 실행 구성
 └── README.md
 ```
 
 ## 기술 스택
 | 파트 | 현재 | 향후 |
 | --- | --- | --- |
-| AI | Python, FastAPI, Uvicorn, OpenCV headless | PyTorch 또는 TensorFlow, MobileNet 계열 탐지 |
-| Backend | Java 17, Spring Boot 3.5, Gradle Wrapper, Web/JPA/Security/Validation, H2 | JWT, 도메인 Entity/API |
-| Frontend | React, Vite, JavaScript, Axios, React Router | 통합 Dashboard, History, 계정 관리 |
+| AI | Python, FastAPI, OpenCV, PyTorch/YOLO 추론 및 이벤트 파일 저장 | 실영상 임계값 검증·운영 연동 |
+| Backend | Java 17, Spring Boot 3.5, Gradle Wrapper, Web/JPA/Security/Validation, MySQL·JWT·이벤트 조회/검수 API | 관제 통계와 추가 운영 기능 |
+| Frontend | React, Vite, JavaScript, Axios, React Router, JWT 및 관제 API 연결 | 현장 시연·화면 조정 |
 
 ## 실행
 각각 별도 터미널에서 루트 기준으로 실행한다. 첫 설치에는 인터넷이 필요하다.
@@ -36,40 +37,47 @@ python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 `curl http://localhost:8000/health` → `{"status":"ok"}`.
 
+영상 자동 분석은 별도 터미널에서 `cd ai && .venv/bin/python -m app.services.multi_camera_service --model yolo --sample-fps 3 --loop`로 실행한다. 원본 영상은 카메라 ID별 `storage/videos/CAM001`~`CAM009` 폴더에 넣는다. 현재 영상 파일은 CAM001~CAM004에만 있으며, 나머지는 입력 대기 폴더이다. Docker Compose는 `ai-worker`를 별도 서비스로 실행한다. 자세한 준비물과 검증 순서는 [AI 연동 안내](docs/AI_INTEGRATION.md)에 있다.
+
 ### Backend
 ```bash
 cd backend
 ./gradlew bootRun
 ```
 `curl http://localhost:8080/api/health` → `{"status":"ok"}`.
-Windows는 `gradlew.bat bootRun`. 메모리 H2를 사용하며 테이블은 생성하지 않는다.
+Windows는 `gradlew.bat bootRun`. 현재 기본 연결은 MySQL이며 backend/.env의 DB 정보를 설정해야 한다. 이벤트 API DB 통합 테스트는 별도 MySQL 테스트 DB에서 선택적으로 실행한다.
 
 ### Frontend
 ```bash
 cd frontend
-corepack enable
-yarn install --immutable
-yarn start
+corepack yarn install --immutable
+corepack yarn start
 ```
 http://localhost:5173 에서 `/login`, `/dashboard`, `/history`, `/admin` 확인.
-빌드 검증은 Backend `./gradlew build`, Frontend `yarn build`.
+빌드 검증은 Backend `./gradlew build`, Frontend `corepack yarn build`.
 파트별 설정/Windows 안내는 각 폴더의 README를 참고한다.
 
 ## 환경변수 및 파일
-`.env`는 커밋하지 않고 `.env.example`만 관리한다. 기본 실행에는 `.env`가 필요 없다.
-Backend/Frontend는 필요 시 해당 폴더의 예제를 `.env`로 복사한다.
-루트 예제는 안내용이며 공통 자동 로더는 없다. AI 환경변수와 JWT/API 키는 향후 기능용 예약 항목이다.
+`.env`는 커밋하지 않고 `.env.example`만 관리한다. 통합 시연에는 루트 Compose용 `.env`와 AI/Backend가 사용할 환경변수가 필요하다.
+로컬 실행은 `ai/.env`와 `backend/.env`를 각 예제를 참고해 설정한다. 루트 예제는 안내용이며 세 파트의 자동 공통 로더는 아니다. Backend JWT_SECRET은 사용자 인증에, AI_API_KEY는 AI 수신 API에 사용한다.
 VITE_ 환경변수에 비밀 값을 넣지 않는다.
-모델 weight와 이벤트 영상/이미지는 Git에서 제외하며 필요한 빈 폴더는 `.gitkeep`으로 유지한다.
+AI 모델 가중치와 `storage/videos/CAM001`~`CAM004`의 시연 입력 영상은 Git LFS로 관리한다. 팀원은 `git lfs install` 후 저장소를 받아 실제 파일을 내려받아야 한다. 이벤트 결과 영상/이미지와 최신 관제 프레임은 Git에서 제외한다.
+
+## 기본 데이터 자동 생성
+Backend 실행 시 최고 관리자 `superadmin1`(박상현), `superadmin2`(차나래)를 누락된 계정만 자동 생성한다. 초기 비밀번호는 `1234`이며 `SUPER_ADMIN_PASSWORD`로 새 계정의 비밀번호를 지정할 수 있다. 기존 비밀번호·이름·계정 상태는 변경하지 않는다. `SUPER_ADMIN_ENABLED=false`로 자동 생성을 끌 수 있다.
+초기 ADMIN은 기존 ADMIN_PASSWORD 설정에 따라, 기본 CCTV 9개는 누락된 ID만 자동 등록한다. 삭제된 CCTV는 복원하지 않는다. 이벤트·검수·신고 등 사용 기록은 자동 생성하지 않는다. 팀원마다 수동 SQL을 실행할 필요가 없다. 자세한 설정은 [Docker 실행 안내](docs/DOCKER_LOCAL.md)를 참고한다.
 
 ## 개발 기준 문서
+- [AI_EVENT_IMPLEMENTATION](docs/AI_EVENT_IMPLEMENTATION.md): 이번 AI 수신 API 구현·통합·검증 범위
+- [AI_INTEGRATION](docs/AI_INTEGRATION.md): AI 영상 판정·Backend 호출 및 현장 검증 항목
+- [PROJECT_CONTEXT](docs/PROJECT_CONTEXT.md): 팀 합의 전체, 담당 분담 및 개발 원칙
 - [REQUIREMENTS](docs/REQUIREMENTS.md): 계정, CCTV, 탐지, 화면, 제외 범위
 - [ARCHITECTURE](docs/ARCHITECTURE.md): 파트 책임과 이벤트/미디어 흐름
-- [ERD](docs/ERD.md): 향후 테이블과 관계 (Entity/DDL 없음)
-- [API_SPEC](docs/API_SPEC.md): 현재 health check와 향후 이벤트 API
+- [ERD](docs/ERD.md): 현재 주요 테이블과 관계
+- [API_SPEC](docs/API_SPEC.md): 현재 인증·이벤트·119 모의 신고 API 계약
 
-**기능 구현 전 문서를 먼저 확인한다. 설계 변경은 코드보다 먼저 문서에 반영한다.**
-현재 AI 학습/추론, JWT, DB 테이블/시드, 관리자/작업자 기능, Dashboard UI, Docker 배포는 구현하지 않는다.
+**기능 구현 전 문서를 먼저 확인한다. 설계 변경은 팀 합의 후 코드보다 먼저 문서에 반영한다.**
+카메라 초기 등록과 이벤트 조회·검수, Dashboard API 연결은 구현했다. 4개 실제 영상과 Docker·브라우저를 함께 사용한 현장 시연, RTSP와 모델 정확도 검증은 후속 작업이다. 최종 제외 기능은 REQUIREMENTS의 별도 목록을 따른다.
 
 ## Git branch 전략
 | Branch | 용도 |
@@ -81,10 +89,11 @@ VITE_ 환경변수에 비밀 값을 넣지 않는다.
 `dev`에서 `feature/*`를 분기하고 검토 후 `dev`로 통합한다. 안정화한 버전을 `main`에 반영한다.
 
 ## 초기 실행 검증
+검증 범위는 서버 health 응답·Frontend 빌드·HTTP 응답이다. AI 탐지, JWT, 업무 기능 및 파트 간 E2E를 검증한 것은 아니다.
 2026-09-30 로컬 환경(Python 3.14.7, Java 17.0.20, Node.js 24.20.0)에서 확인했다.
 - AI: 의존성 검사 및 OpenCV import 성공, Uvicorn 실행 후 GET /health → 200 / `{"status":"ok"}`.
 - Backend: Gradle build 성공, bootRun 실행 후 GET /api/health → 200 / `{"status":"ok"}`.
-- Frontend: 초기 npm install 및 build 성공, Vite 실행 후 네 페이지 경로 모두 HTTP 200.
+- Frontend: 최초에는 npm으로 검증했으나 현재 실행 기준은 Yarn + Vite이다. 전환 후 Yarn 설치·빌드 및 네 경로 HTTP 200도 확인했다.
 - .gitignore: 실제 환경 파일/모델/이벤트 이미지·영상 제외와 예제/.gitkeep/Wrapper 보존 확인.
 - 브라우저 렌더링 자동 검증은 실행 환경의 Chromium 시작 중 SIGSEGV로 완료하지 못했다.
 - 검증용 서버는 확인 후 종료했다. 자동 테스트 스위트는 현재 포함하지 않는다.
@@ -93,3 +102,5 @@ VITE_ 환경변수에 비밀 값을 넣지 않는다.
 [Vite 실행 안내](https://vite.dev/guide/).
 
 Frontend 패키지 관리는 Yarn으로 전환했다. Corepack이 없으면 `npm install -g corepack`으로 먼저 설치한다.
+
+Jenkins Poll SCM을 통해 dev 브랜치 변경 시 CI 자동 빌드를 수행한다.

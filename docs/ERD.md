@@ -1,23 +1,131 @@
-# 향후 데이터 모델
+# FIRIS ERD 설계 초안
 
-이 문서는 개념적 관계만 기록한다. 현재 Entity, DDL, migration, 테이블, 시드 데이터는 만들지 않는다.
-컬럼 타입, PK 생성 방식, 인덱스 및 전체 스키마는 향후 설계 단계에서 확정한다.
+> 현재 Backend에는 AI 이벤트 생성·미디어 갱신, 이벤트 이력·상세·검수 및 인증된 미디어 조회가 있다. [구현·검증 안내](AI_EVENT_IMPLEMENTATION.md)를 함께 확인한다.
 
-| 예정 테이블 | 역할 / 알려진 설계 요소 |
+
+기준: [PROJECT_CONTEXT](PROJECT_CONTEXT.md) 19~20절. 아래 컬럼명·타입·제약은 팀이 제공한 설계이며 임의 변경하지 않는다.
+**CAMERA/FIRE_EVENT/EVENT_MEDIA/ACCOUNT/EVENT_REVIEW Entity를 구현했다. 운영 DDL·migration과 CAMERA 시드는 별도 작업이다.** 현재 기본 설정은 MySQL 8.4.11이며 운영 스키마 관리 정책은 확인이 필요하다.
+
+## 문서 상태 구분
+
+- **현재 실행 상태**: AI 이벤트 생성·미디어 갱신과 사용자 이벤트 조회·검수 API가 있다. Frontend와 이벤트 API의 연결은 디자인 작업 이후 진행한다. 이벤트 조회와 미디어 조회는 로컬 MySQL에서 수동 검증했다. 전용 테스트 DB의 자동 통합 테스트는 환경변수가 있을 때만 실행한다.
+- **최종 합의**: 앞으로 구현할 요구사항이다. 현재 구현 여부와 구분한다.
+- **예시**: JSON의 비밀번호·ID·파일명, 탐지 수치 등 설명용 값이다. 실제 설정으로 확정하지 않는다.
+- **확인 필요**: 담당자와 합의 후 문서에 반영할 사항이다. 임의 구현하지 않는다.
+- **DB 현재 상태**: backend 기본 연결은 MySQL이다. 이벤트 API DB 통합 테스트는 별도 MySQL 테스트 DB에서 선택적으로 실행한다. MySQL 버전은 8.4.11로 확정했으며, 운영 스키마 관리 정책은 별도 확인이 필요하다.
+
+
+## ACCOUNT
+
+| 컬럼 | 타입 및 제약 |
 | --- | --- |
-| ACCOUNT | ADMIN/WORKER, loginId, must_change_password, ACTIVE/INACTIVE. ADMIN 1개 사전 등록 예정 |
-| CAMERA | 고정 CCTV, cameraId(camera-1 등), ONLINE/OFFLINE |
-| FIRE_EVENT | 카메라 위험 이벤트, FIRE/SMOKE 및 필요 시 FIRE_SMOKE, Confidence, 발생 시각 |
-| EVENT_MEDIA | 이벤트 미디어 경로(snapshot_path, video_path). Binary 저장 금지 |
-| EVENT_REVIEW | 최종 검수 TRUE_FIRE/FALSE_POSITIVE, 오탐 사유, 검수자 |
+| account_id | BIGINT PK AUTO_INCREMENT |
+| login_id | VARCHAR(30) NOT NULL UNIQUE |
+| password_hash | VARCHAR(255) NOT NULL |
+| name | VARCHAR(50) NOT NULL |
+| role | VARCHAR(20) NOT NULL |
+| must_change_password | BOOLEAN NOT NULL DEFAULT FALSE |
+| contact_phone | VARCHAR(20) NULL; 최초 등록 전에는 비어 있음 |
+| contact_consent_version | VARCHAR(30) NULL; 동의 문안 버전 |
+| contact_consented_at | DATETIME NULL; 서버에서 기록한 동의 시각 |
+| contact_onboarding_required | BOOLEAN NULL; 신규 WORKER는 TRUE, 기존 계정의 NULL은 미적용으로 해석 |
+| status | VARCHAR(20) NOT NULL DEFAULT ACTIVE |
+| created_at | DATETIME NOT NULL |
+| updated_at | DATETIME NOT NULL |
 
-## 관계
-- CAMERA 1 : N FIRE_EVENT
-- FIRE_EVENT 1 : 0..1 EVENT_MEDIA
-- FIRE_EVENT 1 : 0..1 EVENT_REVIEW
-- ACCOUNT 1 : N EVENT_REVIEW
+## CAMERA
 
-이벤트는 미디어/검수 정보 없이 먼저 생성될 수 있다.
-EVENT_MEDIA와 EVENT_REVIEW는 이벤트당 최대 한 행이 되도록 향후 제약을 설계한다.
-작업자는 삭제하지 않고 비활성화하며 검수 이력을 유지한다.
-오탐 사유 후보: STEAM, LIGHT, REFLECTION, DUST, WELDING, ETC.
+| 컬럼 | 타입 및 제약 |
+| --- | --- |
+| camera_id | VARCHAR(30) PK |
+| camera_name | VARCHAR(50) NOT NULL |
+| location | VARCHAR(100) |
+| report_note | VARCHAR(500) NULL; 신고 확인 창의 카메라별 특이사항 |
+| stream_url | VARCHAR(500) |
+| status | VARCHAR(20) NOT NULL DEFAULT ONLINE |
+
+## FIRE_EVENT
+
+| 컬럼 | 타입 및 제약 |
+| --- | --- |
+| event_id | BIGINT PK AUTO_INCREMENT |
+| camera_id | VARCHAR(30) NOT NULL FK |
+| event_type | VARCHAR(20) NOT NULL |
+| confidence | DOUBLE NOT NULL |
+| detected_at | DATETIME NOT NULL |
+| model_version | VARCHAR(50) |
+| created_at | DATETIME NOT NULL |
+| report_timed_out_at | DATETIME NULL; 신규 알림 10초 무응답 시각, 119 접수 여부와 무관 |
+| response_completed_at | DATETIME NULL; 현장 대응 완료 시각, 119 접수 여부와 무관 |
+
+## EVENT_MEDIA
+
+| 컬럼 | 타입 및 제약 |
+| --- | --- |
+| media_id | BIGINT PK AUTO_INCREMENT |
+| event_id | BIGINT NOT NULL UNIQUE FK |
+| snapshot_path | VARCHAR(500) |
+| video_path | VARCHAR(500) |
+| pre_seconds | INT |
+| post_seconds | INT |
+| created_at | DATETIME NOT NULL |
+| updated_at | DATETIME NOT NULL |
+
+## EVENT_REVIEW
+
+| 컬럼 | 타입 및 제약 |
+| --- | --- |
+| review_id | BIGINT PK AUTO_INCREMENT |
+| event_id | BIGINT NOT NULL UNIQUE FK |
+| reviewer_id | BIGINT NOT NULL FK |
+| result | VARCHAR(30) NOT NULL |
+| false_positive_reason | VARCHAR(30) |
+| note | VARCHAR(500) |
+| reviewed_at | DATETIME NOT NULL |
+
+## MOCK_119_REPORT
+
+| 컬럼 | 타입 및 제약 |
+| --- | --- |
+| report_id | BIGINT PK AUTO_INCREMENT |
+| event_id | BIGINT NOT NULL UNIQUE FK → FIRE_EVENT |
+| reporter_id | BIGINT NOT NULL FK → ACCOUNT |
+| request_id | VARCHAR(36) NOT NULL UNIQUE; 재시도에도 동일한 값 사용 |
+| reporter_phone | VARCHAR(20) NOT NULL; 신고 당시 계정 연락처 복사 |
+| control_room_phone | VARCHAR(20) NOT NULL; 모달에서 확인한 관제실 번호 |
+| site_address | VARCHAR(255) NULL; 신규 신고에서 필수, 기존 테이블 안전 확장용 nullable |
+| detail_location | VARCHAR(100) NULL; 신규 신고에서 필수, 기존 테이블 안전 확장용 nullable |
+| special_notes | VARCHAR(500) NULL; 신고 당시 카메라 특이사항 복사 |
+| status | VARCHAR(20) NOT NULL; PENDING / ACCEPTED / FAILED |
+| receipt_id | VARCHAR(100) NULL; 모의서버 접수 ID |
+| failure_reason | VARCHAR(255) NULL |
+| created_at / updated_at / accepted_at | DATETIME; accepted_at은 접수 확인 후 기록 |
+
+이 테이블은 실제 119 접수 기록이 아니다. 신고 번호는 사후 확인을 위해 전송 시점 값으로 보존한다.
+
+## 값 및 관계
+
+- ACCOUNT.role: SUPER_ADMIN / ADMIN / WORKER. status: ACTIVE / INACTIVE.
+- ACCOUNT.must_change_password는 DB 기본값 FALSE이나 WORKER 생성·초기화 시 TRUE로 설정한다.
+- CAMERA.status: ONLINE / OFFLINE. camera_id는 camera-1 등의 고정 데이터 ID이다.
+- FIRE_EVENT.event_type: FIRE / SMOKE / FIRE_SMOKE.
+- EVENT_REVIEW.result: TRUE_FIRE / FALSE_POSITIVE. UNREVIEWED는 저장하지 않고 검수 행 부재로 판단한다.
+- EVENT_REVIEW.false_positive_reason: STEAM / LIGHT / REFLECTION / DUST / WELDING / ETC.
+- password_hash는 BCrypt hash만 저장한다. 미디어 Binary는 저장하지 않는다.
+- EVENT_MEDIA.video_path는 생성 직후 NULL일 수 있다.
+
+| 관계 | 참조 |
+| --- | --- |
+| CAMERA 1:N FIRE_EVENT | FIRE_EVENT.camera_id → CAMERA.camera_id |
+| FIRE_EVENT 1:0..1 EVENT_MEDIA | EVENT_MEDIA.event_id → FIRE_EVENT.event_id (UNIQUE) |
+| FIRE_EVENT 1:0..1 EVENT_REVIEW | EVENT_REVIEW.event_id → FIRE_EVENT.event_id (UNIQUE) |
+| ACCOUNT 1:N EVENT_REVIEW | EVENT_REVIEW.reviewer_id → ACCOUNT.account_id |
+| FIRE_EVENT 1:0..1 MOCK_119_REPORT | MOCK_119_REPORT.event_id → FIRE_EVENT.event_id (UNIQUE) |
+| ACCOUNT 1:N MOCK_119_REPORT | MOCK_119_REPORT.reporter_id → ACCOUNT.account_id |
+
+AI 이벤트 생성 API는 FIRE_EVENT와 Snapshot 경로를 가진 EVENT_MEDIA를 생성한다.
+관계의 0..1은 저장 구조상 최대 하나를 뜻한다. 최종 검수도 이벤트당 하나이다.
+검수자는 JWT에서 가져오고, 작업자를 삭제하지 않아 검수 이력을 유지한다.
+통계 전용 테이블은 만들지 않는다. 외래키 삭제 정책, 추가 인덱스, 시간대 등 명시되지 않은 정책은 구현 전에 확인한다.
+
+CAMERA.deleted: BOOLEAN NOT NULL DEFAULT FALSE. 논리 삭제 후 기존 FIRE_EVENT의 FK 및 이력 조회는 유지한다.
